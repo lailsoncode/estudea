@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduFlow - Criação de Aula e Atividade</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8f9ff; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c3c6d7; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #737686; 
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f8f9ff",
+                        "tertiary-fixed-dim": "#89ceff",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-tertiary-fixed": "#001e2f",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#0053db",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "on-surface-variant": "#434655",
+                        "on-tertiary-fixed-variant": "#004c6e",
+                        "tertiary-container": "#0074a6",
+                        "surface": "#f8f9ff",
+                        "inverse-primary": "#b4c5ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#eaddff",
+                        "surface-dim": "#cbdbf5",
+                        "secondary-container": "#8a4cfc",
+                        "tertiary-fixed": "#c9e6ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#eff4ff",
+                        "outline": "#737686",
+                        "outline-variant": "#c3c6d7",
+                        "on-secondary-container": "#fffbff",
+                        "inverse-surface": "#213145",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "secondary": "#712ae2",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-background": "#0b1c30",
+                        "on-surface": "#0b1c30",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-container": "#e4f2ff",
+                        "primary-container": "#2563eb",
+                        "on-primary-fixed": "#00174b",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#25005a",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary": "#005a82",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "48px",
+                        "xl": "3rem",
+                        "lg": "2rem",
+                        "xs": "0.5rem",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "md": "1.5rem",
+                        "max-width-content": "1280px",
+                        "sm": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.75", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased overflow-x-hidden min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest/75 dark:bg-inverse-surface/75 h-screen w-72 fixed left-0 top-0 backdrop-blur-xl border-r border-white/40 shadow-sm flex flex-col p-md gap-sm z-50">
+<!-- Brand -->
+<div class="px-4 py-6 mb-4">
+<span class="font-display-lg text-display-lg font-extrabold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[40px] fill">school</span>
+                EduFlow
+            </span>
+<div class="text-on-surface-variant font-label-sm text-label-sm mt-1">Professor Dashboard</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Students</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary-container text-on-primary-container font-semibold scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined fill">architecture</span>
+<span class="font-label-md text-label-md">Course Builder</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<!-- CTA -->
+<button class="mt-auto mb-6 w-full bg-gradient-to-b from-primary to-primary-fixed-variant text-on-primary font-label-md text-label-md py-3 px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+            Create New Course
+        </button>
+<!-- Footer Links -->
+<div class="flex flex-col gap-2 border-t border-outline-variant/30 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-72 flex-1 min-h-screen flex flex-col relative pt-20">
+<!-- TopAppBar -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 fixed top-0 right-0 w-[calc(100%-288px)] z-40 backdrop-blur-md border-b border-white/20 shadow-sm flex justify-between items-center h-20 px-lg">
+<!-- Breadcrumbs / Context -->
+<div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm">home</span>
+                    Cursos
+                </a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Design System Masterclass</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Módulo 1</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-on-surface font-semibold">Nova Aula</span>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chat_bubble</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-container-highest hover:border-primary transition-colors">
+<img alt="Professor Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW0LW-3qwpyFA3TJCOLjfn1AMlGJritDBqB7BnNabpUCRlPeorK3hBg0UZ6-3Jr6sjJRDKMTvK5DlV8XZMKF2SCT1vycNLuGyYzKEwISwOyoKLF-KJkiMs0mi7dag32Lk9ZcOG_aj2zIYyVcS-jJwnJDHIvHF_RlSNyigI8ay5srVoX4q2AjSUVnmoFs25mLmc8xEJZunLvsTUnH5NUzMvnQimkdSFLQXIDzlwklWi4JImbMdfZv2o7fq6Vg1Rdg9-ln9gok3LCWk"/>
+</button>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 p-gutter max-w-max-width-content mx-auto w-full flex flex-col md:flex-row gap-gutter pb-24">
+<!-- Left Column: Workspace -->
+<div class="flex-1 flex flex-col gap-6">
+<!-- Lesson Basics Card -->
+<section class="bg-surface-container-lowest rounded-2xl shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),0_2px_4px_-2px_rgb(0,0,0,0.1)] p-6 hover:-translate-y-1 transition-transform duration-300">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">edit_document</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Informações Básicas</h2>
+</div>
+<div class="flex flex-col gap-5">
+<!-- Title Input -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="lesson-title">Título da Aula</label>
+<input class="bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" id="lesson-title" placeholder="Ex: Introdução à Teoria das Cores" type="text"/>
+</div>
+<!-- Description Input -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="lesson-desc">Descrição / Objetivos</label>
+<textarea class="bg-surface-container-low border border-outline-variant/50 rounded-xl px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none" id="lesson-desc" placeholder="O que os alunos aprenderão nesta aula?" rows="3"></textarea>
+</div>
+</div>
+</section>
+<!-- Activity Type Selector -->
+<section class="bg-surface-container-lowest rounded-2xl shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),0_2px_4px_-2px_rgb(0,0,0,0.1)] p-6">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase tracking-wider">Tipo de Conteúdo</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<!-- Video -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="content_type" type="radio" value="video"/>
+<div class="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary-container/10 transition-all hover:border-primary/50 h-28">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary peer-checked:text-primary peer-checked:fill">smart_display</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant peer-checked:text-primary peer-checked:font-bold">Vídeo</span>
+</div>
+<!-- Selection Indicator -->
+<div class="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+</label>
+<!-- Text -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="content_type" type="radio" value="text"/>
+<div class="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary-container/10 transition-all hover:border-primary/50 h-28">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary peer-checked:text-primary peer-checked:fill">article</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant peer-checked:text-primary peer-checked:font-bold">Texto</span>
+</div>
+</label>
+<!-- Quiz (Selected by default for this view) -->
+<label class="cursor-pointer group relative">
+<input checked="" class="peer sr-only" name="content_type" type="radio" value="quiz"/>
+<div class="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary-container/10 transition-all hover:border-primary/50 h-28">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary peer-checked:text-primary peer-checked:fill">quiz</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant peer-checked:text-primary peer-checked:font-bold">Quiz</span>
+</div>
+<div class="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+</label>
+<!-- File -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="content_type" type="radio" value="file"/>
+<div class="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary-container/10 transition-all hover:border-primary/50 h-28">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary peer-checked:text-primary peer-checked:fill">folder_zip</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant peer-checked:text-primary peer-checked:font-bold">Arquivo</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Quiz Builder Area (Active since Quiz is selected) -->
+<section class="bg-surface-container-lowest/80 backdrop-blur-xl border border-white/40 rounded-2xl shadow-[0_8px_16px_-4px_rgb(0,0,0,0.1)] p-6 relative overflow-hidden">
+<!-- Glassmorphic Accent Graphic -->
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-tertiary-fixed-dim/30 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-6 relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-tertiary-container/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">view_list</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Questões do Quiz</h2>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Crie avaliações interativas para fixação do conteúdo.</p>
+</div>
+</div>
+<button class="bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary px-4 py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            Nova Questão
+                        </button>
+</div>
+<!-- Question Item 1 -->
+<div class="bg-surface rounded-xl border border-outline-variant/40 p-5 mb-4 relative group">
+<div class="absolute -left-[1px] top-4 bottom-4 w-[4px] bg-primary rounded-r-md"></div>
+<div class="flex justify-between items-start mb-4 pl-2">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary-container/10 text-primary px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Múltipla Escolha</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Questão 1</span>
+</div>
+<input class="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-on-surface focus:ring-0 placeholder:text-on-surface-variant/50 font-medium" type="text" value="Qual é a principal função do espaço em branco (whitespace) no design de interfaces?"/>
+</div>
+<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-md hover:bg-surface-container"><span class="material-symbols-outlined text-[20px]">content_copy</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-error rounded-md hover:bg-error-container/50"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-md hover:bg-surface-container cursor-grab"><span class="material-symbols-outlined text-[20px]">drag_indicator</span></button>
+</div>
+</div>
+<!-- Options -->
+<div class="flex flex-col gap-2 pl-2">
+<!-- Option A -->
+<div class="flex items-center gap-3 bg-surface-container-low rounded-lg p-2 border border-transparent hover:border-outline-variant/30 transition-colors">
+<label class="flex items-center justify-center w-6 h-6 rounded-full border-2 border-outline-variant cursor-pointer">
+<input class="sr-only peer" name="q1_correct" type="radio"/>
+<div class="w-3 h-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</label>
+<input class="flex-1 bg-transparent border-none p-1 font-body-md text-body-md text-on-surface focus:ring-0" type="text" value="Preencher espaços vazios para que a tela não pareça inacabada."/>
+<button class="text-on-surface-variant/50 hover:text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+<!-- Option B (Correct) -->
+<div class="flex items-center gap-3 bg-primary-container/5 rounded-lg p-2 border border-primary/20 transition-colors">
+<label class="flex items-center justify-center w-6 h-6 rounded-full border-2 border-primary cursor-pointer relative">
+<input checked="" class="sr-only peer" name="q1_correct" type="radio"/>
+<div class="w-3 h-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</label>
+<input class="flex-1 bg-transparent border-none p-1 font-body-md text-body-md text-on-surface focus:ring-0" type="text" value="Reduzir a carga cognitiva agrupando elementos logicamente."/>
+<div class="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold">Correta</div>
+<button class="text-on-surface-variant/50 hover:text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+<!-- Option C -->
+<div class="flex items-center gap-3 bg-surface-container-low rounded-lg p-2 border border-transparent hover:border-outline-variant/30 transition-colors">
+<label class="flex items-center justify-center w-6 h-6 rounded-full border-2 border-outline-variant cursor-pointer">
+<input class="sr-only peer" name="q1_correct" type="radio"/>
+<div class="w-3 h-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</label>
+<input class="flex-1 bg-transparent border-none p-1 font-body-md text-body-md text-on-surface focus:ring-0" type="text" value="Aumentar o tamanho do arquivo da página web."/>
+<button class="text-on-surface-variant/50 hover:text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">close</span></button>
+</div>
+<button class="mt-2 flex items-center gap-2 text-primary font-label-sm text-label-sm hover:underline w-fit pl-1">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+                                Adicionar Opção
+                            </button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Settings Panel -->
+<div class="w-full md:w-[320px] flex flex-col gap-6">
+<aside class="bg-surface-container-lowest rounded-2xl shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),0_2px_4px_-2px_rgb(0,0,0,0.1)] p-6 sticky top-[104px]">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">tune</span>
+                        Configurações
+                    </h3>
+<div class="flex flex-col gap-6">
+<!-- Points -->
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant mb-2 block">Pontuação Total</label>
+<div class="flex items-center gap-3">
+<input class="w-24 bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 py-2 font-body-md text-body-md text-center focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" type="number" value="100"/>
+<span class="font-body-md text-body-md text-on-surface-variant">pontos</span>
+</div>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Passing Score -->
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant mb-2 block">Nota de Aprovação</label>
+<div class="flex items-center justify-between mb-2">
+<span class="font-body-sm text-sm text-on-surface-variant">70% (70 pts)</span>
+</div>
+<input class="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-secondary" max="100" min="0" type="range" value="70"/>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Toggles -->
+<div class="flex flex-col gap-4">
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Obrigatório para progredir</span>
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Embaralhar Questões</span>
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Tempo Limite</span>
+<div class="relative">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</div>
+</aside>
+</div>
+</div>
+<!-- Bottom Action Bar (Sticky) -->
+<div class="fixed bottom-0 left-72 right-0 bg-surface/90 backdrop-blur-md border-t border-white/20 p-4 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-40 flex justify-end gap-4 px-lg">
+<button class="px-6 py-2.5 rounded-xl border-2 border-surface-container-highest hover:bg-slate-50 font-label-md text-label-md text-on-surface transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+                Visualizar como Aluno
+            </button>
+<button class="px-8 py-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-fixed-variant text-on-primary font-label-md text-label-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                Salvar Aula
+            </button>
+</div>
+</main>
+</body></html>

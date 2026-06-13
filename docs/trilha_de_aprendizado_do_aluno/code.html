@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduFlow - Dashboard do Aluno</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed": "#00174b",
+                        "secondary": "#712ae2",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#e5eeff",
+                        "on-secondary-fixed": "#25005a",
+                        "tertiary-fixed-dim": "#89ceff",
+                        "outline": "#737686",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "tertiary-container": "#0074a6",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "inverse-primary": "#b4c5ff",
+                        "on-tertiary-container": "#e4f2ff",
+                        "on-secondary-container": "#fffbff",
+                        "secondary-fixed": "#eaddff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#434655",
+                        "tertiary-fixed": "#c9e6ff",
+                        "outline-variant": "#c3c6d7",
+                        "primary-container": "#2563eb",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "on-tertiary-fixed-variant": "#004c6e",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#001e2f",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary-container": "#eeefff",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#8a4cfc",
+                        "on-background": "#0b1c30",
+                        "tertiary": "#005a82",
+                        "surface-container-highest": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#0053db"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "xl": "3rem",
+                        "gutter": "24px",
+                        "max-width-content": "1280px",
+                        "xs": "0.5rem",
+                        "md": "1.5rem",
+                        "lg": "2rem",
+                        "margin-desktop": "48px",
+                        "sm": "1rem"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.75", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F8FAFC;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(217, 100%, 96%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(260, 100%, 96%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(217, 100%, 96%, 1) 0px, transparent 50%);
+            background-attachment: fixed;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+        }
+        .hover-lift {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-lg font-label-md text-label-md w-full border-b border-outline-variant/50 dark:border-outline shadow-sm flex justify-between items-center px-4 md:px-12 py-4 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">EduFlow</div>
+<nav class="hidden md:flex gap-6">
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-bold pb-1 transition-all duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Classes</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Materials</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden ml-2 shadow-sm border border-white">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo"/>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 md:py-12 flex flex-col gap-10">
+<!-- Welcome Section -->
+<section class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 w-full">
+<div>
+<h1 class="text-4xl font-extrabold text-on-surface mb-2 tracking-tight">Olá, João! 👋</h1>
+<p class="text-lg text-on-surface-variant font-medium">Pronto para continuar sua jornada de aprendizado hoje?</p>
+</div>
+<div class="glass-card rounded-2xl p-6 w-full md:w-auto min-w-[320px]">
+<div class="flex justify-between items-end mb-3">
+<span class="font-semibold text-sm text-on-surface-variant uppercase tracking-wide">Progresso Geral</span>
+<span class="text-2xl font-bold text-primary">68%</span>
+</div>
+<div class="h-3 bg-surface-container-low rounded-full overflow-hidden shadow-inner">
+<div class="h-full bg-primary rounded-full w-[68%] relative" style="background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);">
+<div class="absolute inset-0 bg-white/20 w-full h-full" style="animation: shimmer 2s infinite;"></div>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Left Column: Main Content -->
+<div class="lg:col-span-8 flex flex-col gap-10">
+<!-- Highlight Card (Continue Watching) -->
+<section>
+<div class="glass-card rounded-3xl p-8 hover-lift relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent z-0"></div>
+<img alt="Aula em andamento" class="absolute right-0 top-0 w-2/3 h-full object-cover object-right opacity-30 group-hover:scale-105 transition-transform duration-700 mix-blend-multiply" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUw456cP16FhWgyosnJDFinBAvf0CYt8XZxgsGs0KraSItgUFDSC5CQZRicq2QFORsZY7nym7gBk1lfngyGLaimKxXHzRgRsCruXoB4eAaOu1TyfCveHSXIvrfecav0mOxbGntRV47L28S6svQNJ8N9K_AFIZIWqM_Ch8XUNWTFn79LzstNzTmgXmGfodeoBMZKiATRMlEKhRdHlwEDXenR_eNiDFwqiKUFK69k65hirnI3vWMrTckNboL1ceaavlYuyCbp8oL-TA"/>
+<div class="relative z-20 flex flex-col h-full justify-between min-h-[220px]">
+<div>
+<span class="inline-block px-4 py-1.5 bg-white/60 text-primary font-semibold text-xs rounded-full mb-4 backdrop-blur-md border border-white/50 uppercase tracking-wider">Continuar Assistindo • Trilha de Fundamentos</span>
+<h3 class="text-3xl font-extrabold text-on-surface max-w-lg leading-tight">Aula 12: Princípios Fundamentais</h3>
+<p class="text-on-surface-variant mt-3 max-w-md font-medium text-lg">Faltam 15 minutos para concluir este módulo.</p>
+</div>
+<div class="mt-8 flex items-center gap-4">
+<button class="bg-primary text-white font-semibold px-8 py-3.5 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+                                    Retomar Aula
+                                </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Gamification & Rewards -->
+<section>
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-on-surface">Conquistas Recentes</h2>
+<a class="text-primary font-medium text-sm hover:underline" href="#">Ver todas</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center hover-lift">
+<div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 mb-3 shadow-inner">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+</div>
+<span class="font-bold text-on-surface text-sm">Pioneiro</span>
+<span class="text-xs text-on-surface-variant mt-1">Primeiro módulo</span>
+</div>
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center hover-lift">
+<div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-primary mb-3 shadow-inner">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<span class="font-bold text-on-surface text-sm">7 Dias de Fogo</span>
+<span class="text-xs text-on-surface-variant mt-1">Ofensiva mantida</span>
+</div>
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center hover-lift">
+<div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-secondary mb-3 shadow-inner">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="font-bold text-on-surface text-sm">Estudioso</span>
+<span class="text-xs text-on-surface-variant mt-1">10 aulas assistidas</span>
+</div>
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center hover-lift opacity-60 grayscale">
+<div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3 border-2 border-dashed border-gray-300">
+<span class="material-symbols-outlined text-3xl">lock</span>
+</div>
+<span class="font-bold text-on-surface text-sm">Mestre</span>
+<span class="text-xs text-on-surface-variant mt-1">Bloqueado</span>
+</div>
+</div>
+</section>
+<!-- Detailed Modules Grid -->
+<section>
+<h2 class="text-2xl font-bold text-on-surface mb-6">Trilha de Aprendizado</h2>
+<div class="flex flex-col gap-4">
+<!-- Module List Item: Completed -->
+<div class="glass-card rounded-2xl p-6 hover-lift border-l-4 border-l-green-500">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+<span class="material-symbols-outlined text-2xl">rocket_launch</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-xl font-bold text-on-surface">Introdução ao Sistema</h4>
+<span class="px-2.5 py-1 bg-green-100 text-green-700 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center gap-1">Concluído</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium">Conceitos básicos e navegação.</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 min-w-[200px]">
+<div class="flex justify-between text-xs font-semibold text-on-surface-variant">
+<span>Progresso do Módulo</span>
+<span class="text-green-600">10/10 aulas</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-green-500 rounded-full w-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module List Item: In Progress -->
+<div class="glass-card rounded-2xl p-6 hover-lift border-l-4 border-l-primary">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-2xl">architecture</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-xl font-bold text-on-surface">Design de Soluções</h4>
+<span class="px-2.5 py-1 bg-blue-100 text-primary font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center gap-1">Em Progresso</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium mb-3">Estruturando projetos complexos.</p>
+<div class="flex items-center gap-2 text-xs font-semibold text-primary">
+<span class="material-symbols-outlined text-[16px]">play_circle</span>
+                                            Próxima: Aula 5 - Arquitetura Limpa
+                                        </div>
+</div>
+</div>
+<div class="flex flex-col gap-2 min-w-[200px]">
+<div class="flex justify-between text-xs font-semibold text-on-surface-variant">
+<span>Progresso do Módulo</span>
+<span class="text-primary">4/12 aulas</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[33%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module List Item: Locked -->
+<div class="glass-card rounded-2xl p-6 opacity-75 border-l-4 border-l-gray-300">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-2xl bg-surface-variant flex items-center justify-center text-outline shrink-0">
+<span class="material-symbols-outlined text-2xl">lock</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-xl font-bold text-on-surface text-gray-500">Implementação Avançada</h4>
+<span class="px-2.5 py-1 bg-gray-100 text-gray-500 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center gap-1">Bloqueado</span>
+</div>
+<p class="text-sm text-gray-400 font-medium">Técnicas de otimização de performance.</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 min-w-[200px]">
+<div class="flex justify-between text-xs font-semibold text-gray-400">
+<span>Progresso do Módulo</span>
+<span>0/8 aulas</span>
+</div>
+<div class="h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-outline-variant rounded-full w-0"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar Widgets -->
+<div class="lg:col-span-4 flex flex-col gap-8">
+<!-- Stats Widget -->
+<div class="glass-card rounded-3xl p-6">
+<h3 class="text-xl font-bold text-on-surface mb-6">Estatísticas Rápidas</h3>
+<div class="flex flex-col gap-5">
+<div class="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
+<div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-on-surface-variant">Aulas Assistidas</div>
+<div class="text-2xl font-extrabold text-on-surface">24</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
+<div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-secondary shrink-0 shadow-sm">
+<span class="material-symbols-outlined">task_alt</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-on-surface-variant">Atividades Entregues</div>
+<div class="text-2xl font-extrabold text-on-surface">15</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
+<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-orange-200">
+<span class="material-symbols-outlined">local_fire_department</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-orange-800">Dias de Ofensiva</div>
+<div class="text-2xl font-extrabold text-orange-600">7</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Study Calendar Widget -->
+<div class="glass-card rounded-3xl p-6">
+<div class="flex justify-between items-center mb-5">
+<h3 class="text-xl font-bold text-on-surface">Agenda de Estudos</h3>
+<button class="text-primary hover:bg-blue-50 p-1.5 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-xl">calendar_month</span>
+</button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="border-l-2 border-primary pl-4 py-1">
+<div class="text-xs font-bold text-primary mb-1">HOJE, 14:00</div>
+<div class="font-semibold text-on-surface text-sm">Live de Mentoria</div>
+<div class="text-xs text-on-surface-variant mt-1">Link no portal de materiais</div>
+</div>
+<div class="border-l-2 border-orange-400 pl-4 py-1">
+<div class="text-xs font-bold text-orange-500 mb-1">AMANHÃ, 23:59</div>
+<div class="font-semibold text-on-surface text-sm">Entrega do Desafio 2</div>
+<div class="text-xs text-on-surface-variant mt-1">Módulo de Design de Soluções</div>
+</div>
+<div class="border-l-2 border-gray-300 pl-4 py-1 opacity-70">
+<div class="text-xs font-bold text-gray-500 mb-1">SEXTA-FEIRA</div>
+<div class="font-semibold text-on-surface text-sm">Revisão Semanal</div>
+<div class="text-xs text-on-surface-variant mt-1">Sugerido: 1 hora de estudo</div>
+</div>
+</div>
+</div>
+<!-- Community Activity -->
+<div class="glass-card rounded-3xl p-6">
+<h3 class="text-xl font-bold text-on-surface mb-5">Comunidade</h3>
+<div class="flex flex-col gap-4">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                                MR
+                            </div>
+<div>
+<p class="text-sm text-on-surface"><span class="font-bold">Maria R.</span> acabou de concluir o módulo <span class="font-medium text-primary">Introdução ao Sistema</span>.</p>
+<span class="text-[10px] text-on-surface-variant">Há 2 horas</span>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-secondary font-bold text-xs shrink-0">
+                                PL
+                            </div>
+<div>
+<p class="text-sm text-on-surface"><span class="font-bold">Pedro L.</span> alcançou a conquista <span class="font-medium text-secondary">Estudioso</span>.</p>
+<span class="text-[10px] text-on-surface-variant">Há 5 horas</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 bg-surface-container text-on-surface font-semibold text-sm rounded-xl hover:bg-surface-container-high transition-colors">
+                        Acessar Fórum
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar for Mobile -->
+<nav class="bg-white/80 backdrop-blur-lg dark:bg-inverse-surface/90 font-label-sm text-label-sm fixed bottom-0 w-full z-50 rounded-t-2xl border-t border-outline-variant/30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:hidden flex justify-around items-center px-4 py-3 pb-safe">
+<button class="flex flex-col items-center justify-center text-primary px-4 py-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="mt-1 font-semibold text-xs">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">map</span>
+<span class="mt-1 font-medium text-xs">Trilha</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="mt-1 font-medium text-xs">Conquistas</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">person</span>
+<span class="mt-1 font-medium text-xs">Perfil</span>
+</button>
+</nav>
+</body></html>
