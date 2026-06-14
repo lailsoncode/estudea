@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import logoIcon from '../assets/logo.png';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Mail01Icon,
@@ -75,7 +76,8 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
   return (
     <div className="w-full max-w-md mx-auto bg-surface-container-lowest border border-outline-variant/65 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-8 space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
+        <img src={logoIcon} alt="Estudea Logo" className="w-16 h-16 rounded-2xl mx-auto object-contain shadow-sm" />
         <h3 className="text-headline-lg font-heading font-extrabold text-on-background">
           Acessar Estudea
         </h3>

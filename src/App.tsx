@@ -33,6 +33,7 @@ import { DashboardProfessorOverview } from './pages/DashboardProfessorOverview';
 import { NotificationBell } from './components/common/NotificationBell';
 import { MateriaisApoio } from './pages/MateriaisApoio';
 import { ArenaRanking } from './pages/ArenaRanking';
+import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking';
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking';
@@ -159,9 +160,7 @@ function App() {
           <div>
             <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shadow-primary/20">
-                  <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
-                </div>
+                <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
                 <div className={getSidebarLabelClass(sidebarCollapsed)}>
                   <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Painel do Professor</h1>
                   <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Gerenciar Cursos</p>
@@ -391,9 +390,7 @@ function App() {
           <div>
             <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
               <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-on-primary font-bold font-heading text-lg shrink-0 shadow-sm shadow-primary/20">
-                  E
-                </span>
+                <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
                 <div className={getSidebarLabelClass(sidebarCollapsed)}>
                   <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
                   <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
