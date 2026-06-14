@@ -92,7 +92,7 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   return fallback;
 };
 
-export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, session, onStartArena }) => {
+export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, onStartArena }) => {
 
   // DB States
   const [loading, setLoading] = useState(true);

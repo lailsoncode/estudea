@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArenaLiveAluno } from './ArenaLiveAluno';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CardConquista } from '../components/common/CardConquista';
