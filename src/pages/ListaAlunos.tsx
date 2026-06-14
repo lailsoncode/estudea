@@ -31,6 +31,7 @@ interface Student {
   status_risco: 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco';
   media_digitacao: number;
   ofensiva_atual: number;
+  turma_id?: string | null;
 }
 
 interface Turma {
@@ -80,6 +81,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   const [formDigitacao, setFormDigitacao] = useState(350);
   const [formOfensiva, setFormOfensiva] = useState(5);
   const [formAvatarUrl, setFormAvatarUrl] = useState('');
+  const [formTurmaId, setFormTurmaId] = useState('');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,7 +174,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       // 2. Fetch student profiles in this class
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual')
+        .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual, turma_id')
         .eq('role', 'student')
         .eq('turma_id', turmaId)
         .order('nome', { ascending: true });
@@ -210,7 +212,8 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
           autonomia_digital: (p.autonomia_digital || 'P') as 'S' | 'P' | 'N',
           status_risco: (p.status_risco || 'No Caminho') as 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco',
           media_digitacao: p.media_digitacao || 0,
-          ofensiva_atual: p.ofensiva_atual || 0
+          ofensiva_atual: p.ofensiva_atual || 0,
+          turma_id: p.turma_id
         }));
         setStudents(formattedStudents);
       } else {
@@ -289,6 +292,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     setFormDigitacao(student.media_digitacao);
     setFormOfensiva(student.ofensiva_atual);
     setFormAvatarUrl(student.avatar_url || '');
+    setFormTurmaId(student.turma_id || '');
     setIsFormModalOpen(true);
   };
 
@@ -315,7 +319,8 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
         const updateData = {
           nome: formNome,
           email: formEmail,
-          avatar_url: formAvatarUrl.trim() || null
+          avatar_url: formAvatarUrl.trim() || null,
+          turma_id: formTurmaId || null
         };
 
         const { error: updateError } = await supabase
@@ -517,6 +522,25 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                       {t.nome}
                     </button>
                   ))}
+                  <div className="border-t border-slate-100 my-1"></div>
+                  <button
+                    onClick={() => {
+                      setSelectedTurma({
+                        id: 'sem_turma',
+                        nome: 'Alunos Sem Turma',
+                        codigo_acesso: '',
+                        curso_id: null,
+                        cursos: { titulo: 'Sem Curso' }
+                      });
+                      setShowTurmaDropdown(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-slate-50 transition-colors ${
+                      selectedTurma?.id === 'sem_turma' ? 'text-primary bg-primary/5' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    Alunos Sem Turma (Pendentes)
+                  </button>
                 </div>
               )}
             </div>
@@ -965,6 +989,21 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                     value={formAvatarUrl}
                     onChange={(e) => setFormAvatarUrl(e.target.value)}
                   />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant/70 mb-1">Turma Vinculada</label>
+                  <select
+                    className="w-full bg-slate-50 border border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-on-surface outline-none transition-all cursor-pointer"
+                    value={formTurmaId}
+                    onChange={(e) => setFormTurmaId(e.target.value)}
+                  >
+                    <option value="">Sem Turma (Pendente)</option>
+                    {turmas.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nome}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

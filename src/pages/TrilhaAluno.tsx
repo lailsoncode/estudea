@@ -149,6 +149,7 @@ interface Progresso {
   aluno_id: string;
   aula_id: string;
   concluido_em: string;
+  avaliacao?: number | null;
 }
 
 interface Entrega {

@@ -247,21 +247,261 @@ export const CourseBuilder: React.FC = () => {
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSuccess, setAiSuccess] = useState<string | null>(null);
 
+  const parseLocalTemplate = (text: string) => {
+    const normalizedText = text.replace(/\r\n/g, '\n');
+    
+    if (!normalizedText.includes('[TÍTULO]') || !normalizedText.includes('[CONTEÚDO]')) {
+      return null; // Not our template
+    }
+    
+    const tags = ['[TÍTULO]', '[DESCRIÇÃO]', '[CONTEÚDO]', '[LINK_ARQUIVO]', '[ATIVIDADE]', '[QUESTÕES]'];
+    const sections: { [key: string]: string } = {};
+    
+    const tagIndices = tags
+      .map(tag => ({ tag, index: normalizedText.indexOf(tag) }))
+      .filter(item => item.index !== -1);
+      
+    tagIndices.sort((a, b) => a.index - b.index);
+    
+    for (let i = 0; i < tagIndices.length; i++) {
+      const start = tagIndices[i].index + tagIndices[i].tag.length;
+      const end = (i + 1 < tagIndices.length) ? tagIndices[i+1].index : normalizedText.length;
+      const key = tagIndices[i].tag.replace('[', '').replace(']', '');
+      sections[key] = normalizedText.substring(start, end).trim();
+    }
+    
+    const titulo = sections['TÍTULO'] || '';
+    const descricao = sections['DESCRIÇÃO'] || '';
+    const conteudo = sections['CONTEÚDO'] || '';
+    
+    let link_arquivo = sections['LINK_ARQUIVO'] || '';
+    let arquivo_url = '';
+    if (link_arquivo && link_arquivo.toLowerCase() !== 'nenhum') {
+      const urlMatch = link_arquivo.match(/https?:\/\/[^\s]+/);
+      if (urlMatch) {
+        arquivo_url = urlMatch[0];
+      } else {
+        arquivo_url = link_arquivo;
+      }
+    }
+
+    // Parse ATIVIDADE
+    let has_atividade = false;
+    let atividade_enunciado = '';
+    let atividade_tipo_entrega = 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla';
+    let atividade_quiz_proprio = false;
+    
+    const atividadeContent = sections['ATIVIDADE'] || '';
+    if (atividadeContent) {
+      const ativaMatch = atividadeContent.match(/Ativa:\s*(Sim|Não|yes|no)/i);
+      const isAtiva = ativaMatch ? (ativaMatch[1].toLowerCase() === 'sim' || ativaMatch[1].toLowerCase() === 'yes') : true;
+      
+      if (isAtiva) {
+        has_atividade = true;
+        
+        let enunciadoText = '';
+        const enunciadoStart = atividadeContent.indexOf('Enunciado:');
+        if (enunciadoStart !== -1) {
+          let endIdx = atividadeContent.length;
+          const entregaIdx = atividadeContent.indexOf('Tipo de Entrega:');
+          const quizIdx = atividadeContent.indexOf('Questionário Próprio:');
+          if (entregaIdx !== -1 && entregaIdx > enunciadoStart) {
+            endIdx = Math.min(endIdx, entregaIdx);
+          }
+          if (quizIdx !== -1 && quizIdx > enunciadoStart) {
+            endIdx = Math.min(endIdx, quizIdx);
+          }
+          enunciadoText = atividadeContent.substring(enunciadoStart + 10, endIdx).trim();
+        }
+        atividade_enunciado = enunciadoText;
+        
+        const entregaMatch = atividadeContent.match(/Tipo de Entrega:\s*(\w+)/i);
+        if (entregaMatch) {
+          const val = entregaMatch[1].toLowerCase();
+          if (['texto', 'imagem', 'quiz', 'multipla'].includes(val)) {
+            atividade_tipo_entrega = val as 'texto' | 'imagem' | 'quiz' | 'multipla';
+          }
+        }
+        
+        const quizProprioMatch = atividadeContent.match(/Questionário Próprio:\s*(Sim|Não|yes|no)/i);
+        if (quizProprioMatch) {
+          atividade_quiz_proprio = quizProprioMatch[1].toLowerCase() === 'sim' || quizProprioMatch[1].toLowerCase() === 'yes';
+        }
+      }
+    }
+    
+    // Parse QUESTÕES
+    const questoesList: any[] = [];
+    const questoesContent = sections['QUESTÕES'] || '';
+    if (questoesContent) {
+      const questionBlocks = questoesContent.split(/\n\s*---\s*\n|\n\s*---\s*$/);
+      
+      for (const block of questionBlocks) {
+        if (!block.trim()) continue;
+        
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        let enunciado = '';
+        let tipo = 'multipla_escolha';
+        let pertence_a_atividade = false;
+        const opcoes: string[] = [];
+        let resposta_correta = '';
+        
+        let gabaritoRecomendado = '';
+        let palavrasChave = '';
+        
+        for (const line of lines) {
+          if (line.match(/^Pergunta\s*\d+:/i)) {
+            enunciado = line.replace(/^Pergunta\s*\d+:\s*/i, '').trim();
+          } else if (line.startsWith('Tipo:')) {
+            const val = line.replace(/^Tipo:\s*/i, '').trim().toLowerCase();
+            if (['multipla_escolha', 'verdadeiro_falso', 'aberta', 'multipla_selecao'].includes(val)) {
+              tipo = val;
+            }
+          } else if (line.startsWith('Destino:')) {
+            const val = line.replace(/^Destino:\s*/i, '').trim().toLowerCase();
+            pertence_a_atividade = (val === 'atividade' || val === 'atividades');
+          } else if (line.startsWith('*') || line.startsWith('-')) {
+            const optText = line.replace(/^[*•-]\s*/, '').trim();
+            if (optText) {
+              opcoes.push(optText);
+            }
+          } else if (line.startsWith('Resposta Correta:')) {
+            resposta_correta = line.replace(/^Resposta Correta:\s*/i, '').trim();
+          } else if (line.startsWith('Gabarito Recomendado')) {
+            gabaritoRecomendado = line.replace(/^Gabarito Recomendado.*:\s*/i, '').trim();
+          } else if (line.startsWith('Palavras-chave de aprovação')) {
+            palavrasChave = line.replace(/^Palavras-chave de aprovação.*:\s*/i, '').trim();
+          }
+        }
+        
+        if (tipo === 'aberta') {
+          opcoes.length = 0;
+          opcoes.push(gabaritoRecomendado || 'Escreva aqui o gabarito ou explicação da resposta correta.');
+          opcoes.push(palavrasChave || '');
+          resposta_correta = '';
+        } else if (tipo === 'verdadeiro_falso') {
+          opcoes.length = 0;
+          opcoes.push('Verdadeiro');
+          opcoes.push('Falso');
+          if (!resposta_correta) {
+            resposta_correta = 'Verdadeiro';
+          }
+        }
+        
+        questoesList.push({
+          enunciado,
+          opcoes,
+          resposta_correta,
+          tipo,
+          pertence_a_atividade
+        });
+      }
+    }
+    
+    let tipo = 'texto';
+    if (questoesList.some(q => !q.pertence_a_atividade)) {
+      tipo = 'quiz';
+    } else if (arquivo_url) {
+      tipo = 'arquivo';
+    }
+    
+    return {
+      titulo,
+      descricao,
+      tipo,
+      conteudo,
+      video_url: null,
+      arquivo_url,
+      has_atividade,
+      atividade_enunciado,
+      atividade_tipo_entrega,
+      atividade_quiz_proprio,
+      questoes: questoesList
+    };
+  };
+
   const handleGenerateWithAI = async () => {
     if (!aiPrompt.trim()) {
       setAiError('Por favor, digite o que você deseja criar.');
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      setAiError('Chave de API do Gemini (VITE_GEMINI_API_KEY) não configurada no arquivo .env.');
-      return;
-    }
-
     setAiLoading(true);
     setAiError(null);
     setAiSuccess(null);
+
+    // Tenta fazer o parsing local se o texto estiver no formato estruturado
+    const localParsed = parseLocalTemplate(aiPrompt);
+    if (localParsed) {
+      try {
+        const updatedForm = { ...lessonForm };
+        
+        if (localParsed.titulo) updatedForm.titulo = localParsed.titulo;
+        if (localParsed.descricao) updatedForm.descricao = localParsed.descricao;
+        if (localParsed.conteudo) updatedForm.conteudo = localParsed.conteudo;
+        if (localParsed.video_url) updatedForm.video_url = localParsed.video_url;
+        if (localParsed.arquivo_url) updatedForm.arquivo_url = localParsed.arquivo_url;
+        
+        if (localParsed.has_atividade !== undefined) {
+          updatedForm.has_atividade = !!localParsed.has_atividade;
+          if (localParsed.has_atividade) {
+            const tempId = 'temp_activity_questions_id';
+            setAtividadesList([
+              {
+                tempId,
+                enunciado: localParsed.atividade_enunciado || '',
+                tipo_entrega: localParsed.atividade_tipo_entrega || 'texto',
+                pontua: true,
+                permite_refazer: true,
+                atividade_quiz_proprio: !!localParsed.atividade_quiz_proprio
+              }
+            ]);
+          } else {
+            setAtividadesList([]);
+          }
+        }
+
+        if (localParsed.tipo) {
+          updatedForm.tipo = localParsed.tipo as 'video' | 'texto' | 'quiz' | 'arquivo';
+          setActiveTypes({
+            video: localParsed.tipo === 'video' || !!localParsed.video_url,
+            texto: localParsed.tipo === 'texto' || !!localParsed.conteudo,
+            quiz: localParsed.tipo === 'quiz' || (localParsed.questoes && localParsed.questoes.length > 0 && !localParsed.questoes.every((q: any) => q.pertence_a_atividade)),
+            arquivo: localParsed.tipo === 'arquivo' || !!localParsed.arquivo_url
+          });
+        }
+
+        setLessonForm(updatedForm);
+
+        if (localParsed.questoes && Array.isArray(localParsed.questoes)) {
+          const formattedQuestions = localParsed.questoes.map((q: any, index: number) => ({
+            enunciado: q.enunciado || '',
+            opcoes: Array.isArray(q.opcoes) ? q.opcoes : [],
+            resposta_correta: q.resposta_correta || '',
+            ordem: index + 1,
+            tipo: q.tipo || 'multipla_escolha',
+            atividade_id: q.pertence_a_atividade ? 'temp_activity_questions_id' : null
+          }));
+          setQuestoes(formattedQuestions);
+        }
+
+        setAiSuccess('Conteúdo estruturado importado com sucesso (processamento instantâneo local)!');
+        setAiPrompt('');
+        setAiLoading(false);
+        return;
+      } catch (err: any) {
+        console.error('Erro ao processar template local:', err);
+        // Prossegue com o fallback do Gemini se falhar por algum motivo
+      }
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      setAiError('Chave de API do Gemini (VITE_GEMINI_API_KEY) não configurada no arquivo .env.');
+      setAiLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(
