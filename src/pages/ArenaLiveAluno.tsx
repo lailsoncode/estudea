@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  GameControllerIcon,
+  Trophy,
+  UserCircleIcon,
+  CheckmarkCircle02Icon,
+  FireIcon,
+  CancelCircleIcon,
+  CrownIcon
+} from '@hugeicons/core-free-icons';
 
 interface ArenaLiveAlunoProps {
   session: any;
@@ -250,8 +260,8 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
       {/* Upper header */}
       <header className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-sm">
-            🎮
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+            <HugeiconsIcon icon={GameControllerIcon} size={18} strokeWidth={2} />
           </div>
           <span className="font-heading font-black text-body-md text-white">Arena Estudea Aluno</span>
         </div>
@@ -268,7 +278,9 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
         <div className="flex-1 flex items-center justify-center p-6 bg-radial-at-t from-slate-900 via-slate-950 to-black">
           <form onSubmit={handleJoinGame} className="max-w-xs w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl text-center">
             <div className="space-y-1">
-              <h2 className="font-heading font-black text-headline-md text-white">Entrar na Arena 🏆</h2>
+              <h2 className="font-heading font-black text-headline-md text-white flex items-center justify-center gap-2">
+                Entrar na Arena <HugeiconsIcon icon={Trophy} size={24} strokeWidth={2} className="text-yellow-400" />
+              </h2>
               <p className="text-slate-400 text-xs">Digite o código PIN fornecido pelo professor e escolha um nickname.</p>
             </div>
             
@@ -315,8 +327,8 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
           {/* LOBBY STATE */}
           {gameStatus === 'lobby' && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 animate-fade-in bg-radial-at-t from-indigo-950 via-slate-950 to-black">
-              <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-2xl animate-bounce">
-                👤
+              <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary animate-bounce">
+                <HugeiconsIcon icon={UserCircleIcon} size={28} strokeWidth={2} />
               </div>
               <div className="space-y-1">
                 <h3 className="font-heading font-black text-headline-md text-white">Você está no lobby!</h3>
@@ -384,8 +396,8 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
               {/* Correct / Incorrect animation banner */}
               {isLastAnswerCorrect ? (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-3xl shadow-lg border border-emerald-400 animate-bounce">
-                    ✔
+                  <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border border-emerald-400 animate-bounce">
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={28} strokeWidth={2} />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-heading font-black text-headline-lg text-emerald-400">Excelente!</h3>
@@ -394,14 +406,17 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
                   <div className="space-y-1 bg-emerald-500/10 border border-emerald-500/20 px-6 py-3 rounded-2xl shadow-sm">
                     <div className="text-2xl font-heading font-black text-emerald-400">+{pointsEarned} pts</div>
                     {playerInfo?.streak && playerInfo.streak >= 2 ? (
-                      <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest animate-pulse">🔥 Sequência de {playerInfo.streak} acertos!</span>
+                      <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest animate-pulse flex items-center justify-center gap-1.5">
+                        <HugeiconsIcon icon={FireIcon} size={12} strokeWidth={2.5} />
+                        Sequência de {playerInfo.streak} acertos!
+                      </span>
                     ) : null}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-red-600 text-white flex items-center justify-center text-3xl shadow-lg border border-red-500">
-                    ❌
+                  <div className="w-16 h-16 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg border border-red-500">
+                    <HugeiconsIcon icon={CancelCircleIcon} size={28} strokeWidth={2} />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-heading font-black text-headline-lg text-red-500">Ops, incorreto!</h3>
@@ -429,8 +444,8 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
           {/* FINISHED STATE (PODIUM) */}
           {gameStatus === 'finished' && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 bg-radial-at-t from-purple-950 via-slate-950 to-black animate-fade-in">
-              <div className="w-16 h-16 rounded-full bg-yellow-500 text-white flex items-center justify-center text-3xl shadow-lg animate-bounce">
-                👑
+              <div className="w-16 h-16 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg animate-bounce">
+                <HugeiconsIcon icon={CrownIcon} size={28} strokeWidth={2} />
               </div>
               <div className="space-y-1">
                 <h3 className="font-heading font-black text-headline-lg text-white">Jogo Concluído!</h3>

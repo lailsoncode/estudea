@@ -7,7 +7,9 @@ import {
   Progress01Icon,
   Alert01Icon,
   BookOpen01Icon,
-  ArrowDown01Icon
+  ArrowDown01Icon,
+  FireIcon,
+  SparklesIcon
 } from '@hugeicons/core-free-icons';
 
 interface Turma {
@@ -667,12 +669,14 @@ export const DashboardProfessor: React.FC = () => {
                                 {completedCount}/{aulas.length} Aulas
                               </span>
                               {(student.ofensiva_atual || 0) > 0 && (
-                                <span className="flex items-center gap-0.5 text-[10px] text-orange-600 font-bold bg-orange-50 border border-orange-200/30 px-1.5 py-0.5 rounded-full" title={`Ofensiva de ${student.ofensiva_atual} dias`}>
-                                  🔥 {student.ofensiva_atual}d
+                                <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold bg-orange-50 border border-orange-200/30 px-1.5 py-0.5 rounded-full" title={`Ofensiva de ${student.ofensiva_atual} dias`}>
+                                  <HugeiconsIcon icon={FireIcon} size={10} strokeWidth={2.5} />
+                                  {student.ofensiva_atual}d
                                 </span>
                               )}
-                              <span className="flex items-center gap-0.5 text-[10px] text-purple-600 font-bold bg-purple-50 border border-purple-200/30 px-1.5 py-0.5 rounded-full" title={`XP acumulado`}>
-                                ✨ {(completedCount * 50) + ((student.ofensiva_atual || 0) * 20)} XP
+                              <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 font-bold bg-purple-50 border border-purple-200/30 px-1.5 py-0.5 rounded-full" title={`XP acumulado`}>
+                                <HugeiconsIcon icon={SparklesIcon} size={10} strokeWidth={2.5} />
+                                {(completedCount * 50) + ((student.ofensiva_atual || 0) * 20)} XP
                               </span>
                             </div>
                           </div>

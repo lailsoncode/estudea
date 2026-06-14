@@ -108,7 +108,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [respostaForm, setRespostaForm] = useState('');
+  const [respostaForm, setRespostaForm] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -210,6 +210,14 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
         .select('atividade_id, resposta, nota, feedback_professor')
         .eq('aluno_id', userId);
       setEntregas(entregasData || []);
+
+      if (entregasData) {
+        const newAnswers: Record<string, string> = {};
+        entregasData.forEach(e => {
+          newAnswers[e.atividade_id] = e.resposta;
+        });
+        setRespostaForm(newAnswers);
+      }
     } catch (err) {
       console.error('Erro ao carregar progresso do aluno:', err);
     }
@@ -238,7 +246,8 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
   const handleSendAssignment = async (e: React.FormEvent, atividadeId: string, aulaId: string) => {
     e.preventDefault();
-    if (!respostaForm.trim()) {
+    const currentResposta = (respostaForm[atividadeId] || '').trim();
+    if (!currentResposta) {
       setError('Por favor, digite sua resposta.');
       return;
     }
@@ -253,23 +262,29 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
         .upsert({
           aluno_id: userId,
           atividade_id: atividadeId,
-          resposta: respostaForm.trim(),
+          resposta: currentResposta,
           updated_at: new Date().toISOString()
         }, { onConflict: 'aluno_id,atividade_id' });
 
       if (submitError) throw submitError;
 
-      // Automatically register class progress when submitting activity
-      await supabase
-        .from('progresso_alunos')
-        .upsert({
-          aluno_id: userId,
-          aula_id: aulaId,
-          concluido_em: new Date().toISOString()
-        }, { onConflict: 'aluno_id,aula_id' });
+      // Automatically register class progress when submitting activity if all activities are delivered
+      const allActs = selectedAula?.atividades || [];
+      const allSubmitted = allActs.every(act =>
+        act.id === atividadeId || entregas.some(ent => ent.atividade_id === act.id)
+      );
+
+      if (allSubmitted) {
+        await supabase
+          .from('progresso_alunos')
+          .upsert({
+            aluno_id: userId,
+            aula_id: aulaId,
+            concluido_em: new Date().toISOString()
+          }, { onConflict: 'aluno_id,aula_id' });
+      }
 
       setSuccess('Atividade enviada com sucesso para o professor!');
-      setRespostaForm('');
       fetchStudentProgress();
     } catch (err: any) {
       setError(err.message || 'Erro ao enviar atividade.');
@@ -373,23 +388,35 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                       const isSelected = selectedAula?.id === aula.id;
                       const hasCompleted = progresso.some(p => p.aula_id === aula.id);
                       
-                      // Check assignment status if there is one
-                      const activity = aula.atividades?.[0];
-                      const delivery = activity 
-                        ? entregas.find(e => e.atividade_id === activity.id)
-                        : null;
-
+                      // Check assignment status if there are any
+                      const activities = aula.atividades || [];
                       let statusBadge = null;
+
                       if (hasCompleted) {
-                        if (activity) {
-                          if (delivery) {
-                            if (delivery.nota !== null) {
-                              statusBadge = <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Nota: {delivery.nota}</span>;
+                        if (activities.length > 0) {
+                          const deliveries = activities.map(act => entregas.find(e => e.atividade_id === act.id)).filter(Boolean);
+                          const allDelivered = deliveries.length === activities.length;
+                          
+                          if (allDelivered) {
+                            // Filter activities that count for grades
+                            const gradedActivities = activities.filter(act => act.pontua !== false);
+                            if (gradedActivities.length > 0) {
+                              const gradedDeliveries = gradedActivities.map(act => entregas.find(e => e.atividade_id === act.id)).filter(Boolean);
+                              const anyPending = gradedDeliveries.some(d => d.nota === null);
+                              if (anyPending) {
+                                statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente</span>;
+                              } else {
+                                const totalGrade = gradedDeliveries.reduce((sum, d) => sum + (d.nota || 0), 0);
+                                const avgGrade = Math.round(totalGrade / gradedActivities.length);
+                                statusBadge = <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Nota: {avgGrade}</span>;
+                              }
                             } else {
-                              statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente</span>;
+                              // Only non-graded activities, all delivered
+                              statusBadge = <HugeiconsIcon icon={Tick01Icon} size={14} className="text-emerald-500 shrink-0" />;
                             }
                           } else {
-                            statusBadge = <HugeiconsIcon icon={Tick01Icon} size={14} className="text-emerald-500 shrink-0" />;
+                            // Some activities not delivered yet
+                            statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente ({deliveries.length}/{activities.length})</span>;
                           }
                         } else {
                           statusBadge = <HugeiconsIcon icon={Tick01Icon} size={14} className="text-emerald-500 shrink-0" />;
@@ -642,51 +669,51 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                              {/* Submitted and pending review */}
                              {studentDelivery && studentDelivery.nota === null && (
-                               <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-label-md text-amber-800 space-y-2 shadow-sm">
-                                 <div className="flex items-center gap-1.5 font-bold text-amber-700">
-                                   <HugeiconsIcon icon={Progress01Icon} size={16} className="animate-spin" />
-                                   <span>Resposta Enviada — Aguardando Avaliação</span>
-                                 </div>
-                                 <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-600 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                                   {studentDelivery.resposta}
-                                 </div>
-                                 <p className="text-[10px] text-amber-600/90 font-semibold">
-                                   Você pode reenviar a atividade digitando e enviando uma nova resposta abaixo a qualquer momento.
-                                 </p>
-                               </div>
-                             )}
+                                <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-label-md text-amber-800 space-y-2 shadow-sm">
+                                  <div className="flex items-center gap-1.5 font-bold text-amber-700">
+                                    <HugeiconsIcon icon={Progress01Icon} size={16} className="animate-spin" />
+                                    <span>Resposta Enviada — Aguardando Avaliação</span>
+                                  </div>
+                                  <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-600 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                                    {studentDelivery.resposta}
+                                  </div>
+                                  <p className="text-[10px] text-amber-600/90 font-semibold">
+                                    Você pode reenviar a atividade digitando e enviando uma nova resposta abaixo a qualquer momento.
+                                  </p>
+                                </div>
+                              )}
 
-                             {/* Form to submit or resubmit */}
-                             {(!studentDelivery || studentDelivery.nota === null) && (
-                               <form onSubmit={(e) => handleSendAssignment(e, atividade.id, selectedAula.id)} className="space-y-3 pt-2">
-                                 <div className="flex flex-col gap-1.5">
-                                   <label className="text-label-sm font-bold text-slate-600">
-                                     {studentDelivery ? 'Atualizar minha resposta' : 'Minha resposta'}
-                                   </label>
-                                   <textarea
-                                     rows={4}
-                                     required
-                                     value={respostaForm}
-                                     onChange={(e) => setRespostaForm(e.target.value)}
-                                     disabled={submitting}
-                                     placeholder={
-                                       atividade.tipo_entrega === 'imagem'
-                                         ? 'Cole o link público da imagem da sua atividade (ex: Imgur, Google Drive público)...'
-                                         : 'Escreva a solução da sua atividade prática aqui...'
-                                     }
-                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md leading-relaxed font-sans"
-                                   />
-                                 </div>
-                                 <button
-                                   type="submit"
-                                   disabled={submitting}
-                                   className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm transition-all flex items-center gap-1.5"
-                                 >
-                                   <HugeiconsIcon icon={Task01Icon} size={16} />
-                                   {submitting ? 'Enviando...' : (studentDelivery ? 'Reenviar Resposta' : 'Enviar Resposta')}
-                                 </button>
-                               </form>
-                             )}
+                              {/* Form to submit or resubmit */}
+                              {(!studentDelivery || studentDelivery.nota === null) && (
+                                <form onSubmit={(e) => handleSendAssignment(e, atividade.id, selectedAula.id)} className="space-y-3 pt-2">
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-bold text-slate-600">
+                                      {studentDelivery ? 'Atualizar minha resposta' : 'Minha resposta'}
+                                    </label>
+                                    <textarea
+                                      rows={4}
+                                      required
+                                      value={respostaForm[atividade.id] || ''}
+                                      onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                      disabled={submitting}
+                                      placeholder={
+                                        atividade.tipo_entrega === 'imagem'
+                                          ? 'Cole o link público da imagem da sua atividade (ex: Imgur, Google Drive público)...'
+                                          : 'Escreva a solução da sua atividade prática aqui...'
+                                      }
+                                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md leading-relaxed font-sans"
+                                    />
+                                  </div>
+                                  <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm transition-all flex items-center gap-1.5"
+                                  >
+                                    <HugeiconsIcon icon={Task01Icon} size={16} />
+                                    {submitting ? 'Enviando...' : (studentDelivery ? 'Reenviar Resposta' : 'Enviar Resposta')}
+                                  </button>
+                                </form>
+                              )}
                            </div>
                          );
                        })}

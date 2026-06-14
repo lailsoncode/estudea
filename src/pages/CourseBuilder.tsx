@@ -16,7 +16,8 @@ import {
   Cancel01Icon,
   SparklesIcon,
   NotebookIcon,
-  Quiz01Icon
+  Quiz01Icon,
+  GameControllerIcon
 } from '@hugeicons/core-free-icons';
 
 // Types corresponding to our database tables
@@ -176,7 +177,7 @@ export const CourseBuilder: React.FC = () => {
     atividade_quiz_proprio: false
   });
 
-  const [quizSubTab, setQuizSubTab] = useState<'standard' | 'arena' | 'atividade'>('standard');
+  const [quizSubTab, setQuizSubTab] = useState<string>('standard');
   const [aiMaterial, setAiMaterial] = useState<string>('');
   const [aiGeneratingArena, setAiGeneratingArena] = useState<boolean>(false);
 
@@ -355,10 +356,20 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       
       if (parsedData.has_atividade !== undefined) {
         updatedForm.has_atividade = !!parsedData.has_atividade;
-        if (parsedData.atividade_enunciado) updatedForm.atividade_enunciado = parsedData.atividade_enunciado;
-        if (parsedData.atividade_tipo_entrega) updatedForm.atividade_tipo_entrega = parsedData.atividade_tipo_entrega;
-        if (parsedData.atividade_quiz_proprio !== undefined) {
-          updatedForm.atividade_quiz_proprio = !!parsedData.atividade_quiz_proprio;
+        if (parsedData.has_atividade) {
+          const tempId = 'temp_activity_questions_id';
+          setAtividadesList([
+            {
+              tempId,
+              enunciado: parsedData.atividade_enunciado || '',
+              tipo_entrega: parsedData.atividade_tipo_entrega || 'texto',
+              pontua: parsedData.atividade_pontua !== false,
+              permite_refazer: parsedData.atividade_permite_refazer !== false,
+              atividade_quiz_proprio: !!parsedData.atividade_quiz_proprio
+            }
+          ]);
+        } else {
+          setAtividadesList([]);
         }
       }
 
@@ -395,6 +406,18 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       setAiLoading(false);
     }
   };
+
+  interface AtividadeForm {
+    id?: string;
+    tempId: string;
+    enunciado: string;
+    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+    pontua: boolean;
+    permite_refazer: boolean;
+    atividade_quiz_proprio: boolean;
+  }
+
+  const [atividadesList, setAtividadesList] = useState<AtividadeForm[]>([]);
 
   const [questoes, setQuestoes] = useState<Questao[]>([
     { enunciado: 'Qual é a principal função do espaço em branco (whitespace) no design de interfaces?', opcoes: ['Preencher espaços vazios', 'Reduzir a carga cognitiva agrupando elementos logicamente', 'Aumentar o tamanho do arquivo'], resposta_correta: 'Reduzir a carga cognitiva agrupando elementos logicamente', ordem: 1 }
@@ -657,9 +680,8 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       atividade_enunciado: '',
       atividade_tipo_entrega: 'texto',
       atividade_pontua: true,
-      atividade_permite_refazer: true,
-      atividade_quiz_proprio: false
     });
+    setAtividadesList([]);
     setQuestoes([
       { enunciado: 'Qual é a principal função do espaço em branco (whitespace) no design de interfaces?', opcoes: ['Preencher espaços vazios', 'Reduzir a carga cognitiva agrupando elementos logicamente', 'Aumentar o tamanho do arquivo'], resposta_correta: 'Reduzir a carga cognitiva agrupando elementos logicamente', ordem: 1 }
     ]);
@@ -687,15 +709,27 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       if (qError) throw qError;
       const loadedQuestions = qData || [];
 
-      // 2. Load linked activity if it exists
+      // 2. Load linked activities if they exist
       const { data: atividadeData, error: atividadeError } = await supabase
           .from('atividades')
           .select('*')
-          .eq('aula_id', lesson.id)
-          .limit(1);
+          .eq('aula_id', lesson.id);
       
       if (atividadeError) throw atividadeError;
-      const activeAtividade = atividadeData && atividadeData.length > 0 ? atividadeData[0] : null;
+      const loadedAtividades = (atividadeData || []).map(act => {
+        const hasProprioQuiz = loadedQuestions.some(q => q.atividade_id === act.id);
+        return {
+          id: act.id,
+          tempId: act.id,
+          enunciado: act.enunciado,
+          tipo_entrega: act.tipo_entrega as any,
+          pontua: act.pontua ?? true,
+          permite_refazer: act.permite_refazer ?? true,
+          atividade_quiz_proprio: hasProprioQuiz
+        };
+      });
+
+      setAtividadesList(loadedAtividades);
 
       const parsed = parseLessonConteudo(lesson.conteudo || '', lesson.tipo);
       setLessonForm({
@@ -712,17 +746,17 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         permite_arena: lesson.permite_arena ?? true,
         tempo_limite_enabled: lesson.tempo_limite !== null,
         tempo_limite: lesson.tempo_limite || 15,
-        has_atividade: !!activeAtividade,
-        atividade_enunciado: activeAtividade ? activeAtividade.enunciado : '',
-        atividade_tipo_entrega: activeAtividade ? activeAtividade.tipo_entrega as any : 'texto',
-        atividade_pontua: activeAtividade ? (activeAtividade.pontua ?? true) : true,
-        atividade_permite_refazer: activeAtividade ? (activeAtividade.permite_refazer ?? true) : true,
-        atividade_quiz_proprio: activeAtividade ? loadedQuestions.some(q => q.atividade_id === activeAtividade.id) : false
+        has_atividade: loadedAtividades.length > 0,
+        atividade_enunciado: loadedAtividades[0] ? loadedAtividades[0].enunciado : '',
+        atividade_tipo_entrega: loadedAtividades[0] ? loadedAtividades[0].tipo_entrega : 'texto',
+        atividade_pontua: loadedAtividades[0] ? loadedAtividades[0].pontua : true,
+        atividade_permite_refazer: loadedAtividades[0] ? loadedAtividades[0].permite_refazer : true,
+        atividade_quiz_proprio: loadedAtividades[0] ? loadedAtividades[0].atividade_quiz_proprio : false
       });
 
-      const hasProprioQuiz = activeAtividade ? loadedQuestions.some(q => q.atividade_id === activeAtividade.id) : false;
-      if (hasProprioQuiz) {
-        setQuizSubTab('atividade');
+      const proprioQuizAct = loadedAtividades.find(act => act.atividade_quiz_proprio);
+      if (proprioQuizAct) {
+        setQuizSubTab(`atividade_${proprioQuizAct.tempId}`);
       } else {
         setQuizSubTab('standard');
       }
@@ -768,10 +802,26 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
   // QUIZ BUILDER FUNCTIONS
   const handleAddQuestion = () => {
     const isArena = quizSubTab === 'arena';
-    const isAtividade = quizSubTab === 'atividade';
+    const isAtividade = quizSubTab.startsWith('atividade_') || quizSubTab === 'atividade';
+    
+    // Find the specific activity tempId if relevant
+    let targetActivityId: string | null = null;
+    if (quizSubTab.startsWith('atividade_')) {
+      targetActivityId = quizSubTab.replace('atividade_', '');
+    } else if (quizSubTab === 'atividade') {
+      const firstQuizAct = atividadesList.find(act => act.tipo_entrega === 'quiz' && act.atividade_quiz_proprio);
+      targetActivityId = firstQuizAct ? firstQuizAct.tempId : 'pending';
+    }
+
     const categoryCount = questoes.filter(q => {
       if (isArena) return !!q.para_arena;
-      if (isAtividade) return !!q.atividade_id;
+      if (isAtividade) {
+        if (targetActivityId) {
+          const act = atividadesList.find(a => a.tempId === targetActivityId || a.id === targetActivityId);
+          return q.atividade_id === targetActivityId || (act?.id && q.atividade_id === act.id);
+        }
+        return !!q.atividade_id;
+      }
       return !q.para_arena && !q.atividade_id;
     }).length;
 
@@ -788,7 +838,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         ordem: categoryCount + 1,
         tipo: 'multipla_escolha',
         para_arena: isArena,
-        atividade_id: isAtividade ? 'pending' : null
+        atividade_id: targetActivityId
       }
     ]);
   };
@@ -871,7 +921,11 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
 
   const handleSetCorrectOption = (qIndex: number, optionText: string) => {
     const newQuestions = [...questoes];
-    newQuestions[qIndex].resposta_correta = optionText;
+    if (newQuestions[qIndex].resposta_correta === optionText) {
+      newQuestions[qIndex].resposta_correta = '';
+    } else {
+      newQuestions[qIndex].resposta_correta = optionText;
+    }
     setQuestoes(newQuestions);
   };
 
@@ -896,12 +950,15 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     const filtered = questoes.filter((_, idx) => idx !== index);
     let stdIdx = 1;
     let arenaIdx = 1;
-    let actIdx = 1;
+    const actIndices: Record<string, number> = {};
     const updated = filtered.map(q => {
       if (q.para_arena) {
         return { ...q, ordem: arenaIdx++ };
       } else if (q.atividade_id) {
-        return { ...q, ordem: actIdx++ };
+        const actId = q.atividade_id;
+        const currentIdx = actIndices[actId] || 1;
+        actIndices[actId] = currentIdx + 1;
+        return { ...q, ordem: currentIdx };
       } else {
         return { ...q, ordem: stdIdx++ };
       }
@@ -920,12 +977,15 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     });
     let stdIdx = 1;
     let arenaIdx = 1;
-    let actIdx = 1;
+    const actIndices: Record<string, number> = {};
     const updated = newQuestions.map(q => {
       if (q.para_arena) {
         return { ...q, ordem: arenaIdx++ };
       } else if (q.atividade_id) {
-        return { ...q, ordem: actIdx++ };
+        const actId = q.atividade_id;
+        const currentIdx = actIndices[actId] || 1;
+        actIndices[actId] = currentIdx + 1;
+        return { ...q, ordem: currentIdx };
       } else {
         return { ...q, ordem: stdIdx++ };
       }
@@ -948,7 +1008,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     setAiGeneratingArena(true);
     try {
       const prompt = `Você é o mestre da Arena Estudea, um quiz multiplayer em tempo real similar ao Kahoot.
-Seu objetivo é ler o material fornecido pelo professor e criar de 5 a 8 questões de múltipla escolha para a Arena competitiva.
+Seu objetivo é ler o material fornecido pelo professor e criar de 5 a 8 questões de múltipla escolha ou verdadeiro ou falso para a Arena competitiva.
 
 O material fornecido é o seguinte:
 """
@@ -958,7 +1018,7 @@ ${aiMaterial}
 Regras importantes:
 1. As perguntas devem ser diretas, desafiadoras e rápidas (máximo de 120 caracteres).
 2. As opções de resposta devem ser curtas e objetivas (máximo de 50 caracteres) para que os alunos possam ler e responder rapidamente em dispositivos móveis.
-3. Forneça exatamente entre 2 e 4 opções de resposta por questão.
+3. Forneça exatamente entre 2 e 4 opções de resposta por questão (use exatamente ["Verdadeiro", "Falso"] para questões de verdadeiro ou falso).
 4. Garanta que a "resposta_correta" corresponda exatamente a um dos itens da lista "opcoes".
 5. Retorne a resposta estruturada estritamente em formato JSON de acordo com o modelo abaixo, sem qualquer tipo de markdown ou comentários adicionais.
 
@@ -1005,14 +1065,18 @@ Modelo JSON de saída:
       const parsed = JSON.parse(rawText.trim());
       if (Array.isArray(parsed) && parsed.length > 0) {
         const currentStandardQuestions = questoes.filter(q => !q.para_arena);
-        const newArenaQuestions = parsed.map((item: any, index: number) => ({
-          enunciado: item.enunciado,
-          opcoes: item.opcoes,
-          resposta_correta: item.resposta_correta,
-          ordem: index + 1,
-          tipo: 'multipla_escolha' as const,
-          para_arena: true
-        }));
+        const newArenaQuestions = parsed.map((item: any, index: number) => {
+          const isTrueFalse = Array.isArray(item.opcoes) && item.opcoes.length === 2 && 
+            item.opcoes.some((o: string) => o.toLowerCase() === 'verdadeiro' || o.toLowerCase() === 'falso');
+          return {
+            enunciado: item.enunciado,
+            opcoes: item.opcoes,
+            resposta_correta: item.resposta_correta,
+            ordem: index + 1,
+            tipo: isTrueFalse ? ('verdadeiro_falso' as const) : ('multipla_escolha' as const),
+            para_arena: true
+          };
+        });
 
         setQuestoes([...currentStandardQuestions, ...newArenaQuestions]);
         setAiMaterial('');
@@ -1035,7 +1099,7 @@ Modelo JSON de saída:
       return;
     }
 
-    if (!activeTypes.video && !activeTypes.texto && !activeTypes.quiz && !activeTypes.arquivo && !(lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) {
+    if (!activeTypes.video && !activeTypes.texto && !activeTypes.quiz && !activeTypes.arquivo && !(lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) {
       setError('Por favor, selecione pelo menos um tipo de conteúdo.');
       return;
     }
@@ -1051,7 +1115,7 @@ Modelo JSON de saída:
       let primaryTipo: 'video' | 'texto' | 'quiz' | 'arquivo' = 'texto';
       if (activeTypes.video) {
         primaryTipo = 'video';
-      } else if (activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) {
+      } else if (activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) {
         primaryTipo = 'quiz';
       } else if (activeTypes.arquivo) {
         primaryTipo = 'arquivo';
@@ -1062,7 +1126,7 @@ Modelo JSON de saída:
       // Compute durations or description labels:
       const typesList: string[] = [];
       if (activeTypes.video) typesList.push('Vídeo');
-      if (activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) typesList.push(`${questoes.length} Questões`);
+      if (activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) typesList.push(`${questoes.length} Questões`);
       if (activeTypes.arquivo) typesList.push('Material');
       if (activeTypes.texto && typesList.length === 0) typesList.push('Leitura');
       const duracaoLabel = typesList.join(' + ') || 'Leitura';
@@ -1109,48 +1173,64 @@ Modelo JSON de saída:
         aulaId = insertData.id;
       }
 
-      let activityId: string | null = null;
+      // Handle Linked Activity Practices
+      const tempIdToRealId: Record<string, string> = {};
 
-      // Handle Linked Activity Practice
       if (lessonForm.has_atividade) {
-        const { data: extAtividade, error: checkError } = await supabase
+        // Fetch current activities in DB for this class
+        const { data: dbAtividades, error: fetchActError } = await supabase
           .from('atividades')
           .select('id')
-          .eq('aula_id', aulaId)
-          .limit(1);
+          .eq('aula_id', aulaId);
+        if (fetchActError) throw fetchActError;
 
-        if (checkError) throw checkError;
+        const dbAtividadesIds = dbAtividades ? dbAtividades.map(a => a.id) : [];
+        const currentAtividadesIds = atividadesList.map(a => a.id).filter(Boolean) as string[];
 
-        const activityPayload = {
-          aula_id: aulaId,
-          enunciado: lessonForm.atividade_enunciado.trim(),
-          tipo_entrega: lessonForm.atividade_tipo_entrega,
-          pontua: lessonForm.atividade_tipo_entrega === 'quiz' ? lessonForm.atividade_pontua : true,
-          permite_refazer: lessonForm.atividade_permite_refazer
-        };
-
-        if (extAtividade && extAtividade.length > 0) {
-          // Update existing activity
-          const { error: actUpdateError } = await supabase
+        // Activities to delete
+        const toDeleteIds = dbAtividadesIds.filter(id => !currentAtividadesIds.includes(id));
+        if (toDeleteIds.length > 0) {
+          const { error: delActError } = await supabase
             .from('atividades')
-            .update(activityPayload)
-            .eq('id', extAtividade[0].id);
-          if (actUpdateError) throw actUpdateError;
-          activityId = extAtividade[0].id;
-        } else {
-          // Insert new activity
-          const { data: actInsertData, error: actInsertError } = await supabase
-            .from('atividades')
-            .insert(activityPayload)
-            .select('id')
-            .single();
-          if (actInsertError) throw actInsertError;
-          if (actInsertData) {
-            activityId = actInsertData.id;
+            .delete()
+            .in('id', toDeleteIds);
+          if (delActError) throw delActError;
+        }
+
+        // Insert / Update activities
+        for (const act of atividadesList) {
+          const activityPayload = {
+            aula_id: aulaId,
+            enunciado: act.enunciado.trim(),
+            tipo_entrega: act.tipo_entrega,
+            pontua: act.pontua,
+            permite_refazer: act.permite_refazer
+          };
+
+          if (act.id) {
+            // Update
+            const { error: actUpdateError } = await supabase
+              .from('atividades')
+              .update(activityPayload)
+              .eq('id', act.id);
+            if (actUpdateError) throw actUpdateError;
+            tempIdToRealId[act.tempId] = act.id;
+            tempIdToRealId[act.id] = act.id;
+          } else {
+            // Insert
+            const { data: actInsertData, error: actInsertError } = await supabase
+              .from('atividades')
+              .insert(activityPayload)
+              .select('id')
+              .single();
+            if (actInsertError) throw actInsertError;
+            if (actInsertData) {
+              tempIdToRealId[act.tempId] = actInsertData.id;
+            }
           }
         }
       } else {
-        // Delete activity if teacher disabled it
+        // Delete all activities if teacher disabled it
         const { error: actDeleteError } = await supabase
           .from('atividades')
           .delete()
@@ -1160,7 +1240,7 @@ Modelo JSON de saída:
 
       // If Quiz, Arena or Activity Questionnaire, handle Questions
       const hasQuestions = activeTypes.quiz || 
-        (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio) ||
+        (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz' && act.atividade_quiz_proprio)) ||
         questoes.some(q => q.para_arena);
 
       if (hasQuestions) {
@@ -1179,7 +1259,8 @@ Modelo JSON de saída:
           if (q.para_arena) return true;
           // 2. If it's an activity question: keep it only if the activity is a quiz and it's set to has independent quiz
           if (q.atividade_id) {
-            return lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio;
+            const associatedAct = atividadesList.find(act => act.tempId === q.atividade_id || act.id === q.atividade_id);
+            return lessonForm.has_atividade && associatedAct && associatedAct.tipo_entrega === 'quiz' && associatedAct.atividade_quiz_proprio;
           }
           // 3. If it's a standard lesson quiz question: keep it only if standard quiz is enabled
           return activeTypes.quiz;
@@ -1188,6 +1269,10 @@ Modelo JSON de saída:
         if (activeQuestions.length > 0) {
           const questionsPayload = activeQuestions.map(q => {
             const isActivityQuestion = !!q.atividade_id;
+            let realActId: string | null = null;
+            if (isActivityQuestion) {
+              realActId = tempIdToRealId[q.atividade_id!] || null;
+            }
             return {
               aula_id: aulaId,
               enunciado: q.enunciado.trim(),
@@ -1196,7 +1281,7 @@ Modelo JSON de saída:
               ordem: q.ordem,
               tipo: q.tipo || 'multipla_escolha',
               para_arena: q.para_arena || false,
-              atividade_id: isActivityQuestion ? activityId : null
+              atividade_id: realActId
             };
           });
 
@@ -1659,14 +1744,16 @@ Modelo JSON de saída:
                   />
 
                   {aiError && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-label-sm text-red-600 font-medium leading-relaxed">
-                      ⚠️ {aiError}
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-label-sm text-red-600 font-medium leading-relaxed flex items-center gap-2">
+                      <HugeiconsIcon icon={Alert01Icon} size={16} strokeWidth={2} className="shrink-0" />
+                      <span>{aiError}</span>
                     </div>
                   )}
 
                   {aiSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-label-sm text-emerald-700 font-semibold leading-relaxed">
-                      🎉 {aiSuccess}
+                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-label-sm text-emerald-700 font-semibold leading-relaxed flex items-center gap-2">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} className="shrink-0" />
+                      <span>{aiSuccess}</span>
                     </div>
                   )}
 
@@ -1829,7 +1916,10 @@ Modelo JSON de saída:
                     />
                     {/* Help box */}
                     <div className="mt-1 p-3.5 bg-blue-50 border border-blue-100 rounded-xl space-y-2">
-                      <p className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">📄 Visualização de PDF inline no app do aluno</p>
+                      <p className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <HugeiconsIcon icon={NotebookIcon} size={14} strokeWidth={2.5} />
+                        Visualização de PDF inline no app do aluno
+                      </p>
                       <p className="text-[12px] text-blue-800 font-medium leading-relaxed">
                         PDFs do <strong>Google Drive</strong> e links diretos <code className="bg-blue-100 px-1 rounded">.pdf</code> serão exibidos diretamente dentro da plataforma sem precisar baixar.
                       </p>
@@ -2001,150 +2091,217 @@ Modelo JSON de saída:
                 </div>
 
                 {lessonForm.has_atividade && (
-                  <div className="space-y-4 animate-in slide-in-from-top duration-200">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-label-sm font-bold text-slate-600">Instruções / Enunciado da Atividade</label>
-                      <textarea
-                        rows={4}
-                        placeholder="Descreva detalhadamente o que o aluno deve executar para esta atividade..."
-                        value={lessonForm.atividade_enunciado}
-                        onChange={(e) => setLessonForm({ ...lessonForm, atividade_enunciado: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans"
-                      />
-                    </div>
+                  <div className="space-y-6 animate-in slide-in-from-top duration-200">
+                    <div className="space-y-4">
+                      {atividadesList.map((act, index) => {
+                        const isQuiz = act.tipo_entrega === 'quiz';
+                        return (
+                          <div key={act.tempId} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                              <span className="text-label-md font-extrabold text-slate-700">Atividade Prática #{index + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const filtered = atividadesList.filter(a => a.tempId !== act.tempId);
+                                  setAtividadesList(filtered);
+                                  if (filtered.length === 0) {
+                                    setLessonForm({ ...lessonForm, has_atividade: false });
+                                  }
+                                }}
+                                className="text-red-500 hover:text-red-700 text-label-sm font-semibold flex items-center gap-1 transition-all"
+                              >
+                                <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                                Remover Atividade
+                              </button>
+                            </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-label-sm font-bold text-slate-600">Formato de Entrega Exigido</label>
-                      <div className="flex flex-wrap gap-6 mt-1">
-                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="entrega_tipo"
-                            value="texto"
-                            checked={lessonForm.atividade_tipo_entrega === 'texto'}
-                            onChange={() => setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'texto' })}
-                            className="text-primary focus:ring-primary/20 border-slate-300"
-                          />
-                          <span>Texto Escrito / Código</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="entrega_tipo"
-                            value="imagem"
-                            checked={lessonForm.atividade_tipo_entrega === 'imagem'}
-                            onChange={() => setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'imagem' })}
-                            className="text-primary focus:ring-primary/20 border-slate-300"
-                          />
-                          <span>Link de Imagem (Upload de Screenshot/Design)</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="entrega_tipo"
-                            value="quiz"
-                            checked={lessonForm.atividade_tipo_entrega === 'quiz'}
-                            onChange={() => {
-                              setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'quiz' });
-                              setActiveTypes(prev => ({ ...prev, quiz: true }));
-                            }}
-                            className="text-primary focus:ring-primary/20 border-slate-300"
-                          />
-                          <span>Quiz (Questionário)</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="entrega_tipo"
-                            value="multipla"
-                            checked={lessonForm.atividade_tipo_entrega === 'multipla'}
-                            onChange={() => setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'multipla' })}
-                            className="text-primary focus:ring-primary/20 border-slate-300"
-                          />
-                          <span>Múltipla Entrega (Texto + Imagem)</span>
-                        </label>
-                      </div>
-                    </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-label-sm font-bold text-slate-600">Instruções / Enunciado da Atividade</label>
+                              <textarea
+                                rows={3}
+                                placeholder="Descreva detalhadamente o que o aluno deve executar para esta atividade..."
+                                value={act.enunciado}
+                                onChange={(e) => {
+                                  const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, enunciado: e.target.value } : a);
+                                  setAtividadesList(updated);
+                                }}
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans"
+                              />
+                            </div>
 
-                    {lessonForm.atividade_tipo_entrega === 'quiz' && (
-                      <div className="p-4 bg-indigo-50/50 border border-indigo-150 rounded-2xl space-y-3 animate-in slide-in-from-top duration-200">
-                        <label className="flex items-center justify-between cursor-pointer group gap-4">
-                          <div className="flex flex-col text-left">
-                            <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Atividade Pontuada (Vale nota)</span>
-                            <span className="text-label-sm text-slate-400 mt-0.5">Se desmarcado, a atividade servirá apenas como exercício formativo (sem nota/pontos)</span>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-label-sm font-bold text-slate-600">Formato de Entrega Exigido</label>
+                              <div className="flex flex-wrap gap-6 mt-1">
+                                <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`entrega_tipo_${act.tempId}`}
+                                    value="texto"
+                                    checked={act.tipo_entrega === 'texto'}
+                                    onChange={() => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'texto' as const } : a);
+                                      setAtividadesList(updated);
+                                    }}
+                                    className="text-primary focus:ring-primary/20 border-slate-300"
+                                  />
+                                  <span>Texto Escrito / Código</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`entrega_tipo_${act.tempId}`}
+                                    value="imagem"
+                                    checked={act.tipo_entrega === 'imagem'}
+                                    onChange={() => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'imagem' as const } : a);
+                                      setAtividadesList(updated);
+                                    }}
+                                    className="text-primary focus:ring-primary/20 border-slate-300"
+                                  />
+                                  <span>Link de Imagem (Upload de Screenshot/Design)</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`entrega_tipo_${act.tempId}`}
+                                    value="quiz"
+                                    checked={act.tipo_entrega === 'quiz'}
+                                    onChange={() => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'quiz' as const } : a);
+                                      setAtividadesList(updated);
+                                      setActiveTypes(prev => ({ ...prev, quiz: true }));
+                                    }}
+                                    className="text-primary focus:ring-primary/20 border-slate-300"
+                                  />
+                                  <span>Quiz (Questionário)</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`entrega_tipo_${act.tempId}`}
+                                    value="multipla"
+                                    checked={act.tipo_entrega === 'multipla'}
+                                    onChange={() => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'multipla' as const } : a);
+                                      setAtividadesList(updated);
+                                    }}
+                                    className="text-primary focus:ring-primary/20 border-slate-300"
+                                  />
+                                  <span>Múltipla Entrega (Texto + Imagem)</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                              <label className="flex items-center justify-between cursor-pointer group gap-4 p-3.5 bg-white border border-slate-200 rounded-xl">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Atividade Pontuada (Vale nota)</span>
+                                  <span className="text-label-sm text-slate-400 mt-0.5">Se desmarcado, a atividade servirá apenas como exercício formativo (sem nota/pontos)</span>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={act.pontua}
+                                  onChange={(e) => {
+                                    const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, pontua: e.target.checked } : a);
+                                    setAtividadesList(updated);
+                                  }}
+                                  className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                />
+                              </label>
+
+                              {isQuiz && (
+                                <div className="p-4 bg-indigo-50/50 border border-indigo-150 rounded-xl space-y-3">
+                                  <label className="flex items-center justify-between cursor-pointer group gap-4">
+                                    <div className="flex flex-col text-left">
+                                      <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Questionário Exclusivo</span>
+                                      <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o questionário terá perguntas específicas para esta atividade (em vez de compartilhar as do quiz principal da aula)</span>
+                                    </div>
+                                    <input
+                                      type="checkbox"
+                                      checked={act.atividade_quiz_proprio}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, atividade_quiz_proprio: checked } : a);
+                                        setAtividadesList(updated);
+                                        if (checked) {
+                                          setQuizSubTab(`atividade_${act.tempId}`);
+                                          const hasActivityQ = questoes.some(q => q.atividade_id === act.tempId || q.atividade_id === act.id);
+                                          if (!hasActivityQ) {
+                                            setQuestoes(prev => [
+                                              ...prev,
+                                              {
+                                                enunciado: 'Pergunta do Questionário...',
+                                                opcoes: ['Opção A', 'Opção B'],
+                                                resposta_correta: 'Opção A',
+                                                ordem: 1,
+                                                tipo: 'multipla_escolha',
+                                                atividade_id: act.tempId
+                                              }
+                                            ]);
+                                          }
+                                        } else {
+                                          setQuizSubTab('standard');
+                                        }
+                                      }}
+                                      className="w-10 h-6 bg-slate-200 checked:bg-indigo-500 rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                    />
+                                  </label>
+
+                                  <p className="text-[11px] text-indigo-650 italic font-medium leading-relaxed bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100">
+                                    {act.atividade_quiz_proprio 
+                                      ? 'ℹ As questões cadastradas na aba "Questões da Atividade" abaixo serão utilizadas exclusivamente para esta atividade.'
+                                      : 'ℹ As questões cadastradas na aba "Questões do Quiz" abaixo serão utilizadas para esta atividade.'}
+                                  </p>
+                                </div>
+                              )}
+
+                              <label className="flex items-center justify-between cursor-pointer group gap-4 p-3.5 bg-white border border-slate-200 rounded-xl">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Permitir refazer a atividade</span>
+                                  <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o aluno poderá reiniciar a atividade e enviar uma nova resposta antes de ser avaliado.</span>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={act.permite_refazer}
+                                  onChange={(e) => {
+                                    const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, permite_refazer: e.target.checked } : a);
+                                    setAtividadesList(updated);
+                                  }}
+                                  className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                />
+                              </label>
+                            </div>
                           </div>
-                          <input
-                            type="checkbox"
-                            checked={lessonForm.atividade_pontua}
-                            onChange={(e) => setLessonForm({ ...lessonForm, atividade_pontua: e.target.checked })}
-                            className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
-                          />
-                        </label>
-
-                        <label className="flex items-center justify-between cursor-pointer group gap-4 pt-2 border-t border-indigo-100/50">
-                          <div className="flex flex-col text-left">
-                            <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Questionário Exclusivo</span>
-                            <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o questionário terá perguntas específicas para esta atividade (em vez de compartilhar as do quiz principal da aula)</span>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={lessonForm.atividade_quiz_proprio}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setLessonForm(prev => ({ ...prev, atividade_quiz_proprio: checked }));
-                              if (checked) {
-                                setQuizSubTab('atividade');
-                                const hasActivityQ = questoes.some(q => !!q.atividade_id);
-                                if (!hasActivityQ) {
-                                  setQuestoes(prev => [
-                                    ...prev,
-                                    {
-                                      enunciado: 'Pergunta do Questionário...',
-                                      opcoes: ['Opção A', 'Opção B'],
-                                      resposta_correta: 'Opção A',
-                                      ordem: 1,
-                                      tipo: 'multipla_escolha',
-                                      atividade_id: 'pending'
-                                    }
-                                  ]);
-                                }
-                              } else {
-                                setQuizSubTab('standard');
-                              }
-                            }}
-                            className="w-10 h-6 bg-slate-200 checked:bg-indigo-500 rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
-                          />
-                        </label>
-
-                        <p className="text-[11px] text-indigo-650 italic font-medium leading-relaxed bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100">
-                          {lessonForm.atividade_quiz_proprio 
-                            ? 'ℹ As questões cadastradas na aba "Questões da Atividade" abaixo serão utilizadas exclusivamente para esta atividade.'
-                            : 'ℹ As questões cadastradas na aba "Questões do Quiz" abaixo serão utilizadas para esta atividade.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Permite Refazer Option */}
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                      <label className="flex items-center justify-between cursor-pointer group gap-4">
-                        <div className="flex flex-col text-left">
-                          <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Permitir refazer a atividade</span>
-                          <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o aluno poderá reiniciar a atividade e enviar uma nova resposta antes de ser avaliado.</span>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={lessonForm.atividade_permite_refazer}
-                          onChange={(e) => setLessonForm({ ...lessonForm, atividade_permite_refazer: e.target.checked })}
-                          className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
-                        />
-                      </label>
+                        );
+                      })}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAtividadesList([
+                          ...atividadesList,
+                          {
+                            tempId: 'temp_' + Math.random().toString(36).substr(2, 9),
+                            enunciado: '',
+                            tipo_entrega: 'texto',
+                            pontua: true,
+                            permite_refazer: true,
+                            atividade_quiz_proprio: false
+                          }
+                        ]);
+                      }}
+                      className="w-full py-3.5 rounded-xl border-2 border-dashed border-slate-300 hover:border-primary text-slate-600 hover:text-primary font-heading font-bold text-label-md transition-all flex items-center justify-center gap-2 cursor-pointer bg-white hover:bg-primary/[0.02]"
+                    >
+                      <HugeiconsIcon icon={AddCircleIcon} size={18} />
+                      Adicionar Outra Atividade Prática nesta Aula
+                    </button>
                   </div>
                 )}
               </section>
 
               {/* QUIZ BUILDER AREA */}
-              {(activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) && (
+              {(activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) && (
                 <section className="app-card-padded relative overflow-hidden space-y-6">
                   {/* Quiz tabs */}
                   <div className="flex border-b border-slate-100">
@@ -2159,7 +2316,10 @@ Modelo JSON de saída:
                               : 'border-transparent text-slate-400 hover:text-slate-600'
                           }`}
                         >
-                          📝 Questões do Quiz
+                          <span className="flex items-center gap-1.5">
+                            <HugeiconsIcon icon={NotebookIcon} size={16} strokeWidth={2} />
+                            Questões do Quiz
+                          </span>
                         </button>
                         <button
                           type="button"
@@ -2170,23 +2330,30 @@ Modelo JSON de saída:
                               : 'border-transparent text-slate-400 hover:text-slate-600'
                           }`}
                         >
-                          🎮 Arena Estudea Live
+                          <span className="flex items-center gap-1.5">
+                            <HugeiconsIcon icon={GameControllerIcon} size={16} strokeWidth={2} />
+                            Arena Estudea Live
+                          </span>
                         </button>
                       </>
                     )}
-                    {lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio && (
+                    {lessonForm.has_atividade && atividadesList.filter(act => act.tipo_entrega === 'quiz' && act.atividade_quiz_proprio).map((act, idx) => (
                       <button
+                        key={act.tempId}
                         type="button"
-                        onClick={() => setQuizSubTab('atividade')}
+                        onClick={() => setQuizSubTab(`atividade_${act.tempId}`)}
                         className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] flex items-center gap-1.5 ${
-                          quizSubTab === 'atividade'
+                          quizSubTab === `atividade_${act.tempId}`
                             ? 'border-pink-500 text-pink-500'
                             : 'border-transparent text-slate-400 hover:text-slate-600'
                         }`}
                       >
-                        📋 Questões da Atividade
+                        <span className="flex items-center gap-1.5">
+                          <HugeiconsIcon icon={Quiz01Icon} size={16} strokeWidth={2} />
+                          Questões da Atividade #{idx + 1}
+                        </span>
                       </button>
-                    )}
+                    ))}
                   </div>
 
                   {quizSubTab === 'standard' ? (
@@ -2228,7 +2395,7 @@ Modelo JSON de saída:
                       {/* AI material generator block */}
                       <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-base">✨</span>
+                          <HugeiconsIcon icon={SparklesIcon} size={18} className="text-indigo-500" />
                           <span className="font-heading font-bold text-label-md text-indigo-650">Gerar com Inteligência Artificial</span>
                         </div>
                         <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -2280,6 +2447,11 @@ Modelo JSON de saída:
                     {questoes.map((q, qIndex) => {
                       const belongsToTab = (() => {
                         if (quizSubTab === 'arena') return !!q.para_arena;
+                        if (quizSubTab.startsWith('atividade_')) {
+                          const actTempId = quizSubTab.replace('atividade_', '');
+                          const act = atividadesList.find(a => a.tempId === actTempId || a.id === actTempId);
+                          return q.atividade_id === actTempId || (act?.id && q.atividade_id === act.id);
+                        }
                         if (quizSubTab === 'atividade') return !!q.atividade_id;
                         return !q.para_arena && !q.atividade_id;
                       })();
@@ -2294,7 +2466,7 @@ Modelo JSON de saída:
                           <div className={`absolute -left-[1px] top-4 bottom-4 w-[4px] rounded-r-md ${
                             quizSubTab === 'arena' 
                               ? 'bg-indigo-500' 
-                              : quizSubTab === 'atividade'
+                              : quizSubTab.startsWith('atividade_') || quizSubTab === 'atividade'
                                 ? 'bg-pink-500'
                                 : 'bg-primary'
                           }`}></div>
@@ -2373,16 +2545,14 @@ Modelo JSON de saída:
                                     }`}
                                   >
                                     {/* Correct check label */}
-                                    <label className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-slate-300 cursor-pointer peer-checked:border-primary">
-                                      <input
-                                        type="radio"
-                                        name={`q_${qIndex}_correct`}
-                                        checked={isCorrect}
-                                        onChange={() => handleSetCorrectOption(qIndex, opt)}
-                                        className="sr-only"
-                                      />
+                                    <div
+                                      onClick={() => handleSetCorrectOption(qIndex, opt)}
+                                      className={`flex items-center justify-center w-6 h-6 rounded-full border-2 cursor-pointer transition-all ${
+                                        isCorrect ? 'border-primary' : 'border-slate-300 hover:border-slate-400 bg-white'
+                                      }`}
+                                    >
                                       <div className={`w-3 h-3 rounded-full bg-primary transition-all ${isCorrect ? 'scale-100' : 'scale-0'}`}></div>
-                                    </label>
+                                    </div>
 
                                     <input
                                       type="text"
@@ -2406,14 +2576,31 @@ Modelo JSON de saída:
                                 );
                               })}
 
-                              <button
-                                type="button"
-                                onClick={() => handleAddOption(qIndex)}
-                                className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline pl-2 mt-2"
-                              >
-                                <HugeiconsIcon icon={AddCircleIcon} size={14} />
-                                Adicionar Opção
-                              </button>
+                              <div className="flex items-center gap-4 mt-2 pl-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddOption(qIndex)}
+                                  className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline"
+                                >
+                                  <HugeiconsIcon icon={AddCircleIcon} size={14} />
+                                  Adicionar Opção
+                                </button>
+
+                                {q.resposta_correta && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newQuestions = [...questoes];
+                                      newQuestions[qIndex].resposta_correta = '';
+                                      setQuestoes(newQuestions);
+                                    }}
+                                    className="flex items-center gap-1 text-error font-heading font-bold text-label-sm hover:underline"
+                                  >
+                                    <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                                    Limpar Resposta Correta
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -2442,7 +2629,9 @@ Modelo JSON de saída:
                                         onChange={() => handleToggleCorrectOptionMulti(qIndex, opt)}
                                         className="sr-only"
                                       />
-                                      <span className={`text-[12px] font-extrabold text-primary transition-all ${isCorrect ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>✓</span>
+                                      {isCorrect ? (
+                                        <HugeiconsIcon icon={Tick01Icon} size={14} className="text-primary animate-scale-up" strokeWidth={3} />
+                                      ) : null}
                                     </label>
 
                                     <input
@@ -2467,14 +2656,31 @@ Modelo JSON de saída:
                                 );
                               })}
 
-                              <button
-                                type="button"
-                                onClick={() => handleAddOption(qIndex)}
-                                className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline pl-2 mt-2"
-                              >
-                                <HugeiconsIcon icon={AddCircleIcon} size={14} />
-                                Adicionar Opção
-                              </button>
+                              <div className="flex items-center gap-4 mt-2 pl-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddOption(qIndex)}
+                                  className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline"
+                                >
+                                  <HugeiconsIcon icon={AddCircleIcon} size={14} />
+                                  Adicionar Opção
+                                </button>
+
+                                {q.resposta_correta && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newQuestions = [...questoes];
+                                      newQuestions[qIndex].resposta_correta = '';
+                                      setQuestoes(newQuestions);
+                                    }}
+                                    className="flex items-center gap-1 text-error font-heading font-bold text-label-sm hover:underline"
+                                  >
+                                    <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                                    Limpar Respostas Corretas
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
 

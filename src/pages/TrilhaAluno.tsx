@@ -24,7 +24,14 @@ import {
   Calendar01Icon,
   Home01Icon,
   MapsIcon,
-  UserAccountIcon
+  UserAccountIcon,
+  GameControllerIcon,
+  Medal01Icon,
+  Medal02Icon,
+  Medal03Icon,
+  DiamondIcon,
+  CrownIcon,
+  InformationCircleIcon
 } from '@hugeicons/core-free-icons';
 
 const renderFormattedText = (text: string) => {
@@ -216,8 +223,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const [quizPassed, setQuizPassed] = useState<boolean | null>(null);
 
   // Activity interactive state
-  const [activityResponse, setActivityResponse] = useState('');
-  const [activityImage, setActivityImage] = useState('');
+  const [activityResponse, setActivityResponse] = useState<Record<string, string>>({});
+  const [activityImage, setActivityImage] = useState<Record<string, string>>({});
   const [submittingActivity, setSubmittingActivity] = useState(false);
   const [activitySuccessMsg, setActivitySuccessMsg] = useState<string | null>(null);
   const [activityErrorMsg, setActivityErrorMsg] = useState<string | null>(null);
@@ -427,8 +434,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     setQuizSubmitted(false);
     setQuizScore(null);
     setQuizPassed(null);
-    setActivityResponse('');
-    setActivityImage('');
+    setActivityResponse({});
+    setActivityImage({});
     setActivitySuccessMsg(null);
     setActivityErrorMsg(null);
     setIsRedoingActivity({});
@@ -450,24 +457,41 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
     // Pre-fill activity if already submitted
     if (selectedAula && selectedAula.atividades && selectedAula.atividades.length > 0) {
-      const activeAtividade = selectedAula.atividades[0];
-      const existingEntrega = entregas.find(e => e.atividade_id === activeAtividade.id);
-      if (existingEntrega) {
-        if (activeAtividade.tipo_entrega === 'quiz') {
-          try {
-            const parsed = JSON.parse(existingEntrega.resposta);
-            if (parsed && parsed.respostas) {
-              setQuizAnswers(parsed.respostas);
+      const newResponses: Record<string, string> = {};
+      const newImages: Record<string, string> = {};
+      const newAnswers: Record<string, any> = {};
+
+      selectedAula.atividades.forEach(activeAtividade => {
+        const existingEntrega = entregas.find(e => e.atividade_id === activeAtividade.id);
+        if (existingEntrega) {
+          if (activeAtividade.tipo_entrega === 'quiz') {
+            try {
+              const parsed = JSON.parse(existingEntrega.resposta);
+              if (parsed && parsed.respostas) {
+                Object.assign(newAnswers, parsed.respostas);
+              }
+            } catch (e) {
+              console.error('Erro ao fazer parse da resposta do quiz:', e);
             }
-          } catch (e) {
-            console.error('Erro ao fazer parse da resposta do quiz:', e);
-          }
-        } else {
-          setActivityResponse(existingEntrega.resposta);
-          if (activeAtividade.tipo_entrega === 'imagem') {
-            setActivityImage(existingEntrega.resposta);
+          } else {
+            newResponses[activeAtividade.id] = existingEntrega.resposta;
+            if (activeAtividade.tipo_entrega === 'imagem') {
+              newImages[activeAtividade.id] = existingEntrega.resposta;
+            } else if (activeAtividade.tipo_entrega === 'multipla') {
+              try {
+                const parsed = JSON.parse(existingEntrega.resposta);
+                newResponses[activeAtividade.id] = parsed.texto || '';
+                newImages[activeAtividade.id] = parsed.imagem || '';
+              } catch (e) {}
+            }
           }
         }
+      });
+
+      setActivityResponse(newResponses);
+      setActivityImage(newImages);
+      if (Object.keys(newAnswers).length > 0) {
+        setQuizAnswers(newAnswers);
       }
     }
   }, [selectedAula, entregas]);
@@ -597,6 +621,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
   const handleSubmitActivity = async (atividadeId: string, tipo: 'texto' | 'imagem' | 'quiz' | 'multipla') => {
     let answer = '';
+    const actResponse = activityResponse[atividadeId] || '';
+    const actImage = activityImage[atividadeId] || '';
 
     if (tipo === 'quiz') {
       const activityRecord = selectedAula?.atividades?.find(a => a.id === atividadeId);
@@ -640,16 +666,16 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       }
       answer = JSON.stringify(payload);
     } else if (tipo === 'multipla') {
-      if (!activityResponse.trim() && !activityImage.trim()) {
+      if (!actResponse.trim() && !actImage.trim()) {
         setActivityErrorMsg('Por favor, insira um texto ou o link de uma imagem para enviar.');
         return;
       }
       answer = JSON.stringify({
-        texto: activityResponse.trim(),
-        imagem: activityImage.trim()
+        texto: actResponse.trim(),
+        imagem: actImage.trim()
       });
     } else {
-      answer = tipo === 'texto' ? activityResponse : activityImage;
+      answer = tipo === 'texto' ? actResponse : actImage;
     }
 
     if (!answer.trim()) {
@@ -711,9 +737,16 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         setEntregas(freshEntregas);
       }
 
-      // Automatically complete the lesson in progress map
+      // Automatically complete the lesson in progress map if all activities are delivered
       if (selectedAula && !isLessonCompleted(selectedAula.id)) {
-        await handleToggleCompletion(selectedAula.id, true);
+        const allActs = selectedAula.atividades || [];
+        const currentDeliveries = freshEntregas || entregas;
+        const allSubmitted = allActs.every(act => 
+          currentDeliveries.some(e => e.atividade_id === act.id)
+        );
+        if (allSubmitted) {
+          await handleToggleCompletion(selectedAula.id, true);
+        }
       }
 
       setIsRedoingActivity(prev => ({ ...prev, [atividadeId]: false }));
@@ -763,11 +796,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const studentXP = (completedAulasCount * 50) + ((profile?.maior_ofensiva || 0) * 20);
 
   const obterLiga = (xp: number) => {
-    if (xp <= 200) return { nome: 'Liga Bronze', emoji: '🥉', cor: 'from-amber-700 to-amber-500', shadow: 'shadow-amber-500/20', text: 'text-amber-700' };
-    if (xp <= 500) return { nome: 'Liga Prata', emoji: '🥈', cor: 'from-slate-400 to-slate-500', shadow: 'shadow-slate-500/20', text: 'text-slate-600' };
-    if (xp <= 1000) return { nome: 'Liga Ouro', emoji: '🥇', cor: 'from-yellow-400 to-yellow-500', shadow: 'shadow-yellow-500/20', text: 'text-yellow-600' };
-    if (xp <= 2000) return { nome: 'Liga Platina', emoji: '💎', cor: 'from-cyan-400 to-cyan-500', shadow: 'shadow-cyan-500/20', text: 'text-cyan-600' };
-    return { nome: 'Liga Diamante', emoji: '👑', cor: 'from-purple-500 to-indigo-600', shadow: 'shadow-purple-500/20', text: 'text-purple-600' };
+    if (xp <= 200) return { nome: 'Liga Bronze', icon: Medal03Icon, cor: 'from-amber-700 to-amber-500', shadow: 'shadow-amber-500/20', text: 'text-amber-700' };
+    if (xp <= 500) return { nome: 'Liga Prata', icon: Medal02Icon, cor: 'from-slate-400 to-slate-500', shadow: 'shadow-slate-500/20', text: 'text-slate-600' };
+    if (xp <= 1000) return { nome: 'Liga Ouro', icon: Medal01Icon, cor: 'from-yellow-400 to-yellow-500', shadow: 'shadow-yellow-500/20', text: 'text-yellow-600' };
+    if (xp <= 2000) return { nome: 'Liga Platina', icon: DiamondIcon, cor: 'from-cyan-400 to-cyan-500', shadow: 'shadow-cyan-500/20', text: 'text-cyan-600' };
+    return { nome: 'Liga Diamante', icon: CrownIcon, cor: 'from-purple-500 to-indigo-600', shadow: 'shadow-purple-500/20', text: 'text-purple-600' };
   };
 
   const ligaUsuario = obterLiga(studentXP);
@@ -1420,7 +1453,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                     Multiplayer Live
                   </span>
                   <h3 className="font-heading font-black text-body-md text-on-surface flex items-center gap-2">
-                    <span>🎮</span> Arena Estudea
+                    <HugeiconsIcon icon={GameControllerIcon} size={20} strokeWidth={2} />
+                    Arena Estudea
                   </h3>
                   <p className="text-xs text-on-surface-variant mt-1.5 font-medium leading-relaxed">
                     Entre com o código PIN fornecido pelo seu professor para participar do quiz competitivo em tempo real!
@@ -1814,11 +1848,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 const completedPoints = moduloAulas.filter(a => isLessonCompleted(a.id)).reduce((acc, curr) => acc + (curr.pontos || 0), 0);
 
                 // Count practical activities in modulo
-                const activitiesCount = moduloAulas.filter(a => a.atividades && a.atividades.length > 0).length;
-                const completedActivities = moduloAulas.filter(a => {
-                  const activity = a.atividades && a.atividades[0];
-                  return activity && entregas.some(e => e.atividade_id === activity.id);
-                }).length;
+                let activitiesCount = 0;
+                let completedActivities = 0;
+                moduloAulas.forEach(a => {
+                  if (a.atividades) {
+                    activitiesCount += a.atividades.length;
+                    completedActivities += a.atividades.filter(act => entregas.some(e => e.atividade_id === act.id)).length;
+                  }
+                });
 
                 return (
                   <div className="app-card-padded">
@@ -2198,7 +2235,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
               <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 shadow-sm space-y-5">
                 <div className="text-center space-y-1">
                   <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${ligaUsuario.cor} text-white flex items-center justify-center mx-auto shadow-md ${ligaUsuario.shadow}`}>
-                    <span className="text-xl">{ligaUsuario.emoji}</span>
+                    <HugeiconsIcon icon={ligaUsuario.icon} size={24} strokeWidth={2} />
                   </div>
                   <h3 className="font-heading font-black text-body-lg text-on-surface mt-3">{ligaUsuario.nome}</h3>
                   <p className="text-label-sm text-on-surface-variant">Classificação Semanal da Turma</p>
@@ -2243,11 +2280,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 <div className="space-y-2.5">
                   {leaderboard.map((user, index) => {
                     const position = index + 1;
-                    let posBadge = '';
+                    let posBadge: React.ReactNode = '';
                     
-                    if (position === 1) posBadge = '🥇';
-                    else if (position === 2) posBadge = '🥈';
-                    else if (position === 3) posBadge = '🥉';
+                    if (position === 1) posBadge = <HugeiconsIcon icon={Medal01Icon} size={20} className="text-yellow-500 mx-auto" />;
+                    else if (position === 2) posBadge = <HugeiconsIcon icon={Medal02Icon} size={20} className="text-slate-400 mx-auto" />;
+                    else if (position === 3) posBadge = <HugeiconsIcon icon={Medal03Icon} size={20} className="text-amber-600 mx-auto" />;
                     else posBadge = `#${position}`;
 
                     return (
@@ -2260,7 +2297,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="w-6 text-center font-heading font-black text-body-md text-on-surface-variant">
+                          <span className="w-6 text-center font-heading font-black text-body-md text-on-surface-variant flex items-center justify-center">
                             {posBadge}
                           </span>
                           <img 
@@ -2286,8 +2323,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 </div>
 
                 {/* Explanatory footer */}
-                <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl text-[11px] text-on-surface-variant/90 leading-relaxed font-sans font-medium text-center">
-                  🔥 <strong>Fique no Top 3</strong> para subir de Liga no fim de semana e ganhar medalhas e conquistas exclusivas!
+                <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl text-[11px] text-on-surface-variant/90 leading-relaxed font-sans font-medium flex items-center justify-center gap-2">
+                  <HugeiconsIcon icon={FireIcon} size={14} className="text-orange-500 shrink-0" strokeWidth={2.5} />
+                  <span>
+                    <strong>Fique no Top 3</strong> para subir de Liga no fim de semana e ganhar medalhas e conquistas exclusivas!
+                  </span>
                 </div>
               </div>
 
@@ -2364,10 +2404,6 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                             else if (aula.questoes && aula.questoes.length > 0) icon = Quiz01Icon;
                             else if (aula.arquivo_url) icon = BookOpen01Icon;
 
-                            const hasAtividade = aula.atividades && aula.atividades.length > 0;
-                            const atividade = hasAtividade ? aula.atividades![0] : null;
-                            const entrega = atividade ? entregas.find(e => e.atividade_id === atividade.id) : null;
-
                             return (
                               <div key={aula.id} className="space-y-1">
                                 <button
@@ -2395,28 +2431,31 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                   )}
                                 </button>
 
-                                {atividade && (
-                                  <div className="ml-6 pl-2.5 border-l border-outline-variant/30 flex items-center justify-between text-[11px] py-1 text-on-surface-variant/80">
-                                    <div className="flex items-center gap-1.5 truncate">
-                                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} className="text-secondary shrink-0" />
-                                      <span className="truncate">Atividade Prática</span>
+                                {aula.atividades && aula.atividades.map((act, actIdx) => {
+                                  const entrega = entregas.find(e => e.atividade_id === act.id);
+                                  return (
+                                    <div key={act.id} className="ml-6 pl-2.5 border-l border-outline-variant/30 flex items-center justify-between text-[11px] py-1 text-on-surface-variant/80">
+                                      <div className="flex items-center gap-1.5 truncate">
+                                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} className="text-secondary shrink-0" />
+                                        <span className="truncate">Ativ. {actIdx + 1}: {act.tipo_entrega}</span>
+                                      </div>
+                                      
+                                      <span className={`text-[9px] font-bold font-mono px-1.5 py-0.2 rounded border shrink-0 uppercase mr-1 ${
+                                        entrega?.nota !== null && entrega?.nota !== undefined
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : entrega
+                                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                          : 'bg-slate-100 text-slate-500 border-slate-200'
+                                      }`}>
+                                        {entrega?.nota !== null && entrega?.nota !== undefined
+                                          ? `Nota: ${entrega.nota}`
+                                          : entrega
+                                          ? 'Entregue'
+                                          : 'Pendente'}
+                                      </span>
                                     </div>
-                                    
-                                    <span className={`text-[9px] font-bold font-mono px-1.5 py-0.2 rounded border shrink-0 uppercase mr-1 ${
-                                      entrega?.nota !== null && entrega?.nota !== undefined
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        : entrega
-                                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                                    }`}>
-                                      {entrega?.nota !== null && entrega?.nota !== undefined
-                                        ? `Nota: ${entrega.nota}`
-                                        : entrega
-                                        ? 'Entregue'
-                                        : 'Pendente'}
-                                    </span>
-                                  </div>
-                                )}
+                                  );
+                                })}
                               </div>
                             );
                           })}
@@ -2562,11 +2601,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2.5} />
                             <span>Atividade Prática</span>
                             {(() => {
-                              const exactEntrega = entregas.find(e => e.atividade_id === selectedAula.atividades![0].id);
-                              if (!exactEntrega) {
+                              const allActs = selectedAula.atividades || [];
+                              const entregasForAula = entregas.filter(e => allActs.some(a => a.id === e.atividade_id));
+                              
+                              if (entregasForAula.length === 0) {
                                 return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
                               }
-                              if (exactEntrega.nota !== null) {
+                              if (entregasForAula.length < allActs.length) {
+                                return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
+                              }
+                              const allGraded = entregasForAula.every(e => e.nota !== null);
+                              if (allGraded) {
                                 return <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />;
                               }
                               return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />;
@@ -2744,7 +2789,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                               {/* Footer hint */}
                               {embedInfo.type === 'gdrive' && (
                                 <p className="text-[11px] text-on-surface-variant/70 text-center font-medium">
-                                  💡 Se o documento não carregar, verifique se o arquivo está com acesso público no Google Drive.
+                                  <span className="flex items-center justify-center gap-1.5">
+                                    <HugeiconsIcon icon={InformationCircleIcon} size={14} strokeWidth={2} />
+                                    Se o documento não carregar, verifique se o arquivo está com acesso público no Google Drive.
+                                  </span>
                                 </p>
                               )}
                             </div>
@@ -2838,12 +2886,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                         onClick={() => handleToggleAnswerMulti(q.id, opcao)}
                                         className={`w-full text-left p-3.5 rounded-lg border text-label-md transition-all flex items-start gap-2.5 ${optionStyle}`}
                                       >
-                                        <div className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center text-[10px] font-extrabold mt-0.5 ${
+                                        <div className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center mt-0.5 ${
                                           isSelected
                                             ? 'bg-secondary border-secondary text-white'
                                             : 'border-slate-300'
                                         }`}>
-                                          {isSelected && '✓'}
+                                          {isSelected && (
+                                            <HugeiconsIcon icon={Tick01Icon} size={10} strokeWidth={3} className="text-white" />
+                                          )}
                                         </div>
                                         <span>{opcao}</span>
                                       </button>
@@ -3243,13 +3293,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                             if (atividade.tipo_entrega === 'multipla') {
                                               try {
                                                 const parsed = JSON.parse(exactEntrega.resposta);
-                                                setActivityResponse(parsed.texto || '');
-                                                setActivityImage(parsed.imagem || '');
+                                                setActivityResponse(prev => ({ ...prev, [atividade.id]: parsed.texto || '' }));
+                                                setActivityImage(prev => ({ ...prev, [atividade.id]: parsed.imagem || '' }));
                                               } catch (e) {}
                                             } else if (atividade.tipo_entrega !== 'quiz') {
-                                              setActivityResponse(exactEntrega.resposta);
+                                              setActivityResponse(prev => ({ ...prev, [atividade.id]: exactEntrega.resposta || '' }));
                                               if (atividade.tipo_entrega === 'imagem') {
-                                                setActivityImage(exactEntrega.resposta);
+                                                setActivityImage(prev => ({ ...prev, [atividade.id]: exactEntrega.resposta || '' }));
                                               }
                                             }
                                           }}
@@ -3294,8 +3344,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
                                       {atividade.tipo_entrega === 'texto' ? (
                                         <textarea
-                                          value={activityResponse}
-                                          onChange={(e) => setActivityResponse(e.target.value)}
+                                          value={activityResponse[atividade.id] || ''}
+                                          onChange={(e) => setActivityResponse(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                           placeholder="Escreva sua resposta detalhada aqui..."
                                           rows={8}
                                           disabled={submittingActivity}
@@ -3306,8 +3356,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                           <div className="space-y-1.5 text-left">
                                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">1. Resposta Escrita (Código ou Texto)</span>
                                             <textarea
-                                              value={activityResponse}
-                                              onChange={(e) => setActivityResponse(e.target.value)}
+                                              value={activityResponse[atividade.id] || ''}
+                                              onChange={(e) => setActivityResponse(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                               placeholder="Escreva sua resposta detalhada aqui..."
                                               rows={6}
                                               disabled={submittingActivity}
@@ -3318,15 +3368,15 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                             <span className="text-[11px] font-bold text-slate-500 tracking-wider font-mono uppercase">2. Link/URL de Imagem (Opcional se preencheu texto)</span>
                                             <input
                                               type="url"
-                                              value={activityImage}
-                                              onChange={(e) => setActivityImage(e.target.value)}
+                                              value={activityImage[atividade.id] || ''}
+                                              onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                               placeholder="https://exemplo.com/sua-imagem.png"
                                               disabled={submittingActivity}
                                               className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                                             />
-                                            {activityImage.trim().startsWith('http') && (
+                                            {(activityImage[atividade.id] || '').trim().startsWith('http') && (
                                               <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
-                                                <img src={activityImage} alt="Preview do envio" className="max-h-36 object-cover" />
+                                                <img src={activityImage[atividade.id] || ''} alt="Preview do envio" className="max-h-36 object-cover" />
                                               </div>
                                             )}
                                           </div>
@@ -3377,7 +3427,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                               ? 'bg-secondary border-secondary text-white'
                                                               : 'border-slate-300'
                                                           }`}>
-                                                            {isSelected && '✓'}
+                                                            {isSelected && (
+                                                               <HugeiconsIcon icon={Tick01Icon} size={10} strokeWidth={3} className="text-white" />
+                                                             )}
                                                           </div>
                                                           <span>{opcao}</span>
                                                         </button>
@@ -3465,15 +3517,15 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                         <div className="space-y-2">
                                           <input
                                             type="url"
-                                            value={activityImage}
-                                            onChange={(e) => setActivityImage(e.target.value)}
+                                            value={activityImage[atividade.id] || ''}
+                                            onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                             placeholder="https://exemplo.com/sua-imagem.png"
                                             disabled={submittingActivity}
                                             className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                                           />
-                                          {activityImage.trim().startsWith('http') && (
+                                          {(activityImage[atividade.id] || '').trim().startsWith('http') && (
                                             <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
-                                              <img src={activityImage} alt="Preview do envio" className="max-h-36 object-cover" />
+                                              <img src={activityImage[atividade.id] || ''} alt="Preview do envio" className="max-h-36 object-cover" />
                                             </div>
                                           )}
                                         </div>
@@ -3511,13 +3563,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                             } else if (atividade.tipo_entrega === 'multipla') {
                                               try {
                                                 const parsed = JSON.parse(exactEntrega.resposta);
-                                                setActivityResponse(parsed.texto || '');
-                                                setActivityImage(parsed.imagem || '');
+                                                setActivityResponse(prev => ({ ...prev, [atividade.id]: parsed.texto || '' }));
+                                                setActivityImage(prev => ({ ...prev, [atividade.id]: parsed.imagem || '' }));
                                               } catch (e) {}
                                             } else {
-                                              setActivityResponse(exactEntrega.resposta);
+                                              setActivityResponse(prev => ({ ...prev, [atividade.id]: exactEntrega.resposta || '' }));
                                               if (atividade.tipo_entrega === 'imagem') {
-                                                setActivityImage(exactEntrega.resposta);
+                                                setActivityImage(prev => ({ ...prev, [atividade.id]: exactEntrega.resposta || '' }));
                                               }
                                             }
                                           }}
@@ -3531,7 +3583,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                         disabled={
                                           submittingActivity || 
                                           (atividade.tipo_entrega === 'texto' 
-                                            ? !activityResponse.trim() 
+                                            ? !(activityResponse[atividade.id] || '').trim() 
                                             : atividade.tipo_entrega === 'quiz'
                                               ? (() => {
                                                   const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
@@ -3541,12 +3593,12 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                   return activeQuestions.length === 0 || activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
-                                                ? (!activityResponse.trim() && !activityImage.trim())
-                                                : !activityImage.trim())
+                                                ? (!(activityResponse[atividade.id] || '').trim() && !(activityImage[atividade.id] || '').trim())
+                                                : !(activityImage[atividade.id] || '').trim())
                                         }
                                         className={`px-5 py-2.5 rounded-lg font-heading font-bold text-label-md flex items-center gap-2 transition-all ${
                                           (atividade.tipo_entrega === 'texto' 
-                                            ? activityResponse.trim() 
+                                            ? (activityResponse[atividade.id] || '').trim() 
                                             : atividade.tipo_entrega === 'quiz'
                                               ? (() => {
                                                   const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
@@ -3556,8 +3608,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                   return activeQuestions.length > 0 && !activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
-                                                ? (activityResponse.trim() || activityImage.trim())
-                                                : activityImage.trim()) && !submittingActivity
+                                                ? ((activityResponse[atividade.id] || '').trim() || (activityImage[atividade.id] || '').trim())
+                                                : (activityImage[atividade.id] || '').trim()) && !submittingActivity
                                             ? 'bg-primary text-on-primary shadow shadow-primary/15 hover:shadow-md hover:bg-primary-container hover:-translate-y-0.5'
                                             : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
                                         }`}

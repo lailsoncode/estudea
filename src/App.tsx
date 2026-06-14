@@ -16,7 +16,8 @@ import {
   Progress01Icon,
   Notification01Icon,
   UserCircleIcon,
-  Award01Icon
+  Award01Icon,
+  Trophy
 } from '@hugeicons/core-free-icons';
 import { supabase } from './lib/supabaseClient';
 import { usePendingCorrections } from './hooks/usePendingCorrections';
@@ -30,9 +31,11 @@ import { CentralCorrecoes } from './pages/CentralCorrecoes';
 import { PerfilUsuario } from './pages/PerfilUsuario';
 import { DashboardProfessorOverview } from './pages/DashboardProfessorOverview';
 import { NotificationBell } from './components/common/NotificationBell';
+import { MateriaisApoio } from './pages/MateriaisApoio';
+import { ArenaRanking } from './pages/ArenaRanking';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings';
-type UserTab = 'dashboard' | 'achievements' | 'profile';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-label-md transition-all w-full text-left ${
@@ -117,6 +120,7 @@ function App() {
       assignments: 'Criador de Cursos | Estudea',
       turmas: 'Gerenciar Turmas | Estudea',
       settings: 'Minha Conta | Estudea',
+      arena_ranking: 'Ranking da Arena | Estudea',
     };
     document.title = titles[activeTeacherTab] ?? 'Estudea';
   }, [activeTeacherTab, session, isAdmin, teacherView]);
@@ -128,6 +132,7 @@ function App() {
       dashboard: 'Minhas Aulas | Estudea',
       achievements: 'Minhas Conquistas | Estudea',
       profile: 'Meu Perfil | Estudea',
+      arena_ranking: 'Ranking da Arena | Estudea',
     };
     document.title = titles[activeUserTab] ?? 'Estudea';
   }, [activeUserTab, session, isAdmin, teacherView]);
@@ -225,6 +230,24 @@ function App() {
                 <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
               </button>
 
+              <button
+                onClick={() => { setActiveTeacherTab('materials'); setMobileMenuOpen(false); }}
+                className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
+                title="Materiais de Apoio (IA)"
+              >
+                <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTeacherTab('arena_ranking'); setMobileMenuOpen(false); }}
+                className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
+                title="Ranking da Arena"
+              >
+                <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
+              </button>
+
               <div className={`my-4 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
 
               <button
@@ -283,6 +306,8 @@ function App() {
                   {activeTeacherTab === 'turmas' && 'Gerencie turmas, códigos de acesso e enturmação de alunos.'}
                   {activeTeacherTab === 'corrections' && 'Avalie e dê feedbacks nas entregas dos alunos.'}
                   {activeTeacherTab === 'settings' && 'Configurações do painel administrativo.'}
+                  {activeTeacherTab === 'materials' && 'Acesse prompts e materiais de apoio para acelerar a criação com IA.'}
+                  {activeTeacherTab === 'arena_ranking' && 'Veja o ranking histórico das partidas da Arena Live.'}
                 </p>
               </div>
             </div>
@@ -337,6 +362,8 @@ function App() {
               {activeTeacherTab === 'progress' && <DashboardProfessor />}
               {activeTeacherTab === 'assignments' && <CourseBuilder />}
               {activeTeacherTab === 'turmas' && <GerenciadorTurmas />}
+              {activeTeacherTab === 'materials' && <MateriaisApoio />}
+              {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
               
               {activeTeacherTab === 'overview' && (
                 <DashboardProfessorOverview setActiveTab={setActiveTeacherTab} session={session} />
@@ -404,6 +431,15 @@ function App() {
               </button>
 
               <button
+                onClick={() => { setActiveUserTab('arena_ranking'); setMobileMenuOpen(false); }}
+                className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
+                title="Ranking da Arena"
+              >
+                <HugeiconsIcon icon={Trophy} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
+              </button>
+
+              <button
                 onClick={() => { setActiveUserTab('profile'); setMobileMenuOpen(false); }}
                 className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
                 title="Meu Perfil"
@@ -455,6 +491,7 @@ function App() {
                   {activeUserTab === 'dashboard' && 'Minhas Aulas'}
                   {activeUserTab === 'achievements' && 'Minhas Conquistas'}
                   {activeUserTab === 'profile' && 'Meu Perfil'}
+                  {activeUserTab === 'arena_ranking' && 'Ranking da Arena'}
                 </h3>
               </div>
             </div>
@@ -523,6 +560,8 @@ function App() {
                 />
               ) : activeUserTab === 'achievements' ? (
                 <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="achievements" />
+              ) : activeUserTab === 'arena_ranking' ? (
+                <ArenaRanking session={session} isAdmin={false} />
               ) : (
                 <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="trail" />
               )}

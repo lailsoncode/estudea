@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  GameControllerIcon,
+  CheckmarkCircle02Icon,
+  Medal01Icon,
+  Medal02Icon,
+  Medal03Icon,
+  FireIcon,
+  Trophy,
+  CrownIcon
+} from '@hugeicons/core-free-icons';
 
 interface ArenaLiveProfessorProps {
   session: any;
@@ -18,6 +29,8 @@ interface Player {
   nickname: string;
   total_score: number;
   streak: number;
+  aluno_id?: string | null;
+  turma_id?: string | null;
 }
 
 interface ResponseData {
@@ -251,7 +264,49 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
         .from('kahoot_sessions')
         .update({ status: 'finished' })
         .eq('id', gameSessionId);
-      
+
+      // Save ranking entries for all players
+      try {
+        const sorted = [...players].sort((a, b) => b.total_score - a.total_score);
+        const totalPlayers = sorted.length;
+
+        // Fetch per-player correct answer counts from kahoot_responses
+        const { data: allResponses } = await supabase
+          .from('kahoot_responses')
+          .select('player_id, is_correct')
+          .eq('session_id', gameSessionId);
+
+        // Fetch the quiz title
+        const selectedQuiz = quizzes.find(q => q.id === selectedAulaId);
+        const quizTitulo = selectedQuiz?.titulo || null;
+
+        const rankingEntries = sorted.map((p, idx) => {
+          const playerResponses = (allResponses || []).filter(r => r.player_id === p.id);
+          const totalCorrect = playerResponses.filter(r => r.is_correct).length;
+
+          return {
+            session_id: gameSessionId,
+            aluno_id: p.aluno_id || null,
+            turma_id: p.turma_id || null,
+            nickname: p.nickname,
+            total_score: p.total_score,
+            total_correct: totalCorrect,
+            total_questions: questions.length,
+            final_position: idx + 1,
+            total_players: totalPlayers,
+            streak_max: p.streak || 0,
+            quiz_titulo: quizTitulo,
+            played_at: new Date().toISOString(),
+          };
+        });
+
+        if (rankingEntries.length > 0) {
+          await supabase.from('arena_ranking').insert(rankingEntries);
+        }
+      } catch (err: any) {
+        console.error('Erro ao salvar ranking da arena:', err.message);
+      }
+
       // Broadcast to players
       const channel = supabase.channel(`kahoot_${pin}`);
       channel.send({
@@ -332,8 +387,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
       {/* Upper header */}
       <header className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold shadow-md">
-            🎮
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
+            <HugeiconsIcon icon={GameControllerIcon} size={18} strokeWidth={2} />
           </div>
           <div>
             <h1 className="font-heading font-black text-body-lg text-white leading-tight">Arena Estudea Live</h1>
@@ -502,7 +557,9 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                 <span className="text-xs text-primary font-bold uppercase tracking-wider">Resultado da Questão {currentQuestionIdx + 1}</span>
                 <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white">Opção Correta:</h2>
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl font-heading font-bold text-sm max-w-lg mx-auto">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">✔</span>
+                  <span className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} strokeWidth={3} />
+                  </span>
                   {questions[currentQuestionIdx].resposta_correta}
                 </div>
               </div>
@@ -556,11 +613,22 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                         <div key={p.id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
                           <div className="flex items-center gap-3">
                             <span className="w-6 text-center font-heading font-black text-sm text-slate-400">
-                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                              {idx === 0 ? (
+                                <HugeiconsIcon icon={Medal01Icon} size={18} className="text-yellow-405 drop-shadow inline-block" />
+                              ) : idx === 1 ? (
+                                <HugeiconsIcon icon={Medal02Icon} size={18} className="text-slate-300 drop-shadow inline-block" />
+                              ) : idx === 2 ? (
+                                <HugeiconsIcon icon={Medal03Icon} size={18} className="text-amber-600 drop-shadow inline-block" />
+                              ) : (
+                                `#${idx + 1}`
+                              )}
                             </span>
                             <span className="font-sans font-bold text-sm text-white">{p.nickname}</span>
                             {p.streak >= 3 && (
-                              <span className="text-[9px] bg-orange-500 text-white px-2 py-0.5 rounded font-extrabold uppercase animate-pulse">🔥 Fogo ({p.streak})</span>
+                              <span className="text-[9px] bg-orange-500 text-white px-2 py-0.5 rounded font-extrabold uppercase animate-pulse flex items-center gap-1">
+                                <HugeiconsIcon icon={FireIcon} size={10} strokeWidth={2.5} />
+                                Fogo ({p.streak})
+                              </span>
                             )}
                           </div>
                           <div className="font-heading font-black text-sm text-primary-fixed-dim">{p.total_score} pts</div>
@@ -587,8 +655,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
           {/* FINISHED STATE (PODIUM) */}
           {gameStatus === 'finished' && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 bg-radial-at-t from-purple-950 via-slate-950 to-black text-center space-y-12 animate-fade-in overflow-y-auto scrollbar-thin">
-              <div className="space-y-2">
-                <span className="text-xl">🏆</span>
+              <div className="space-y-2 flex flex-col items-center">
+                <HugeiconsIcon icon={Trophy} size={40} className="text-yellow-400 drop-shadow" />
                 <h2 className="text-4xl font-heading font-black text-white">Grande Pódio</h2>
                 <p className="text-slate-400 text-sm">Parabéns a todos os participantes!</p>
               </div>
@@ -617,7 +685,9 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                       {/* 1st place */}
                       {first && (
                         <div className="flex flex-col items-center flex-1 h-full group">
-                          <div className="text-yellow-400 text-lg mb-1 animate-bounce">👑</div>
+                          <div className="text-yellow-400 mb-1 animate-bounce">
+                            <HugeiconsIcon icon={CrownIcon} size={22} strokeWidth={2} />
+                          </div>
                           <div className="font-sans font-extrabold text-body-md text-yellow-300 mb-2 truncate max-w-[120px]">{first.nickname}</div>
                           <div className="w-full bg-gradient-to-t from-yellow-600 to-yellow-500 border-t-4 border-yellow-400 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-2xl relative">
                             <span className="text-4xl font-heading font-black text-white">1</span>
