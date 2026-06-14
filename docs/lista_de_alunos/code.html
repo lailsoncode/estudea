@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduFlow - Lista de Alunos - Turma 4B</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<!-- Tailwind Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#004ac6",
+                        "primary-container": "#2563eb",
+                        "on-primary": "#ffffff",
+                        "secondary": "#712ae2",
+                        "secondary-container": "#8a4cfc",
+                        "tertiary": "#005a82",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-surface": "#0b1c30",
+                        "on-surface-variant": "#434655",
+                        "outline": "#737686",
+                        "outline-variant": "#c3c6d7",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-content": "1280px",
+                        "margin-mobile": "16px",
+                        "xl": "3rem",
+                        "margin-desktop": "48px",
+                        "lg": "2rem",
+                        "md": "1.5rem",
+                        "sm": "1rem",
+                        "xs": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-background text-on-surface min-h-screen font-body overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant/30 z-50 flex flex-col py-md px-sm">
+<!-- Logo -->
+<div class="flex items-center gap-sm mb-xl px-sm">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined fill text-[28px]">school</span>
+</div>
+<div>
+<h1 class="font-display text-[20px] font-bold text-primary">EduFlow</h1>
+<p class="text-[12px] font-medium text-on-surface-variant">Portal do Professor</p>
+</div>
+</div>
+<!-- CTA -->
+<div class="px-sm mb-lg">
+<button class="w-full bg-primary text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-primary-container transition-all flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                Novo Alinhamento
+            </button>
+</div>
+<!-- Links -->
+<div class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-primary/10 border-r-4 border-primary" href="#">
+<span class="material-symbols-outlined fill">group</span>
+<span class="font-medium">Alunos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-medium">Central de Correção</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-medium">Atividades</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-medium">Cursos</span>
+</a>
+</div>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium">Configurações</span>
+</a>
+</div>
+</nav>
+<!-- Header Section (Fixed at top right) -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-white/80 backdrop-blur-md border-b border-outline-variant/30 z-40 hidden md:flex items-center justify-between px-lg">
+<div class="flex-1 max-w-xl">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 rounded-full py-2 pl-10 pr-4 text-sm" placeholder="Buscar por nome, ID ou status..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="flex items-center gap-sm">
+<div class="text-right hidden lg:block">
+<p class="text-sm font-bold">Prof. Ricardo M.</p>
+<p class="text-[11px] text-on-surface-variant">Coordenador de Lógica</p>
+</div>
+<img alt="Profile" class="w-10 h-10 rounded-full border-2 border-primary/10 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgiWQ7zeRuB1NU1XrHO_2KXZ1zKIJJ29kaMt6IUD9xWuL8xfJ-5FF6PF8sL5AmKXXpZ2YAXHZha9qmyvOeD5mQd2ATaW92m8YKA_1ZvtE2ySj7w1kVQoOUbYe-si849Rr9Wf4yovJY9BE9_R1Ah9Qva_Xt8aGo1bpIIeTuLAg8UFaIrYbsSmkd84YaDuGEZK7nq06XGp3J52TURMrdX6_dYoWA4f1WBVP3Aso7rEFFFpwU7kctIoTyIUGj7FPQbN1F0l3t6xmSRzE"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="md:ml-64 pt-24 px-margin-mobile md:px-margin-desktop pb-xl">
+<div class="max-w-[1280px] mx-auto space-y-lg">
+<!-- Page Title & Quick Filters -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
+<div>
+<div class="flex items-center gap-2 text-primary font-semibold text-sm mb-1">
+<span class="material-symbols-outlined text-[18px]">class</span>
+                        Lógica de Programação
+                    </div>
+<h2 class="font-display text-3xl font-extrabold text-on-surface">Lista de Alunos - Turma 4B</h2>
+<p class="text-on-surface-variant mt-1">32 alunos matriculados • Semestre 2024.2</p>
+</div>
+<div class="flex gap-sm">
+<div class="relative group">
+<button class="px-4 py-2 bg-white border border-outline-variant rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            Filtrar por Status
+                        </button>
+</div>
+<button class="px-4 py-2 bg-white border border-outline-variant rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+                        Exportar CSV
+                    </button>
+</div>
+</div>
+<!-- Student Table Container -->
+<div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50 border-b border-outline-variant/30">
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider">Aluno</th>
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider">Progresso Geral</th>
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider text-center">Frequência</th>
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider text-center">Autonomia Digital</th>
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider">Status de Risco</th>
+<th class="px-6 py-4 text-[13px] font-bold text-on-surface-variant uppercase tracking-wider text-right">Ações</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<!-- Student Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Alice" class="w-10 h-10 rounded-full object-cover border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5GwDMUR6nfjeTEHFU8uiz20gvDTOOXh0ZqOFIKAMWmFFNen115dFVKLqnPctnxH1iD6ZcME-qaEXJBxz2BbPd0pZEiD_f3WE4LOhCulcxXVY2gBd1pmX8XU1pR1UyLEXj6Z9-UnCtI3H5qXqtbyUPcrwk0DK8Q6jlyFIJTF6u63qj3DkoUxV0q3n6EkZ_HSOPA6VlNjr7_DmAPc1rzEK2oNql5z6-8KacZHOL6WaJCAANzAArQa2Esha9_FUfO43Azn-bDOsvX5A"/>
+<div>
+<p class="font-bold text-on-surface text-sm">Alice Freeman</p>
+<p class="text-[12px] text-on-surface-variant">alice.f@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 88%;"></div>
+</div>
+<span class="text-xs font-bold text-primary">88%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">95%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200">S (Supervisionado)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Excelente
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Student Row 2 (Risk) -->
+<tr class="hover:bg-error/5 transition-colors group bg-error/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-sm border border-outline-variant/30">MJ</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Marcus Johnson</p>
+<p class="text-[12px] text-on-surface-variant">marcus.j@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 24%;"></div>
+</div>
+<span class="text-xs font-bold text-error">24%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium text-error">62%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200">N (Necessita Apoio)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-error text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                                        Em Risco
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px] fill">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Student Row 3 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Sarah" class="w-10 h-10 rounded-full object-cover border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIcyQz8t4O1pyr7Z9lXZ-i1egXDWW46bDURcSq3HyUYE8LDtkn7Tfa1XD0cFPbIawvhj4TLReaubYPGDiEXepKYkAM6O_-1Zoj3rZPRBOXMO3Cdl8L4OKf6Ub9AaWdBJC6Jy-0bit6HcnoOzq4o0P9QMr2t4PuRRgFiz3hWBD6ydUa89FRxs-YgnhmODIqIvblzMHe7JWNjHtlcOAKh0SlJSEgsdWLml-Pjyiymo3GHjFgWz2n5oEB5R3IyLXlIP00Z61pWcOOPgA"/>
+<div>
+<p class="font-bold text-on-surface text-sm">Sarah Chen</p>
+<p class="text-[12px] text-on-surface-variant">sarah.chen@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 65%;"></div>
+</div>
+<span class="text-xs font-bold text-primary">65%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">88%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200">P (Pleno)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        No Caminho
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center font-bold text-primary text-sm border border-primary/20">RL</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Rodrigo Lima</p>
+<p class="text-[12px] text-on-surface-variant">rodrigo.l@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 72%;"></div>
+</div>
+<span class="text-xs font-bold text-primary">72%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">92%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200">P (Pleno)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        No Caminho
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-sm">BF</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Beatriz Faria</p>
+<p class="text-[12px] text-on-surface-variant">beatriz.f@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 rounded-full" style="width: 45%;"></div>
+</div>
+<span class="text-xs font-bold text-on-surface-variant">45%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">78%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200">N (Necessita Apoio)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Alerta Médio
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">GS</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Gustavo Santos</p>
+<p class="text-[12px] text-on-surface-variant">gustavo.s@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 92%;"></div>
+</div>
+<span class="text-xs font-bold text-primary">92%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">100%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200">S (Supervisionado)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Excelente
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-sm">LV</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Larissa Vieira</p>
+<p class="text-[12px] text-on-surface-variant">larissa.v@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 58%;"></div>
+</div>
+<span class="text-xs font-bold text-on-surface-variant">58%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium">84%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200">P (Pleno)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        No Caminho
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 8 (Risk) -->
+<tr class="hover:bg-error/5 transition-colors group bg-error/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-sm border border-outline-variant/30">TA</div>
+<div>
+<p class="font-bold text-on-surface text-sm">Tiago Alves</p>
+<p class="text-[12px] text-on-surface-variant">tiago.a@edu.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 w-48">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 18%;"></div>
+</div>
+<span class="text-xs font-bold text-error">18%</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="text-sm font-medium text-error">45%</span>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200">N (Necessita Apoio)</span>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-error text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                                        Em Risco
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" title="Chat">
+<span class="material-symbols-outlined text-[20px] fill">chat</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Ver Perfil">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-6 py-4 bg-surface-container-low/50 flex flex-col md:flex-row justify-between items-center gap-md text-sm text-on-surface-variant border-t border-outline-variant/30">
+<p>Exibindo 8 de 32 alunos</p>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded hover:bg-surface-container-high disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-white font-bold text-xs">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high font-bold text-xs transition-colors">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high font-bold text-xs transition-colors">3</button>
+<span class="px-2">...</span>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high font-bold text-xs transition-colors">4</button>
+<button class="p-2 rounded hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Dashboard Insights (To fill empty space if needed) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="bg-white p-lg rounded-xl border border-outline-variant/30 shadow-sm flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+<span class="material-symbols-outlined fill">trending_up</span>
+</div>
+<div>
+<p class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Média da Turma</p>
+<h4 class="text-2xl font-extrabold text-on-surface">64.5%</h4>
+</div>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant/30 shadow-sm flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined fill">warning</span>
+</div>
+<div>
+<p class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Alunos Críticos</p>
+<h4 class="text-2xl font-extrabold text-on-surface">04</h4>
+</div>
+</div>
+<div class="bg-white p-lg rounded-xl border border-outline-variant/30 shadow-sm flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined fill">verified_user</span>
+</div>
+<div>
+<p class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Engajamento</p>
+<h4 class="text-2xl font-extrabold text-on-surface">82%</h4>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

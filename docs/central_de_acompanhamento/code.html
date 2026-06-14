@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduFlow - Central de Acompanhamento do Estudante</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-low": "#eff4ff",
+                    "tertiary-container": "#0074a6",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "surface-tint": "#0053db",
+                    "inverse-surface": "#213145",
+                    "tertiary": "#005a82",
+                    "secondary-container": "#8a4cfc",
+                    "outline": "#737686",
+                    "on-primary-container": "#eeefff",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "on-tertiary-container": "#e4f2ff",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "on-secondary-fixed": "#25005a",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c3c6d7",
+                    "surface-dim": "#cbdbf5",
+                    "primary": "#004ac6",
+                    "surface": "#f8f9ff",
+                    "on-error-container": "#93000a",
+                    "background": "#f8f9ff",
+                    "surface-container": "#e5eeff",
+                    "tertiary-fixed-dim": "#89ceff",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#eaddff",
+                    "primary-container": "#2563eb",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-container": "#fffbff",
+                    "on-background": "#0b1c30",
+                    "inverse-primary": "#b4c5ff",
+                    "secondary": "#712ae2",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "on-tertiary-fixed": "#001e2f",
+                    "on-surface-variant": "#434655",
+                    "on-primary-fixed": "#00174b",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-tertiary-fixed-variant": "#004c6e",
+                    "on-surface": "#0b1c30",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "tertiary-fixed": "#c9e6ff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#dbe1ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "base": "4px",
+                    "margin-desktop": "48px",
+                    "md": "1.5rem",
+                    "xs": "0.5rem",
+                    "xl": "3rem",
+                    "sm": "1rem",
+                    "margin-mobile": "16px",
+                    "lg": "2rem",
+                    "max-width-content": "1280px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.75", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-white/75 dark:bg-inverse-surface/75 backdrop-blur-xl h-screen w-72 flex flex-col fixed left-0 top-0 bg-surface-container-low dark:bg-surface-dim shadow-sm z-50">
+<div class="flex flex-col h-full py-8 space-y-2">
+<div class="px-6 mb-8 flex flex-col">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">EduFlow</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Instructor Portal</span>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Students</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all duration-200" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-md text-label-md">Correction Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all duration-200" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md text-label-md">Assignments</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all duration-200" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Courses</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<div class="px-4 mt-auto">
+<button class="w-full bg-gradient-to-b from-primary to-primary-container text-on-primary py-3 px-6 rounded-lg font-label-md text-label-md hover:shadow-md transition-shadow">Create New Course</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-72 flex flex-col min-h-screen relative">
+<!-- TopNavBar -->
+<header class="bg-white/75 dark:bg-inverse-surface/75 backdrop-blur-xl docked full-width top-0 sticky z-40 bg-white/75 dark:bg-inverse-surface/75 shadow-sm shadow-sm flex justify-between items-center h-20 px-lg w-full">
+<div class="flex items-center gap-4">
+<div class="relative bg-surface-container-low rounded-lg flex items-center px-3 py-2 border border-outline-variant focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md text-on-surface ml-2 w-64 placeholder-outline" placeholder="Search students..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-2">
+<button class="hover:bg-surface-container-low dark:hover:bg-surface-container-high rounded-full p-2 transition-all text-on-surface-variant dark:text-outline-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container-low dark:hover:bg-surface-container-high rounded-full p-2 transition-all text-on-surface-variant dark:text-outline-variant">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+<div class="flex items-center gap-3 border-l border-outline-variant pl-6">
+<img alt="Teacher Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-surface-container-lowest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuK2akvdGQyEcPVhAsdtDLxuhjmz1L8c6FAkN31JdvGzSBc-kyHkK9DaiJzInRqlnIAbojL4f0tOf3ozQvq0Lg9LYdZqfOI63tJpwYNu25rltk96sYiCZJP1KCafPSG55jEONYIJpEpQtlR6vfoFqVL3PBnXlqQ_MgTQ1Uvaxx8QDCn-eNBbcD68gA5_cbrRa1iayJnA0ArNxXyrr0EoNFGN_pFZSld2K7IPZLcl9wdxX0CtNyOsAu94zeqq0XK-RnR2OplrkXpLw"/>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">Sign Out</button>
+</div>
+</div>
+</header>
+<!-- Canvas Content -->
+<main class="flex-1 p-gutter overflow-y-auto">
+<div class="max-w-content mx-auto h-full flex flex-col">
+<!-- Page Header -->
+<div class="mb-6">
+<div class="flex items-center gap-2 text-outline font-label-md text-label-md mb-2">
+<span>Students</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
+<span class="text-primary">Central Acompanhamento</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-background">Central de Acompanhamento</h1>
+</div>
+<!-- Full Width Header Section -->
+<div class="glass-panel rounded-xl p-6 mb-8 hover:shadow-lg transition-all duration-300">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+<!-- Student Profile Info -->
+<div class="flex items-center gap-6 min-w-max">
+<div class="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-md text-headline-lg font-bold shadow-inner">
+                JS
+            </div>
+<div>
+<h2 class="font-headline-md text-[28px] font-bold text-on-surface leading-tight">João da Silva</h2>
+<p class="font-label-md text-[16px] text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[20px]">group</span> Turma 4B
+                </p>
+</div>
+</div>
+<!-- KPIs Horizontal Layout -->
+<div class="flex flex-wrap lg:flex-nowrap items-center gap-6 lg:gap-8 flex-1 justify-end">
+<!-- Progress -->
+<div class="w-full lg:w-48 space-y-2 border-r-0 lg:border-r border-surface-variant/50 lg:pr-8">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant uppercase tracking-wider">Progresso</span>
+<span class="font-bold text-primary">15% - Aula 6/40</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden shadow-inner">
+<div class="h-full bg-secondary rounded-full" style="width: 15%;"></div>
+</div>
+</div>
+<!-- Streak -->
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-size: 24px; font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Dias Ofensiva</p>
+<p class="font-headline-md text-[20px] font-bold text-on-surface">12 <span class="text-label-md font-normal text-outline">dias</span></p>
+</div>
+</div>
+<!-- Typing Speed -->
+<div class="flex items-center gap-4 lg:border-l border-surface-variant/50 lg:pl-8">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-size: 24px;">keyboard</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Média Digitação</p>
+<p class="font-headline-md text-[20px] font-bold text-on-surface">450 <span class="text-label-md font-normal text-outline">pal/m</span></p>
+</div>
+</div>
+<!-- Resolution Time -->
+<div class="flex items-center gap-4 lg:border-l border-surface-variant/50 lg:pl-8">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-size: 24px;">timer</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Tempo Resol.</p>
+<p class="font-headline-md text-[20px] font-bold text-on-surface">25 <span class="text-label-md font-normal text-outline">min</span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 2-Column Grid Layout (~65:35) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter flex-1 min-h-[600px]"><!-- Column 1: Ficha de Observação Prática (Col Span 4) -->
+<div class="xl:col-span-4 flex flex-col gap-6">
+<div class="glass-panel rounded-xl flex flex-col flex-1 overflow-hidden min-h-[400px]">
+<div class="p-5 border-b border-surface-variant/50 bg-surface-container-lowest/50">
+<h3 class="font-headline-md text-[20px] font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">visibility</span>
+                Ficha de Observação Prática
+            </h3>
+</div>
+<div class="p-5 overflow-y-auto space-y-4 flex-1 scrollbar-hide">
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Usa computador</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#10b981] text-white shadow-sm transition-transform scale-105">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Navega na internet</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#10b981] text-white shadow-sm transition-transform scale-105">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Cria e salva arquivos</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#ef4444] text-white shadow-sm transition-transform scale-105">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Organiza pastas</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#ef4444] text-white shadow-sm transition-transform scale-105">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Copia e cola links</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#10b981] text-white shadow-sm transition-transform scale-105">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Conhece redes sociais</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#10b981] text-white shadow-sm transition-transform scale-105">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group">
+<span class="font-body-md text-body-md text-on-surface">Conhece ferramentas</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">S</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#f59e0b] text-white shadow-sm transition-transform scale-105">P</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+<div class="flex items-center justify-between group mt-4 pt-4 border-t border-surface-variant/50">
+<span class="font-body-md text-body-md text-on-surface font-semibold">Precisa de apoio</span>
+<div class="flex gap-1 bg-surface-container-low p-1 rounded-full">
+<button class="w-10 h-8 rounded-full flex items-center justify-center font-label-sm font-bold bg-[#ef4444] text-white shadow-sm transition-transform scale-105">S</button>
+<button class="w-10 h-8 rounded-full flex items-center justify-center font-label-sm font-bold text-outline hover:bg-surface-container-high transition-colors">N</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: Inteligência Pedagógica (Col Span 4) -->
+<div class="xl:col-span-4 flex flex-col gap-4">
+<h3 class="font-headline-md text-[20px] font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">psychology</span>
+        Inteligência Pedagógica
+    </h3>
+<div class="flex flex-col gap-4">
+<div class="glass-panel bg-green-50/50 rounded-xl p-5 border-l-4 border-l-[#10b981]">
+<h4 class="font-label-md text-label-md text-[#047857] mb-3 uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+                Zonas de Domínio
+            </h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-white rounded-full font-label-sm text-label-sm text-[#065f46] shadow-sm border border-green-100">Frequência</span>
+<span class="px-3 py-1 bg-white rounded-full font-label-sm text-label-sm text-[#065f46] shadow-sm border border-green-100">Redes Sociais</span>
+<span class="px-3 py-1 bg-white rounded-full font-label-sm text-label-sm text-[#065f46] shadow-sm border border-green-100">Interação</span>
+</div>
+</div>
+<div class="glass-panel bg-red-50/50 rounded-xl p-5 border-l-4 border-l-[#ef4444]">
+<h4 class="font-label-md text-label-md text-[#b91c1c] mb-3 uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 18px;">warning</span>
+                Pontos de Atenção
+            </h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-white rounded-full font-label-sm text-label-sm text-[#991b1b] shadow-sm border border-red-100">Gestão de Arquivos</span>
+<span class="px-3 py-1 bg-white rounded-full font-label-sm text-label-sm text-[#991b1b] shadow-sm border border-red-100">Prazos</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Comunicação Direta (Col Span 4) -->
+<div class="xl:col-span-4 flex flex-col h-full">
+<div class="glass-panel rounded-xl flex flex-col h-full overflow-hidden border-t-4 border-t-secondary">
+<div class="p-4 border-b border-surface-variant/50 bg-surface-container-lowest/50 flex justify-between items-center">
+<h3 class="font-headline-md text-[18px] font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">forum</span>
+                Comunicação Direta
+            </h3>
+<span class="w-3 h-3 rounded-full bg-green-500 animate-pulse" title="Online"></span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-6 bg-surface-container-lowest/30">
+<div class="flex justify-end">
+<div class="max-w-[85%] bg-secondary-container text-on-secondary-container rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+<p class="font-body-md text-[15px] leading-relaxed">Olá João! Percebi que você teve um pouco de dificuldade na última aula ao salvar os documentos do projeto. Precisa de ajuda com as pastas?</p>
+<span class="block text-[11px] text-on-secondary-container/70 mt-1 text-right">09:41 AM</span>
+</div>
+</div>
+<div class="flex justify-start">
+<div class="flex gap-2 max-w-[85%]">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex-shrink-0 flex items-center justify-center font-label-sm text-on-surface-variant mt-auto">JS</div>
+<div class="bg-surface-container text-on-surface rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-surface-variant">
+<p class="font-body-md text-[15px] leading-relaxed">Oi professor. Sim, eu me perdi um pouco de onde o arquivo foi parar depois que baixei.</p>
+<span class="block text-[11px] text-on-surface-variant mt-1">09:45 AM</span>
+</div>
+</div>
+</div>
+<div class="flex justify-end">
+<div class="max-w-[85%] bg-secondary-container text-on-secondary-container rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+<p class="font-body-md text-[15px] leading-relaxed">Sem problemas! Geralmente eles vão para a pasta 'Downloads'. Vamos fazer um exercício rápido sobre isso na próxima aula presencial.</p>
+<span class="block text-[11px] text-on-secondary-container/70 mt-1 text-right">09:47 AM</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest border-t border-surface-variant/50">
+<div class="relative flex items-end gap-2 bg-surface rounded-xl border border-surface-variant p-2 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all">
+<button class="p-2 text-outline hover:text-secondary transition-colors rounded-full hover:bg-surface-container-low flex-shrink-0">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<textarea class="w-full bg-transparent border-none focus:ring-0 resize-none font-body-md text-on-surface placeholder-outline py-2 scrollbar-hide" placeholder="Digite sua mensagem para João..." rows="2"></textarea>
+<button class="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center flex-shrink-0 hover:bg-secondary/90 transition-colors shadow-sm mb-1">
+<span class="material-symbols-outlined" style="font-size: 20px;">send</span>
+</button>
+</div>
+</div>
+</div>
+</div></div>
+</div>
+</main>
+</div>
+</body></html>

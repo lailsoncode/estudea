@@ -1,0 +1,7 @@
+Criar uma maneira de acompanhar o aluno, frequência, pontuar suas maiores dificuldades, auxiliar, criar um chat com o professor, Ter tipo um diagnóstico/evolução, o que ele domina, onde tem mais dificuldades, ter parâmetros de acompanhamento
+
+Atualizar kahoot para aparecer pergunta para o aluno
+
+Deixar na tela do professor o kahoot com tema claro
+
+Dar opção de inserir multi materiais na aula

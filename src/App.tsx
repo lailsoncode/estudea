@@ -13,17 +13,21 @@ import {
   Cancel01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  Progress01Icon,
   Notification01Icon,
   UserCircleIcon,
   Award01Icon,
-  Trophy
+  Trophy,
+  UserGroupIcon,
+  Calendar01Icon
 } from '@hugeicons/core-free-icons';
+import { ListaAlunos } from './pages/ListaAlunos';
+import { CentralAcompanhamento } from './pages/CentralAcompanhamento';
+import { DiarioClasse } from './pages/DiarioClasse';
+
 import { supabase } from './lib/supabaseClient';
 import { usePendingCorrections } from './hooks/usePendingCorrections';
 import { LoginAluno } from './pages/LoginAluno';
 import { CadastroAluno } from './pages/CadastroAluno';
-import { DashboardProfessor } from './pages/DashboardProfessor';
 import { CourseBuilder } from './pages/CourseBuilder';
 import { GerenciadorTurmas } from './pages/GerenciadorTurmas';
 import { TrilhaAluno } from './pages/TrilhaAluno';
@@ -35,7 +39,7 @@ import { MateriaisApoio } from './pages/MateriaisApoio';
 import { ArenaRanking } from './pages/ArenaRanking';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario';
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
@@ -63,6 +67,11 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileStatus, setProfileStatus] = useState<string>('ativo');
+
+  // Student list & tracking center states
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [initialTrackingSection, setInitialTrackingSection] = useState<'chat' | 'ficha'>('ficha');
+
 
   const isAdmin = session?.user?.user_metadata?.role === 'admin';
   const shellStyle = {
@@ -116,12 +125,13 @@ function App() {
     if (!session || !isAdmin || teacherView !== 'content') return;
     const titles: Record<string, string> = {
       overview: 'Visão Geral | Estudea',
-      progress: 'Progresso dos Alunos | Estudea',
+      progress: 'Alunos | Estudea',
       corrections: 'Central de Correções | Estudea',
       assignments: 'Criador de Cursos | Estudea',
       turmas: 'Gerenciar Turmas | Estudea',
       settings: 'Minha Conta | Estudea',
       arena_ranking: 'Ranking da Arena | Estudea',
+      diario: 'Diário de Classe | Estudea',
     };
     document.title = titles[activeTeacherTab] ?? 'Estudea';
   }, [activeTeacherTab, session, isAdmin, teacherView]);
@@ -189,12 +199,28 @@ function App() {
               </button>
 
               <button
-                onClick={() => { setActiveTeacherTab('progress'); setMobileMenuOpen(false); }}
+                onClick={() => {
+                  setActiveTeacherTab('progress');
+                  setSelectedStudentId(null);
+                  setMobileMenuOpen(false);
+                }}
                 className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
-                title="Progresso dos Alunos"
+                title="Alunos"
               >
-                <HugeiconsIcon icon={Progress01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Progresso dos Alunos</span>
+                <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Alunos</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTeacherTab('diario');
+                  setMobileMenuOpen(false);
+                }}
+                className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
+                title="Diário de Classe"
+              >
+                <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
               </button>
 
               <button
@@ -300,7 +326,8 @@ function App() {
                 </h3>
                 <p className="text-on-surface-variant text-label-sm">
                   {activeTeacherTab === 'overview' && 'Visão geral das estatísticas.'}
-                  {activeTeacherTab === 'progress' && 'Acompanhe o engajamento e a conclusão de tarefas.'}
+                  {activeTeacherTab === 'progress' && 'Acompanhe a lista de alunos e a central de monitoramento de risco.'}
+                  {activeTeacherTab === 'diario' && 'Registre a frequência diária e observações da aula.'}
                   {activeTeacherTab === 'assignments' && 'Crie Cursos, gerencie módulos e organize lições.'}
                   {activeTeacherTab === 'turmas' && 'Gerencie turmas, códigos de acesso e enturmação de alunos.'}
                   {activeTeacherTab === 'corrections' && 'Avalie e dê feedbacks nas entregas dos alunos.'}
@@ -358,9 +385,34 @@ function App() {
           {/* Main workspace scrollable area */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-[1280px] mx-auto w-full">
-              {activeTeacherTab === 'progress' && <DashboardProfessor />}
+              {activeTeacherTab === 'progress' && (
+                selectedStudentId ? (
+                  <CentralAcompanhamento
+                    alunoId={selectedStudentId}
+                    initialTab={initialTrackingSection}
+                    onBack={() => setSelectedStudentId(null)}
+                    onChangeStudent={setSelectedStudentId}
+                  />
+                ) : (
+                  <ListaAlunos
+                    onSelectStudent={(id, section) => {
+                      setSelectedStudentId(id);
+                      setInitialTrackingSection(section || 'ficha');
+                    }}
+                  />
+                )
+              )}
               {activeTeacherTab === 'assignments' && <CourseBuilder />}
-              {activeTeacherTab === 'turmas' && <GerenciadorTurmas />}
+              {activeTeacherTab === 'turmas' && (
+                <GerenciadorTurmas
+                  onSelectStudent={(id, section) => {
+                    setSelectedStudentId(id);
+                    setInitialTrackingSection(section || 'ficha');
+                    setActiveTeacherTab('progress');
+                  }}
+                />
+              )}
+              {activeTeacherTab === 'diario' && <DiarioClasse />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
               

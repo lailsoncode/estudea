@@ -37,7 +37,11 @@ interface Aluno {
   email?: string;
 }
 
-export const GerenciadorTurmas: React.FC = () => {
+interface GerenciadorTurmasProps {
+  onSelectStudent?: (id: string, section?: 'chat' | 'ficha') => void;
+}
+
+export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectStudent }) => {
   // Data lists
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -434,6 +438,16 @@ export const GerenciadorTurmas: React.FC = () => {
                           </td>
                           <td className="py-3 text-right pr-2">
                             <div className="inline-flex gap-1">
+                              {/* Acompanhar Button */}
+                              {onSelectStudent && (
+                                <button
+                                  onClick={() => onSelectStudent(aluno.id, 'ficha')}
+                                  className="px-2.5 py-1 rounded-lg text-label-sm font-bold border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-colors"
+                                >
+                                  Acompanhar
+                                </button>
+                              )}
+
                               {/* Block/Unblock Button */}
                               <button
                                 onClick={() => handleToggleBlockStudent(aluno)}
