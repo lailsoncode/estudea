@@ -36,6 +36,8 @@ interface StudentProfile {
   tempo_resolucao: number;
   turma_nome?: string;
   anotacoes?: string | null;
+  aulas_concluidas?: number;
+  total_aulas?: number;
 }
 
 interface AutonomiaData {
@@ -250,35 +252,75 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
       // 1. Fetch Student Profile with Turma join
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*, turmas(nome)')
+        .select('*, turmas(nome, curso_id)')
         .eq('id', alunoId)
         .single();
 
       if (profileError) throw profileError;
 
       let tName = 'Sem Turma';
+      let cursoId = null;
       if (profileData) {
         const associatedTurma = profileData.turmas;
         if (associatedTurma) {
           tName = Array.isArray(associatedTurma)
             ? associatedTurma[0]?.nome || 'Sem Turma'
             : (associatedTurma as any).nome || 'Sem Turma';
+          cursoId = Array.isArray(associatedTurma)
+            ? associatedTurma[0]?.curso_id || null
+            : (associatedTurma as any).curso_id || null;
         }
+      }
 
+      let totalAulasCount = 0;
+      let completedAulasCount = 0;
+
+      if (profileData && profileData.turma_id && cursoId) {
+        // Fetch all modules of the course
+        const { data: modulosData } = await supabase
+          .from('modulos')
+          .select('id')
+          .eq('curso_id', cursoId);
+
+        if (modulosData && modulosData.length > 0) {
+          const moduloIds = modulosData.map(m => m.id);
+
+          // Get list of all lesson IDs in this course
+          const { data: courseAulasData } = await supabase
+            .from('aulas')
+            .select('id')
+            .in('modulo_id', moduloIds);
+
+          const courseAulaIds = new Set(courseAulasData?.map(a => a.id) || []);
+          totalAulasCount = courseAulaIds.size;
+
+          // Fetch student's progress to count completed lessons in this course
+          const { data: progressData } = await supabase
+            .from('progresso_alunos')
+            .select('aula_id')
+            .eq('aluno_id', alunoId);
+
+          completedAulasCount = progressData?.filter(p => courseAulaIds.has(p.aula_id)).length || 0;
+        }
+      }
+
+      if (profileData) {
         setProfile({
           id: profileData.id,
           nome: profileData.nome || 'João da Silva',
           email: profileData.email || 'joao.silva@edu.com',
           avatar_url: profileData.avatar_url,
-          progresso_geral: profileData.progresso_geral || 15,
-          frequencia: profileData.frequencia || 82,
+          progresso_geral: profileData.progresso_geral !== null && profileData.progresso_geral !== undefined ? profileData.progresso_geral : 0,
+          frequencia: profileData.frequencia !== null && profileData.frequencia !== undefined ? profileData.frequencia : 100,
           autonomia_digital: profileData.autonomia_digital || 'P',
           status_risco: profileData.status_risco || 'No Caminho',
-          media_digitacao: profileData.media_digitacao || 450,
-          ofensiva_atual: profileData.ofensiva_atual || 12,
-          tempo_resolucao: profileData.tempo_resolucao || 25,
+          media_digitacao: profileData.media_digitacao !== null && profileData.media_digitacao !== undefined ? profileData.media_digitacao : 0,
+          ofensiva_atual: profileData.ofensiva_atual !== null && profileData.ofensiva_atual !== undefined ? profileData.ofensiva_atual : 0,
+          tempo_resolucao: profileData.tempo_resolucao !== null && profileData.tempo_resolucao !== undefined ? profileData.tempo_resolucao : 0,
           turma_nome: tName,
-          anotacoes: profileData.anotacoes || ''
+          anotacoes: profileData.anotacoes || '',
+          aulas_concluidas: completedAulasCount,
+          total_aulas: totalAulasCount
         });
 
         setNotes(profileData.anotacoes || '');
@@ -797,7 +839,7 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
               <div className="w-full lg:w-48 space-y-2 border-r-0 lg:border-r border-slate-100 lg:pr-8">
                 <div className="flex justify-between font-label-sm text-xs font-bold">
                   <span className="text-on-surface-variant/60 uppercase tracking-wider">Progresso da Trilha</span>
-                  <span className="text-secondary">{profile.progresso_geral}% - Aula 6/40</span>
+                  <span className="text-secondary">{profile.progresso_geral}% - Aula {profile.aulas_concluidas || 0}/{profile.total_aulas || 0}</span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                   <div

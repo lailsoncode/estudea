@@ -21,9 +21,7 @@ import {
   Layers01Icon,
   TaskDone01Icon,
   Calendar01Icon,
-  Home01Icon,
   MapsIcon,
-  UserAccountIcon,
   GameControllerIcon,
   Medal01Icon,
   Medal02Icon,
@@ -3839,42 +3837,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         </div>
       )}
 
-      {/* BottomNavBar for Mobile */}
-      <nav className="bg-white/80 backdrop-blur-lg dark:bg-inverse-surface/90 font-label-sm text-label-sm fixed bottom-0 left-0 w-full z-50 rounded-t-2xl border-t border-outline-variant/30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:hidden flex justify-around items-center px-4 py-3 pb-safe">
-        <button 
-          onClick={() => setView('dashboard')}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-colors ${view === 'dashboard' ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}
-        >
-          <HugeiconsIcon icon={Home01Icon} size={20} strokeWidth={2} />
-          <span className="mt-1 text-[10px]">Home</span>
-        </button>
-        <button 
-          onClick={() => {
-            setView('dashboard');
-            setTimeout(() => {
-              document.getElementById('trail-section')?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }}
-          className="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:text-primary transition-colors"
-        >
-          <HugeiconsIcon icon={MapsIcon} size={20} strokeWidth={2} />
-          <span className="mt-1 font-medium text-[10px]">Trilha</span>
-        </button>
-        <button 
-          onClick={() => setView('achievements')}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-colors ${view === 'achievements' ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}
-        >
-          <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
-          <span className="mt-1 text-[10px]">Conquistas</span>
-        </button>
-        <button 
-          onClick={() => alert(`Perfil do Estudante: ${userName}`)}
-          className="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:text-primary transition-colors"
-        >
-          <HugeiconsIcon icon={UserAccountIcon} size={20} strokeWidth={2} />
-          <span className="mt-1 font-medium text-[10px]">Perfil</span>
-        </button>
-      </nav>
+
 
       {showRatingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-250">
