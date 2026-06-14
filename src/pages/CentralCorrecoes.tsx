@@ -34,7 +34,9 @@ interface Entrega {
 
 export const CentralCorrecoes: React.FC = () => {
   const [turmas, setTurmas] = useState<Turma[]>([]);
-  const [selectedTurmaId, setSelectedTurmaId] = useState<string>('todas');
+  const [selectedTurmaId, setSelectedTurmaId] = useState<string>(() => {
+    return localStorage.getItem('selectedTurmaId') || 'todas';
+  });
   const [statusFilter, setStatusFilter] = useState<'pendentes' | 'corrigidas' | 'todas'>('pendentes');
   const [searchQuery, setSearchQuery] = useState('');
   const [entregas, setEntregas] = useState<Entrega[]>([]);
@@ -432,7 +434,11 @@ export const CentralCorrecoes: React.FC = () => {
             <div className="relative">
               <select
                 value={selectedTurmaId}
-                onChange={(e) => setSelectedTurmaId(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedTurmaId(val);
+                  localStorage.setItem('selectedTurmaId', val);
+                }}
                 className="bg-slate-50 border border-slate-200 text-on-surface rounded-xl py-2 pl-3 pr-8 font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
               >
                 <option value="todas">Todas as Turmas</option>

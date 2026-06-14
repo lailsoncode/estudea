@@ -177,20 +177,31 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
         const courseModIds = courseModulos.map(m => m.id);
         const courseLessons = (aulasData || []).filter(l => l.modulo_id && courseModIds.includes(l.modulo_id));
 
-        // Calculate Average Progress
+        // Calculate Average Progress and Rating
         let avgProgress = 0;
-        if (sCount > 0 && courseLessons.length > 0) {
+        let realRating = null;
+        if (courseLessons.length > 0) {
           const lessonIds = courseLessons.map(l => l.id);
           const studentIds = courseStudents.map(s => s.id);
           const courseProgress = (progressData || []).filter(p => lessonIds.includes(p.aula_id) && studentIds.includes(p.aluno_id));
-          avgProgress = Math.round((courseProgress.length / (sCount * courseLessons.length)) * 100);
+          
+          if (sCount > 0) {
+            avgProgress = Math.round((courseProgress.length / (sCount * courseLessons.length)) * 100);
+          }
+
+          // Fetch all ratings for these lessons from progressData
+          const ratedProgress = courseProgress.filter(p => p.avaliacao !== null && p.avaliacao > 0);
+          if (ratedProgress.length > 0) {
+            const sumRating = ratedProgress.reduce((sum, p) => sum + (p.avaliacao as number), 0);
+            realRating = sumRating / ratedProgress.length;
+          }
         }
 
         return {
           ...course,
           studentCount: sCount,
           avgProgress,
-          rating: 4.8 + Math.round(Math.random() * 2) / 10 // Dynamic display rating
+          rating: realRating !== null ? realRating : 4.8 + Math.round(Math.random() * 2) / 10
         };
       });
 

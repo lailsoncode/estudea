@@ -32,6 +32,22 @@ interface Curso {
   created_at: string;
 }
 
+const CATEGORIAS_PADRAO = [
+  'Design UI/UX',
+  'Programação / Desenvolvimento',
+  'Banco de Dados',
+  'DevOps / Infraestrutura',
+  'Segurança da Informação',
+  'Inteligência Artificial',
+  'Ciência de Dados / Analytics',
+  'Redes de Computadores',
+  'Sistemas Operacionais',
+  'Metodologias Ágeis / Gestão de TI',
+  'Marketing Digital',
+  'Negócios & Inovação'
+];
+
+
 interface Modulo {
   id: string;
   curso_id: string;
@@ -151,6 +167,7 @@ export const CourseBuilder: React.FC = () => {
 
   // Forms States - Module
   const [newModuleTitle, setNewModuleTitle] = useState('');
+  const [numInitialLessons, setNumInitialLessons] = useState<number>(0);
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingModuleTitle, setEditingModuleTitle] = useState('');
 
@@ -608,15 +625,69 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     setSaving(true);
     try {
       const order = modulos.length + 1;
-      const { error } = await supabase
+      const { data: newModule, error } = await supabase
         .from('modulos')
         .insert({
           curso_id: selectedCourse.id,
           titulo: newModuleTitle.trim(),
           ordem: order
-        });
+        })
+        .select('id')
+        .single();
+      
       if (error) throw error;
+
+      if (newModule && numInitialLessons > 0) {
+        // Find the maximum lesson number and order across all existing lessons in the course
+        let lastLessonNumber = 0;
+        let lastLessonOrder = 0;
+        modulos.forEach(m => {
+          if (m.aulas) {
+            m.aulas.forEach(a => {
+              if (a.numero_aula > lastLessonNumber) {
+                lastLessonNumber = a.numero_aula;
+              }
+              if (a.ordem > lastLessonOrder) {
+                lastLessonOrder = a.ordem;
+              }
+            });
+          }
+        });
+
+        const lessonsPayloads = [];
+        
+        for (let i = 0; i < numInitialLessons; i++) {
+          const lessonIndex = i + 1;
+          const lessonNumber = lastLessonNumber + lessonIndex;
+          const lessonOrder = lastLessonOrder + lessonIndex;
+          const paddedIndex = lessonIndex < 10 ? `0${lessonIndex}` : `${lessonIndex}`;
+          
+          lessonsPayloads.push({
+            modulo_id: newModule.id,
+            titulo: `Aula ${paddedIndex}`,
+            conteudo: "===DESCRIPTION_END===",
+            tipo: "texto" as const,
+            numero_aula: lessonNumber,
+            ordem: lessonOrder,
+            pontos: 100,
+            nota_aprovacao: 70,
+            obrigatorio: true,
+            embaralhar_questoes: true,
+            permite_arena: true,
+            tempo_limite: null,
+            duracao: "Leitura"
+          });
+        }
+
+        const { error: lessonsError } = await supabase
+          .from('aulas')
+          .insert(lessonsPayloads);
+        
+        if (lessonsError) throw lessonsError;
+      }
+
       setNewModuleTitle('');
+      setNumInitialLessons(0);
       fetchModulesAndLessons(selectedCourse.id);
     } catch (err: any) {
       setError(err.message || 'Erro ao adicionar módulo.');
@@ -1659,19 +1730,37 @@ Modelo JSON de saída:
               {/* Add Module Inline Form */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-level-1 space-y-3">
                 <h4 className="font-heading font-extrabold text-body-md text-on-surface">Adicionar Novo Módulo</h4>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                   <input
                     type="text"
-                    placeholder="Ex: Introdução ao Adobe Illustrator"
+                    placeholder="Nome do módulo (Ex: Introdução ao Adobe Illustrator)"
                     value={newModuleTitle}
                     onChange={(e) => setNewModuleTitle(e.target.value)}
                     disabled={saving}
                     className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md"
                   />
+                  <div className="flex items-center gap-2">
+                    <label className="text-slate-500 font-heading font-semibold text-label-sm whitespace-nowrap">
+                      Aulas iniciais:
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={numInitialLessons || ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setNumInitialLessons(isNaN(val) ? 0 : Math.max(0, Math.min(50, val)));
+                      }}
+                      disabled={saving}
+                      className="w-20 px-3 py-2.5 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-center font-bold text-body-md"
+                    />
+                  </div>
                   <button
                     onClick={handleAddModule}
                     disabled={saving || !newModuleTitle.trim()}
-                    className="px-5 py-2.5 bg-primary text-on-primary font-heading font-bold text-label-sm rounded-xl hover:bg-primary-container disabled:opacity-50 transition-all"
+                    className="px-5 py-2.5 bg-primary text-on-primary font-heading font-bold text-label-sm rounded-xl hover:bg-primary-container disabled:opacity-50 transition-all whitespace-nowrap"
                   >
                     {saving ? 'Adicionando...' : 'Adicionar Módulo'}
                   </button>
@@ -2945,14 +3034,23 @@ Modelo JSON de saída:
                 <div className="flex flex-col gap-1">
                   <label className="text-label-sm font-bold text-slate-600">Categoria</label>
                   <select
-                    value={courseForm.categoria}
-                    onChange={(e) => setCourseForm({ ...courseForm, categoria: e.target.value })}
+                    value={CATEGORIAS_PADRAO.includes(courseForm.categoria) ? courseForm.categoria : 'Outro'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'Outro') {
+                        setCourseForm({ ...courseForm, categoria: '' });
+                      } else {
+                        setCourseForm({ ...courseForm, categoria: val });
+                      }
+                    }}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-label-md"
                   >
-                    <option value="Design UI/UX">Design UI/UX</option>
-                    <option value="Programação">Programação</option>
-                    <option value="Negócios">Negócios</option>
-                    <option value="Marketing">Marketing</option>
+                    {CATEGORIAS_PADRAO.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                    <option value="Outro">Outra Categoria...</option>
                   </select>
                 </div>
 
@@ -2980,6 +3078,19 @@ Modelo JSON de saída:
                   />
                 </div>
               </div>
+
+              {!CATEGORIAS_PADRAO.includes(courseForm.categoria) && (
+                <div className="flex flex-col gap-1 mt-2 animate-in fade-in duration-200">
+                  <label className="text-label-sm font-bold text-slate-600">Especificar Categoria Customizada</label>
+                  <input
+                    type="text"
+                    placeholder="Digite a categoria do curso (ex: Cybersecurity, Mobile, Banco de Dados, Redes...)"
+                    value={courseForm.categoria}
+                    onChange={(e) => setCourseForm({ ...courseForm, categoria: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md"
+                  />
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">

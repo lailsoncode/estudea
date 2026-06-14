@@ -233,6 +233,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   // Progress submission state
   const [updatingProgress, setUpdatingProgress] = useState(false);
 
+  // Lesson evaluation state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingLessonId, setRatingLessonId] = useState<string | null>(null);
+  const [ratingValue, setRatingValue] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
+
   // Nota: o background do ambiente do aluno é aplicado via classe Tailwind
   // no wrapper abaixo. Não injetamos mais estilos em document.body.
 
@@ -501,7 +508,6 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     return progresso.some(p => p.aula_id === aulaId);
   };
 
-  // Toggle completion of lesson manually
   const handleToggleCompletion = async (aulaId: string, forceConcluir = false) => {
     if (updatingProgress || !userId) return;
     setUpdatingProgress(true);
@@ -533,12 +539,61 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         if (insertData) {
           setProgresso(prev => [...prev, insertData[0]]);
           dispararCelebracao();
+          
+          // Open rating modal after successful completion!
+          setRatingLessonId(aulaId);
+          setRatingValue(0);
+          setShowRatingModal(true);
         }
       }
     } catch (err) {
       console.error('Erro ao atualizar progresso:', err);
     } finally {
       setUpdatingProgress(false);
+    }
+  };
+
+  const getLessonRating = (aulaId: string) => {
+    const p = progresso.find(x => x.aula_id === aulaId);
+    return p ? p.avaliacao : null;
+  };
+
+  const handleOpenRating = (aulaId: string, currentRating: number) => {
+    setRatingLessonId(aulaId);
+    setRatingValue(currentRating);
+    setHoverRating(0);
+    setShowRatingModal(true);
+  };
+
+  const handleSubmitRating = async () => {
+    if (!userId || !ratingLessonId || ratingValue === 0) return;
+    setSubmittingRating(true);
+    try {
+      const { error: ratingError } = await supabase
+        .from('progresso_alunos')
+        .upsert({
+          aluno_id: userId,
+          aula_id: ratingLessonId,
+          concluido_em: new Date().toISOString(),
+          avaliacao: ratingValue
+        }, { onConflict: 'aluno_id,aula_id' });
+
+      if (ratingError) throw ratingError;
+
+      // Update the progress list locally with the rating
+      setProgresso(prev => prev.map(p => {
+        if (p.aula_id === ratingLessonId) {
+          return { ...p, avaliacao: ratingValue };
+        }
+        return p;
+      }));
+
+      setShowRatingModal(false);
+      setRatingLessonId(null);
+    } catch (err) {
+      console.error('Erro ao enviar avaliação da aula:', err);
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -2506,16 +2561,45 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         </h3>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        {isLessonCompleted(selectedAula.id) ? (
-                          <span className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-label-sm font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                            <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={3} />
-                            Concluída
-                          </span>
-                        ) : (
-                          <span className="text-label-sm font-semibold text-on-surface-variant bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/40">
-                            Não Concluída
-                          </span>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex items-center gap-3">
+                          {isLessonCompleted(selectedAula.id) ? (
+                            <span className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-label-sm font-bold px-3 py-1.5 rounded-lg shadow-sm">
+                              <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={3} />
+                              Concluída
+                            </span>
+                          ) : (
+                            <span className="text-label-sm font-semibold text-on-surface-variant bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/40">
+                              Não Concluída
+                            </span>
+                          )}
+                        </div>
+                        {isLessonCompleted(selectedAula.id) && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] text-slate-400 font-semibold mr-1">Sua avaliação:</span>
+                            {(() => {
+                              const rating = getLessonRating(selectedAula.id);
+                              if (rating) {
+                                return (
+                                  <div className="flex gap-0.5 cursor-pointer" onClick={() => handleOpenRating(selectedAula.id, rating)}>
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                      <svg key={star} className={`w-3.5 h-3.5 ${star <= rating ? 'text-amber-500 fill-current' : 'text-slate-300'}`} viewBox="0 0 24 24">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                      </svg>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <button
+                                  onClick={() => handleOpenRating(selectedAula.id, 0)}
+                                  className="text-[11px] text-primary font-bold hover:underline"
+                                >
+                                  Avaliar Aula
+                                </button>
+                              );
+                            })()}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -3770,6 +3854,66 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       </nav>
       {showArenaLive && (
         <ArenaLiveAluno session={session} onClose={() => setShowArenaLive(false)} />
+      )}
+      {showRatingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-250">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl w-full max-w-sm space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 border border-amber-100 flex items-center justify-center mx-auto">
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Avalie esta Aula!</h3>
+              <p className="text-body-md text-on-surface-variant">Como foi sua experiência de aprendizado com este conteúdo?</p>
+            </div>
+
+            <div className="flex justify-center gap-2 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRatingValue(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-1 transition-transform hover:scale-110 focus:outline-none"
+                >
+                  <svg
+                    className={`w-9 h-9 transition-colors ${
+                      star <= (hoverRating || ratingValue)
+                        ? 'text-amber-500 fill-current'
+                        : 'text-slate-200'
+                    }`}
+                    viewBox="0 0 24 24"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRatingModal(false);
+                  setRatingLessonId(null);
+                }}
+                className="flex-1 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-heading font-bold text-label-sm rounded-xl transition-all cursor-pointer"
+              >
+                Pular
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitRating}
+                disabled={ratingValue === 0 || submittingRating}
+                className="flex-1 px-4 py-2.5 bg-primary text-on-primary font-heading font-bold text-label-sm rounded-xl hover:bg-primary-container disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {submittingRating ? 'Salvando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

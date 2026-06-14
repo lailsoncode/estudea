@@ -58,16 +58,22 @@ export const DiarioClasse: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [registeredAulasCount, setRegisteredAulasCount] = useState(0);
+
   useEffect(() => {
     fetchTurmas();
   }, []);
 
   useEffect(() => {
     if (selectedTurma) {
+      localStorage.setItem('selectedTurmaId', selectedTurma.id);
       fetchAulas(selectedTurma.curso_id);
+      fetchRegisteredLessonsCount(selectedTurma.id);
     } else {
       setAulas([]);
       setSelectedAula(null);
+      setRegisteredAulasCount(0);
     }
   }, [selectedTurma]);
 
@@ -89,13 +95,85 @@ export const DiarioClasse: React.FC = () => {
 
       if (data && data.length > 0) {
         setTurmas(data);
-        // Default to Turma 4B first, fallback to first in list
-        const defaultTurma = data.find((t) => t.nome === 'Turma 4B') || data[0];
+        const storedTurmaId = localStorage.getItem('selectedTurmaId');
+        const defaultTurma = data.find((t) => t.id === storedTurmaId) || data[0];
         setSelectedTurma(defaultTurma);
       }
     } catch (err: any) {
       console.error('Error fetching classes:', err);
       setError('Erro ao buscar turmas no banco de dados');
+    }
+  };
+
+  // Fetch count of unique registered lessons for the class
+  const fetchRegisteredLessonsCount = async (turmaId: string) => {
+    try {
+      const { data, error: err } = await supabase
+        .from('diario_classe')
+        .select('aula_id')
+        .eq('turma_id', turmaId);
+
+      if (err) throw err;
+
+      if (data) {
+        const uniqueIds = new Set(data.map((r: any) => r.aula_id));
+        setRegisteredAulasCount(uniqueIds.size);
+      } else {
+        setRegisteredAulasCount(0);
+      }
+    } catch (err) {
+      console.error('Error fetching registered lessons count:', err);
+    }
+  };
+
+  // Delete all attendance logs for selected class and lesson
+  const handleClearAttendance = async () => {
+    if (!selectedTurma || !selectedAula) return;
+    if (
+      !window.confirm(
+        'Tem certeza de que deseja excluir todos os registros de chamada desta aula? Esta ação é irreversível e atualizará a frequência de todos os alunos.'
+      )
+    )
+      return;
+
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('diario_classe')
+        .delete()
+        .eq('turma_id', selectedTurma.id)
+        .eq('aula_id', selectedAula.id);
+
+      if (deleteError) throw deleteError;
+
+      setSuccess('Registros de chamada excluídos com sucesso!');
+      setIsRegistered(false);
+      fetchRegisteredLessonsCount(selectedTurma.id);
+
+      // Reset local attendance to default present
+      const resetAttendance: Record<string, AttendanceRecord> = {};
+      students.forEach((s) => {
+        resetAttendance[s.id] = {
+          status: 'presente',
+          observacao: '',
+          compreendeu: 'S',
+          participou: 'S',
+          precisou_apoio: 'N'
+        };
+      });
+      setAttendance(resetAttendance);
+
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Error clearing attendance:', err);
+      setError(err.message || 'Erro ao excluir chamada do banco');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -200,7 +278,9 @@ export const DiarioClasse: React.FC = () => {
       });
 
       // Override with actual database logs
-      if (attendanceData) {
+      let registered = false;
+      if (attendanceData && attendanceData.length > 0) {
+        registered = true;
         attendanceData.forEach((record: any) => {
           if (initialAttendance[record.aluno_id]) {
             initialAttendance[record.aluno_id] = {
@@ -215,6 +295,7 @@ export const DiarioClasse: React.FC = () => {
       }
 
       setAttendance(initialAttendance);
+      setIsRegistered(registered);
     } catch (err: any) {
       console.error('Error fetching attendance:', err);
       setError(err.message || 'Erro ao carregar diário de classe');
@@ -316,6 +397,8 @@ export const DiarioClasse: React.FC = () => {
       if (upsertError) throw upsertError;
 
       setSuccess('Diário de classe salvo com sucesso!');
+      setIsRegistered(true);
+      fetchRegisteredLessonsCount(selectedTurma.id);
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
@@ -380,7 +463,22 @@ export const DiarioClasse: React.FC = () => {
       {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-heading font-extrabold text-2xl text-on-surface">Diário de Classe</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="font-heading font-extrabold text-2xl text-on-surface">Diário de Classe</h2>
+            {selectedAula && (
+              isRegistered ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100/50 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Chamada Registrada
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100/50 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  Pendente de Registro
+                </span>
+              )
+            )}
+          </div>
           <p className="text-on-surface-variant/70 text-xs font-semibold mt-1">Registre presenças, atrasos e acompanhe o engajamento dos alunos por aula.</p>
         </div>
 
@@ -396,6 +494,17 @@ export const DiarioClasse: React.FC = () => {
                 className="px-4 py-2 bg-white border border-outline-variant/60 rounded-xl text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
+
+            {isRegistered && (
+              <button
+                onClick={handleClearAttendance}
+                disabled={saving || loading || !selectedAula}
+                className="px-4 py-2.5 bg-red-50 hover:bg-red-100/60 border border-red-200 text-error rounded-xl text-sm font-bold flex items-center gap-1.5 transition-all self-end shadow-sm"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
+                <span>Limpar Registro</span>
+              </button>
+            )}
 
             <button
               onClick={handleSaveAll}
@@ -468,26 +577,31 @@ export const DiarioClasse: React.FC = () => {
             ) : aulas.length === 0 ? (
               <span className="text-xs text-on-surface-variant/40 italic font-semibold">Este curso não possui aulas cadastradas</span>
             ) : (
-              <select
-                value={selectedAula?.id || ''}
-                onChange={(e) => {
-                  const aula = aulas.find(a => a.id === e.target.value);
-                  if (aula) setSelectedAula(aula);
-                }}
-                className="bg-slate-50 hover:bg-slate-100/80 border border-outline-variant/40 px-3 py-2.5 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-10"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                  backgroundSize: '12px'
-                }}
-              >
-                {aulas.map(a => (
-                  <option key={a.id} value={a.id}>
-                    Aula {a.numero_aula}: {a.titulo}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2.5">
+                <select
+                  value={selectedAula?.id || ''}
+                  onChange={(e) => {
+                    const aula = aulas.find(a => a.id === e.target.value);
+                    if (aula) setSelectedAula(aula);
+                  }}
+                  className="bg-slate-50 hover:bg-slate-100/80 border border-outline-variant/40 px-3 py-2.5 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-10 animate-fade-in"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    backgroundSize: '12px'
+                  }}
+                >
+                  {aulas.map(a => (
+                    <option key={a.id} value={a.id}>
+                      Aula {a.numero_aula}: {a.titulo}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs font-bold text-on-surface-variant/65 bg-slate-50 border border-outline-variant/30 px-3 py-2 rounded-xl">
+                  {registeredAulasCount} / {aulas.length} registradas
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -668,10 +782,10 @@ export const DiarioClasse: React.FC = () => {
 
                           {/* Student Engagement Toggles */}
                           <td className="px-6 py-4">
-                            <div className="flex flex-col gap-2 max-w-sm mx-auto text-xs font-semibold">
+                            <div className="flex flex-row gap-6 justify-center items-center text-xs font-semibold">
                               {/* Compreendeu */}
-                              <div className="flex items-center justify-between gap-4">
-                                <span className="text-on-surface-variant/80 text-[11px] font-semibold">Compreendeu o assunto?</span>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Compreensão</span>
                                 <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
                                   <button
                                     onClick={() => handleToggleEngagement(student.id, 'compreendeu', 'S')}
@@ -704,8 +818,8 @@ export const DiarioClasse: React.FC = () => {
                               </div>
 
                               {/* Participou */}
-                              <div className="flex items-center justify-between gap-4">
-                                <span className="text-on-surface-variant/80 text-[11px] font-semibold">Participou ativamente?</span>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Participação</span>
                                 <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
                                   <button
                                     onClick={() => handleToggleEngagement(student.id, 'participou', 'S')}
@@ -738,8 +852,8 @@ export const DiarioClasse: React.FC = () => {
                               </div>
 
                               {/* Precisou Apoio */}
-                              <div className="flex items-center justify-between gap-4">
-                                <span className="text-on-surface-variant/80 text-[11px] font-semibold">Precisou de apoio extra?</span>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Apoio</span>
                                 <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
                                   <button
                                     onClick={() => handleToggleEngagement(student.id, 'precisou_apoio', 'S')}

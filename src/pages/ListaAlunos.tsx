@@ -14,7 +14,10 @@ import {
   Edit01Icon,
   Delete02Icon,
   SchoolIcon,
-  ArrowDown01Icon
+  ArrowDown01Icon,
+  KeyboardIcon,
+  FireIcon,
+  SparklesIcon
 } from '@hugeicons/core-free-icons';
 
 interface Student {
@@ -34,6 +37,10 @@ interface Turma {
   id: string;
   nome: string;
   codigo_acesso: string;
+  curso_id: string | null;
+  cursos?: {
+    titulo: string;
+  } | null;
 }
 
 interface ListaAlunosProps {
@@ -47,6 +54,11 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [selectedTurma, setSelectedTurma] = useState<Turma | null>(null);
   const [showTurmaDropdown, setShowTurmaDropdown] = useState(false);
+
+  const [aulas, setAulas] = useState<any[]>([]);
+  const [progresso, setProgresso] = useState<any[]>([]);
+  const [entregas, setEntregas] = useState<any[]>([]);
+  const [hoveredSquare, setHoveredSquare] = useState<{ studentId: string; lessonIndex: number } | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
@@ -79,7 +91,11 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
 
   useEffect(() => {
     if (selectedTurma) {
-      fetchStudents(selectedTurma.id);
+      localStorage.setItem('selectedTurmaId', selectedTurma.id);
+      setLoading(true);
+      fetchClassProgressData(selectedTurma.id, selectedTurma.curso_id || null).finally(() => {
+        setLoading(false);
+      });
     }
   }, [selectedTurma]);
 
@@ -88,15 +104,15 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     try {
       const { data, error } = await supabase
         .from('turmas')
-        .select('*')
+        .select('*, cursos(titulo)')
         .order('nome', { ascending: true });
 
       if (error) throw error;
       
       if (data && data.length > 0) {
         setTurmas(data);
-        // Default to Turma 4B first, fallback to first in list
-        const defaultTurma = data.find((t) => t.nome === 'Turma 4B') || data[0];
+        const storedTurmaId = localStorage.getItem('selectedTurmaId');
+        const defaultTurma = data.find((t) => t.id === storedTurmaId) || data[0];
         setSelectedTurma(defaultTurma);
       }
     } catch (err) {
@@ -104,11 +120,56 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     }
   };
 
-  // Fetch student profiles for selected class
-  const fetchStudents = async (turmaId: string) => {
-    setLoading(true);
+  // Fetch class progress data: lessons, students, progress, submissions
+  const fetchClassProgressData = async (turmaId: string, cursoId: string | null) => {
     setError(null);
     try {
+      // 1. Fetch Lessons dynamically based on course link or fallback
+      let sortedAulas: any[] = [];
+      if (cursoId) {
+        // Fetch modules of the course sorted by order
+        const { data: modulosData, error: modulosError } = await supabase
+          .from('modulos')
+          .select('id, ordem')
+          .eq('curso_id', cursoId)
+          .order('ordem', { ascending: true });
+
+        if (modulosError) throw modulosError;
+
+        if (modulosData && modulosData.length > 0) {
+          const moduloIds = modulosData.map(m => m.id);
+          // Fetch lessons linked to these modules
+          const { data: aulasData, error: aulasError } = await supabase
+            .from('aulas')
+            .select('*, atividades(*)')
+            .in('modulo_id', moduloIds);
+
+          if (aulasError) throw aulasError;
+
+          // Sort lessons client-side by module order, then lesson order
+          const modIdToOrder = new Map(modulosData.map((m, idx) => [m.id, idx]));
+          sortedAulas = (aulasData || []).sort((a, b) => {
+            const orderA = modIdToOrder.get(a.modulo_id!) ?? 999;
+            const orderB = modIdToOrder.get(b.modulo_id!) ?? 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return (a.ordem ?? 0) - (b.ordem ?? 0);
+          });
+        }
+      } else {
+        // Fallback: fetch global lessons (lessons with no modulo_id)
+        const { data: aulasData, error: aulasError } = await supabase
+          .from('aulas')
+          .select('*, atividades(*)')
+          .is('modulo_id', null)
+          .order('numero_aula', { ascending: true });
+
+        if (aulasError) throw aulasError;
+        sortedAulas = aulasData || [];
+      }
+
+      setAulas(sortedAulas);
+
+      // 2. Fetch student profiles in this class
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual')
@@ -119,6 +180,26 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       if (profilesError) throw profilesError;
 
       if (profilesData && profilesData.length > 0) {
+        const studentIds = profilesData.map((s) => s.id);
+
+        // 3. Fetch progress
+        const { data: progressoData, error: progressoError } = await supabase
+          .from('progresso_alunos')
+          .select('*')
+          .in('aluno_id', studentIds);
+
+        if (progressoError) throw progressoError;
+        setProgresso(progressoData || []);
+
+        // 4. Fetch submissions
+        const { data: entregasData, error: entregasError } = await supabase
+          .from('entregas_atividades')
+          .select('*')
+          .in('aluno_id', studentIds);
+
+        if (entregasError) throw entregasError;
+        setEntregas(entregasData || []);
+
         const formattedStudents: Student[] = profilesData.map((p: any) => ({
           id: p.id,
           nome: p.nome || 'Estudante Sem Nome',
@@ -134,12 +215,63 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
         setStudents(formattedStudents);
       } else {
         setStudents([]);
+        setProgresso([]);
+        setEntregas([]);
       }
     } catch (err) {
-      console.error('Error fetching students:', err);
+      console.error('Error fetching class progress data:', err);
       setStudents([]);
-    } finally {
-      setLoading(false);
+      setProgresso([]);
+      setEntregas([]);
+    }
+  };
+
+  const getSquareState = (studentId: string, aula: any) => {
+    if (!aula) return { status: 'nao_iniciado' as const, label: 'Aula não cadastrada' };
+
+    const hasProgresso = progresso.some((p) => p.aluno_id === studentId && p.aula_id === aula.id);
+    const atividade = aula.atividades?.[0];
+    const entrega = atividade
+      ? entregas.find((e) => e.aluno_id === studentId && e.atividade_id === atividade.id)
+      : null;
+
+    if (entrega) {
+      if (entrega.nota === null || entrega.feedback_professor === null) {
+        return {
+          status: 'pendente' as const,
+          label: `${aula.titulo} (Pendente de Correção)`,
+          entrega
+        };
+      } else {
+        return {
+          status: 'concluido' as const,
+          label: `${aula.titulo} (Concluído & Aprovado - Nota: ${entrega.nota})`,
+          entrega
+        };
+      }
+    }
+
+    if (hasProgresso) {
+      return {
+        status: 'concluido' as const,
+        label: `${aula.titulo} (Concluído)`
+      };
+    }
+
+    return {
+      status: 'nao_iniciado' as const,
+      label: `${aula.titulo} (Não Iniciado)`
+    };
+  };
+
+  const getColorClasses = (status: 'concluido' | 'pendente' | 'nao_iniciado') => {
+    switch (status) {
+      case 'concluido':
+        return 'bg-green-500 text-white';
+      case 'pendente':
+        return 'bg-yellow-400 text-on-surface';
+      case 'nao_iniciado':
+        return 'bg-gray-200 border border-gray-300/40';
     }
   };
 
@@ -179,16 +311,22 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       };
 
       if (editingStudent) {
-        // UPDATE student profile
+        // UPDATE student profile (only cadastral details, metrics are dynamic)
+        const updateData = {
+          nome: formNome,
+          email: formEmail,
+          avatar_url: formAvatarUrl.trim() || null
+        };
+
         const { error: updateError } = await supabase
           .from('profiles')
-          .update(formData)
+          .update(updateData)
           .eq('id', editingStudent.id);
 
         if (updateError) throw updateError;
 
         setStudents((prev) =>
-          prev.map((s) => (s.id === editingStudent.id ? { ...s, ...formData } : s))
+          prev.map((s) => (s.id === editingStudent.id ? { ...s, ...updateData } : s))
         );
       } else {
         // CREATE student profile linking to selected class
@@ -293,14 +431,14 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   // Dynamic statistics
   const averageProgress = students.length
     ? Math.round(students.reduce((acc, s) => acc + s.progresso_geral, 0) / students.length * 10) / 10
-    : 64.5;
+    : 0;
 
   const criticalStudentsCount = students.filter((s) => s.status_risco === 'Em Risco').length;
   const formattedCriticalCount = String(criticalStudentsCount).padStart(2, '0');
 
   const averageEngagement = students.length
     ? Math.round(students.reduce((acc, s) => acc + s.frequencia, 0) / students.length)
-    : 82;
+    : 0;
 
   // Export CSV function
   const handleExportCSV = () => {
@@ -347,7 +485,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
         <div>
           <div className="flex items-center gap-2 text-primary font-bold text-xs mb-1.5 uppercase tracking-wider">
             <HugeiconsIcon icon={SchoolIcon} size={16} strokeWidth={2.5} />
-            <span>Lógica de Programação</span>
+            <span>{selectedTurma?.cursos?.titulo || 'Curso Geral'}</span>
           </div>
           <div className="flex items-center gap-3">
             <h2 className="font-heading font-extrabold text-3xl text-on-surface leading-tight">
@@ -384,7 +522,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
             </div>
           </div>
           <p className="text-on-surface-variant text-sm mt-1.5 font-medium">
-            {filteredStudents.length} {filteredStudents.length === 1 ? 'aluno matriculado' : 'alunos matriculados'} • Semestre 2024.2
+            {filteredStudents.length} {filteredStudents.length === 1 ? 'aluno matriculado' : 'alunos matriculados'} • Semestre {new Date().getFullYear()}.{new Date().getMonth() < 6 ? '1' : '2'}
           </p>
         </div>
       </div>
@@ -496,175 +634,230 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
         </div>
       </div>
 
-      {/* Main Student Table Container */}
-      <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
+      {/* Main Student Cards Grid Container */}
+      <div>
         {loading ? (
-          <div className="p-12 text-center space-y-4">
+          <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm p-12 text-center space-y-4">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-sm font-semibold text-on-surface-variant animate-pulse">Carregando lista de alunos...</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-outline-variant/30">
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider">Aluno</th>
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider">Progresso Geral</th>
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center">Frequência</th>
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center">Autonomia Digital</th>
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider">Status de Risco</th>
-                    <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  {paginatedStudents.length > 0 ? (
-                    paginatedStudents.map((student) => {
-                      const isAtRisk = student.status_risco === 'Em Risco';
-                      return (
-                        <tr
-                          key={student.id}
-                          className={`transition-colors group hover:bg-slate-50/40 ${
-                            isAtRisk ? 'bg-red-50/20 hover:bg-red-50/40' : ''
-                          }`}
-                        >
-                          <td className="px-6 py-4.5">
-                            <div className="flex items-center gap-3">
-                              {student.avatar_url ? (
-                                <img
-                                  alt={student.nome}
-                                  className="w-10 h-10 rounded-full object-cover border border-outline-variant/30"
-                                  src={student.avatar_url}
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-on-surface-variant text-xs border border-outline-variant/30 select-none">
-                                  {getInitials(student.nome)}
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-bold text-on-surface text-sm">{student.nome}</p>
-                                <p className="text-[11px] font-medium text-on-surface-variant/60">{student.email}</p>
+            {paginatedStudents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {paginatedStudents.map((student) => {
+                  const isAtRisk = student.status_risco === 'Em Risco';
+                  const studentCompletedCount = aulas.filter(aula => getSquareState(student.id, aula).status === 'concluido').length;
+                  const calculatedXP = (studentCompletedCount * 50) + ((student.ofensiva_atual || 0) * 20);
+
+                  return (
+                    <article
+                      key={student.id}
+                      className={`bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all hover:-translate-y-1 flex flex-col justify-between ${
+                        isAtRisk ? 'border-error/20 bg-red-50/5' : 'border-outline-variant/30'
+                      }`}
+                    >
+                      <div>
+                        {/* Card Header: Avatar & Identification */}
+                        <div className="flex items-center justify-between mb-4.5 pb-4 border-b border-slate-100/60">
+                          <div className="flex items-center gap-3 truncate">
+                            {student.avatar_url ? (
+                              <img
+                                alt={student.nome}
+                                className="w-11 h-11 rounded-full object-cover border border-outline-variant/30 shrink-0"
+                                src={student.avatar_url}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center font-bold text-on-surface-variant text-xs border border-outline-variant/30 select-none shrink-0">
+                                {getInitials(student.nome)}
                               </div>
+                            )}
+                            <div className="truncate">
+                              <h4 className="font-bold text-on-surface text-sm truncate leading-tight hover:text-primary transition-colors cursor-pointer" onClick={() => onSelectStudent(student.id, 'ficha')}>{student.nome}</h4>
+                              <p className="text-[11px] font-medium text-on-surface-variant/60 truncate mt-0.5">{student.email}</p>
                             </div>
-                          </td>
-                          <td className="px-6 py-4.5 w-52">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    isAtRisk ? 'bg-error' : 'bg-primary'
-                                  }`}
-                                  style={{ width: `${student.progresso_geral}%` }}
-                                ></div>
-                              </div>
-                              <span
-                                className={`text-xs font-extrabold ${
-                                  isAtRisk ? 'text-error' : 'text-primary'
-                                }`}
-                              >
-                                {student.progresso_geral}%
+                          </div>
+
+                          {/* Gamification badges */}
+                          <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                            {(student.ofensiva_atual || 0) > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold bg-orange-50 border border-orange-200/30 px-1.5 py-0.5 rounded-full" title={`Ofensiva de ${student.ofensiva_atual} dias`}>
+                                <HugeiconsIcon icon={FireIcon} size={10} strokeWidth={2.5} />
+                                {student.ofensiva_atual}d
                               </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4.5 text-center">
-                            <span className={`text-sm font-semibold ${isAtRisk ? 'text-error' : 'text-on-surface'}`}>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 font-bold bg-purple-50 border border-purple-200/30 px-1.5 py-0.5 rounded-full" title="XP Acumulado">
+                              <HugeiconsIcon icon={SparklesIcon} size={10} strokeWidth={2.5} />
+                              {calculatedXP} XP
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Middle metrics list */}
+                        <div className="space-y-2.5">
+                          {/* Frequency */}
+                          <div className="flex items-center justify-between text-xs font-semibold border-b border-slate-100/40 pb-2">
+                            <span className="text-on-surface-variant/60">Frequência</span>
+                            <span className={`font-extrabold ${student.frequencia >= 75 ? 'text-emerald-600' : 'text-error'}`}>
                               {student.frequencia}%
                             </span>
-                          </td>
-                          <td className="px-6 py-4.5 text-center">
+                          </div>
+
+                          {/* Autonomia Digital */}
+                          <div className="flex items-center justify-between text-xs font-semibold border-b border-slate-100/40 pb-2">
+                            <span className="text-on-surface-variant/60">Autonomia Digital</span>
                             {student.autonomia_digital === 'S' && (
-                              <span className="inline-block px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200/50">
+                              <span className="inline-block px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/50">
                                 S (Supervisionado)
                               </span>
                             )}
                             {student.autonomia_digital === 'P' && (
-                              <span className="inline-block px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200/50">
+                              <span className="inline-block px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200/50">
                                 P (Pleno)
                               </span>
                             )}
                             {student.autonomia_digital === 'N' && (
-                              <span className="inline-block px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/50">
+                              <span className="inline-block px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200/50">
                                 N (Necessita Apoio)
                               </span>
                             )}
-                          </td>
-                          <td className="px-6 py-4.5">
+                          </div>
+
+                          {/* Status de Risco */}
+                          <div className="flex items-center justify-between text-xs font-semibold border-b border-slate-100/40 pb-2">
+                            <span className="text-on-surface-variant/60">Status de Risco</span>
                             {student.status_risco === 'Excelente' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100/50">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100/50">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                 Excelente
                               </span>
                             )}
                             {student.status_risco === 'No Caminho' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100/50">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-100/50">
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                                 No Caminho
                               </span>
                             )}
                             {student.status_risco === 'Alerta Médio' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100/50">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100/50">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                 Alerta Médio
                               </span>
                             )}
                             {student.status_risco === 'Em Risco' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-error text-xs font-bold border border-red-200/50">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 text-error text-[10px] font-bold border border-red-200/50">
                                 <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
                                 Em Risco
                               </span>
                             )}
-                          </td>
-                          <td className="px-6 py-4.5 text-right">
-                            <div className="flex justify-end gap-1">
-                              <button
-                                onClick={() => onSelectStudent(student.id, 'chat')}
-                                className="p-2 text-on-surface-variant/70 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                                title="Abrir Chat"
-                              >
-                                <HugeiconsIcon icon={Chat01Icon} size={20} strokeWidth={1.5} />
-                              </button>
-                              <button
-                                onClick={() => onSelectStudent(student.id, 'ficha')}
-                                className="p-2 text-on-surface-variant/70 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                                title="Visualizar Detalhes"
-                              >
-                                <HugeiconsIcon icon={EyeIcon} size={20} strokeWidth={1.5} />
-                              </button>
-                              <button
-                                onClick={() => handleEditStudentClick(student)}
-                                className="p-2 text-on-surface-variant/70 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                                title="Editar Cadastro"
-                              >
-                                <HugeiconsIcon icon={Edit01Icon} size={20} strokeWidth={1.5} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteStudentClick(student.id, student.nome)}
-                                className="p-2 text-on-surface-variant/70 hover:text-error hover:bg-error/5 rounded-xl transition-all"
-                                title="Excluir Aluno"
-                              >
-                                <HugeiconsIcon icon={Delete02Icon} size={20} strokeWidth={1.5} />
-                              </button>
+                          </div>
+                        </div>
+
+                        {/* General Progress Bar */}
+                        <div className="space-y-1.5 pt-3">
+                          <div className="flex justify-between text-[11px] font-bold">
+                            <span className="text-on-surface-variant/60">Progresso Geral</span>
+                            <span className={isAtRisk ? 'text-error' : 'text-primary'}>
+                              {studentCompletedCount}/{aulas.length} Aulas ({student.progresso_geral}%)
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner w-full">
+                            <div
+                              className={`h-full rounded-full ${isAtRisk ? 'bg-error' : 'bg-primary'}`}
+                              style={{ width: `${student.progresso_geral}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Dynamic Thermal Grid */}
+                        {aulas.length > 0 && (
+                          <div className="pt-4 border-t border-slate-100/60 mt-3.5">
+                            <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-wider mb-2">Grade de Aulas</p>
+                            <div className="grid gap-[3px] w-full relative" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>
+                              {aulas.map((aula, i) => {
+                                const squareData = getSquareState(student.id, aula);
+                                const isHovered =
+                                  hoveredSquare &&
+                                  hoveredSquare.studentId === student.id &&
+                                  hoveredSquare.lessonIndex === i;
+
+                                return (
+                                  <div
+                                    key={aula.id}
+                                    onMouseEnter={() => setHoveredSquare({ studentId: student.id, lessonIndex: i })}
+                                    onMouseLeave={() => setHoveredSquare(null)}
+                                    className={`aspect-square rounded-[2px] hover:scale-110 cursor-pointer transition-all ${getColorClasses(
+                                      squareData.status
+                                    )}`}
+                                    title={squareData.label}
+                                  >
+                                    {isHovered && (
+                                      <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-950 text-white text-[10px] font-semibold p-2 rounded-lg shadow-xl pointer-events-none text-center leading-normal">
+                                        <span className="font-extrabold block mb-0.5 border-b border-white/10 pb-0.5">Aula {aula.numero_aula}</span>
+                                        {squareData.label}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center font-medium text-on-surface-variant/60">
-                        Nenhum aluno encontrado para esta turma.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="flex items-center justify-between border-t border-slate-100/80 pt-3.5 mt-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => onSelectStudent(student.id, 'chat')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/5 hover:bg-secondary/15 text-secondary text-xs font-bold rounded-xl transition-all"
+                            title="Abrir Chat"
+                          >
+                            <HugeiconsIcon icon={Chat01Icon} size={15} strokeWidth={2} />
+                            <span>Chat</span>
+                          </button>
+                          <button
+                            onClick={() => onSelectStudent(student.id, 'ficha')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 hover:bg-primary/15 text-primary text-xs font-bold rounded-xl transition-all"
+                            title="Visualizar Ficha"
+                          >
+                            <HugeiconsIcon icon={EyeIcon} size={15} strokeWidth={2} />
+                            <span>Ficha</span>
+                          </button>
+                        </div>
+
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleEditStudentClick(student)}
+                            className="p-2 text-on-surface-variant/50 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                            title="Editar Cadastro"
+                          >
+                            <HugeiconsIcon icon={Edit01Icon} size={16} strokeWidth={2} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudentClick(student.id, student.nome)}
+                            className="p-2 text-on-surface-variant/50 hover:text-error hover:bg-error/5 rounded-xl transition-all"
+                            title="Excluir Aluno"
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm p-12 text-center font-medium text-on-surface-variant/60">
+                Nenhum aluno encontrado para esta turma.
+              </div>
+            )}
 
             {/* Pagination Footer */}
-            <div className="px-6 py-4 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-on-surface-variant/80 border-t border-outline-variant/20">
+            <div className="mt-6 bg-white rounded-2xl border border-outline-variant/30 p-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-on-surface-variant/80 shadow-sm">
               <p>Exibindo {paginatedStudents.length} de {filteredStudents.length} alunos</p>
               <div className="flex items-center gap-1">
                 <button
@@ -705,144 +898,151 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
 
       {/* CRUD Student Form Modal (Add & Edit) */}
       {isFormModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-outline-variant/40 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-scale-up">
-            <div className="px-6 py-4 bg-slate-50 border-b border-outline-variant/20 flex justify-between items-center">
-              <h3 className="text-sm font-bold text-on-surface font-heading">
-                {editingStudent ? `Editar Aluno: ${editingStudent.nome}` : 'Adicionar Novo Aluno'}
-              </h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-outline-variant/40 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-up">
+
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-outline-variant/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <HugeiconsIcon icon={Edit01Icon} size={16} strokeWidth={2} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-on-surface font-heading leading-tight">
+                    {editingStudent ? 'Editar Cadastro' : 'Adicionar Novo Aluno'}
+                  </h3>
+                  {editingStudent && (
+                    <p className="text-[11px] text-on-surface-variant/60 font-medium leading-none mt-0.5">{editingStudent.nome}</p>
+                  )}
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setIsFormModalOpen(false);
                   setEditingStudent(null);
                 }}
-                className="text-on-surface-variant hover:text-on-surface text-xs font-bold"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant/50 hover:text-on-surface hover:bg-slate-100 transition-all text-lg font-light leading-none shrink-0"
+                aria-label="Fechar modal"
               >
-                Fechar
+                ×
               </button>
             </div>
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Nome Completo</label>
+
+            {/* Modal Body */}
+            <form onSubmit={handleFormSubmit} className="p-5 space-y-4 max-h-[72vh] overflow-y-auto">
+
+              {/* Dados Cadastrais */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest">Dados Cadastrais</p>
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant/70 mb-1">Nome Completo</label>
                   <input
                     type="text"
                     required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
+                    className="w-full bg-slate-50 border border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-on-surface outline-none transition-all"
                     placeholder="Ex: João da Silva"
                     value={formNome}
                     onChange={(e) => setFormNome(e.target.value)}
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Email</label>
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant/70 mb-1">Email</label>
                   <input
                     type="email"
                     required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
+                    className="w-full bg-slate-50 border border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-on-surface outline-none transition-all"
                     placeholder="Ex: joao.silva@edu.com"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Progresso Geral (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formProgresso}
-                    onChange={(e) => setFormProgresso(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Frequência (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formFrequencia}
-                    onChange={(e) => setFormFrequencia(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Autonomia Digital</label>
-                  <select
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formAutonomia}
-                    onChange={(e) => setFormAutonomia(e.target.value as 'S' | 'P' | 'N')}
-                  >
-                    <option value="S">S (Supervisionado)</option>
-                    <option value="P">P (Pleno)</option>
-                    <option value="N">N (Necessita Apoio)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Status de Risco</label>
-                  <select
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formRisco}
-                    onChange={(e) => setFormRisco(e.target.value as any)}
-                  >
-                    <option value="Excelente">Excelente</option>
-                    <option value="No Caminho">No Caminho</option>
-                    <option value="Alerta Médio">Alerta Médio</option>
-                    <option value="Em Risco">Em Risco</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Média Digitação (pal/m)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formDigitacao}
-                    onChange={(e) => setFormDigitacao(Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">Dias Ofensiva</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
-                    value={formOfensiva}
-                    onChange={(e) => setFormOfensiva(Number(e.target.value))}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-extrabold text-on-surface-variant/70 uppercase mb-1">URL da Imagem de Avatar (Opcional)</label>
+                  <label className="block text-[11px] font-bold text-on-surface-variant/70 mb-1">URL do Avatar <span className="text-on-surface-variant/40 font-medium">(opcional)</span></label>
                   <input
                     type="text"
-                    className="w-full bg-slate-50 border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 px-3 text-xs font-semibold text-on-surface"
+                    className="w-full bg-slate-50 border border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-on-surface outline-none transition-all"
                     placeholder="https://exemplo.com/avatar.jpg"
                     value={formAvatarUrl}
                     onChange={(e) => setFormAvatarUrl(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="pt-4 border-t border-outline-variant/20 flex justify-end gap-2">
+
+              {/* Métricas (somente leitura) */}
+              <div className="bg-slate-50 border border-outline-variant/30 rounded-xl p-3.5 space-y-3">
+                <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest flex items-center gap-1.5">
+                  <HugeiconsIcon icon={SparklesIcon} size={12} strokeWidth={2.5} className="text-primary" />
+                  Métricas (calculadas automaticamente)
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+                  {/* Progresso */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Progresso</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${formProgresso}%` }} />
+                      </div>
+                      <span className="font-extrabold text-primary shrink-0 text-[11px]">{formProgresso}%</span>
+                    </div>
+                  </div>
+                  {/* Frequencia */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Frequência</span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold border ${
+                      formFrequencia >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' : 'bg-red-50 text-error border-red-200/50'
+                    }`}>{formFrequencia}%</span>
+                  </div>
+                  {/* Autonomia */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Autonomia Digital</span>
+                    {formAutonomia === 'S' && <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200/50">S (Supervisionado)</span>}
+                    {formAutonomia === 'P' && <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200/50">P (Pleno)</span>}
+                    {formAutonomia === 'N' && <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/50">N (Necessita Apoio)</span>}
+                  </div>
+                  {/* Status Risco */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Status de Risco</span>
+                    {formRisco === 'Excelente' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100/50"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />Excelente</span>}
+                    {formRisco === 'No Caminho' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-100/50"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />No Caminho</span>}
+                    {formRisco === 'Alerta Médio' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-100/50"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />Alerta Médio</span>}
+                    {formRisco === 'Em Risco' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-error text-[11px] font-bold border border-red-200/50"><span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse shrink-0" />Em Risco</span>}
+                  </div>
+                  {/* Digitação */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Velocidade Digitação</span>
+                    <div className="flex items-center gap-1.5">
+                      <HugeiconsIcon icon={KeyboardIcon} size={13} className="text-on-surface-variant/60 shrink-0" />
+                      <span className="font-extrabold text-[11px]">{formDigitacao} ppm</span>
+                    </div>
+                  </div>
+                  {/* Ofensiva */}
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant/50 uppercase tracking-wider block mb-1">Ofensiva</span>
+                    <div className="flex items-center gap-1.5">
+                      <HugeiconsIcon icon={FireIcon} size={13} className="text-orange-500 shrink-0" />
+                      <span className="font-extrabold text-[11px]">{formOfensiva} dias</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/20">
                 <button
                   type="button"
                   onClick={() => {
                     setIsFormModalOpen(false);
                     setEditingStudent(null);
                   }}
-                  className="px-4 py-2 border border-outline-variant/60 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 border border-outline-variant/50 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-slate-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-container shadow-sm transition-all"
+                  className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:opacity-90 shadow-sm shadow-primary/20 transition-all"
                 >
-                  Salvar
+                  Salvar Alterações
                 </button>
               </div>
             </form>

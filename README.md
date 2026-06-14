@@ -2,8 +2,8 @@
 
 # 🎓 Estudea
 
-**Plataforma de ensino moderna, gratuita e open source.**  
-Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democratizar o acesso à educação digital.
+**Plataforma LMS especializada em TI e Letramento Digital — gratuita e open source.**  
+Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democratizar o acesso à educação tecnológica.
 
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Open Source](https://img.shields.io/badge/open%20source-100%25-6366f1?style=for-the-badge&logo=github)](https://github.com/oxentecode/estudea)
@@ -17,17 +17,28 @@ Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democra
 
 ## 🌟 O que é o Estudea?
 
-O **Estudea** é uma plataforma LMS (Learning Management System) completa, desenvolvida para professores que querem criar e distribuir cursos online de forma profissional — **sem pagar nada por isso**.
+O **Estudea** é uma plataforma LMS (Learning Management System) construída com foco em **cursos de TI e letramento digital**. Desenvolvida para professores que trabalham com inclusão digital, iniciação à tecnologia e capacitação técnica — do básico ao avançado.
 
-Qualquer professor pode usar, instalar e modificar o Estudea livremente. O projeto é **100% gratuito**, **sem mensalidades**, **sem limites de alunos** e **sem pegadinhas**.
+Seja em escolas públicas, projetos sociais, ONGs ou centros de formação, o Estudea oferece tudo que o professor precisa para acompanhar, engajar e desenvolver alunos em sua jornada no mundo da tecnologia — **sem pagar absolutamente nada**.
+
+> **Casos de uso ideais:**
+> - Cursos de digitação, informática básica e letramento digital
+> - Trilhas de programação para iniciantes (lógica, web, banco de dados)
+> - Capacitação técnica em ferramentas digitais (pacote Office, Google Workspace, etc.)
+> - Formação profissional em TI em projetos sociais e prefeituras
 
 ---
 
-## 💡 Por que gratuito e open source?
+## 💡 Por que esse foco em TI e letramento digital?
 
-Acreditamos que a tecnologia de ensino de qualidade não deveria ser um privilégio de quem pode pagar por ferramentas caras. O Estudea nasce com a missão de ser um instrumento acessível para educadores de todos os contextos — das escolas públicas às academias independentes.
+Milhões de brasileiros ainda não têm acesso pleno ao universo digital. O Estudea nasce com a missão de equipar **educadores de TI** com uma plataforma poderosa, pensada especialmente para os desafios de quem trabalha com inclusão tecnológica:
 
-> _"Educação é o passaporte para o futuro, e o futuro pertence a quem se prepara hoje."_
+- 📋 **Ficha de Observação Prática** para mapear autonomia digital de cada aluno (uso do computador, navegação na internet, organização de arquivos, ferramentas digitais)
+- ⌨️ **Rastreamento de velocidade de digitação** como métrica de evolução técnica
+- 🧠 **Inteligência Pedagógica automática** que identifica zonas de domínio e pontos de atenção a partir do comportamento real do aluno
+- 📊 **Diário de Classe digital** com engajamento, compreensão e necessidade de apoio por aula
+
+> _"A tecnologia é a maior ferramenta de equalização social do nosso tempo — e o Estudea existe para que nenhum professor de TI fique sem uma plataforma à altura do seu trabalho."_
 
 ---
 
@@ -35,14 +46,50 @@ Acreditamos que a tecnologia de ensino de qualidade não deveria ser um privilé
 
 | Área | O que você pode fazer |
 |---|---|
-| 🏗️ **Criação de Cursos** | Crie cursos com módulos, aulas em vídeo, texto, quiz e arquivos |
-| 👨‍🎓 **Trilha do Aluno** | Trilha gamificada com progresso, desbloqueio sequencial e conquistas |
-| 📊 **Dashboard do Professor** | Métricas de progresso, mapa de calor de aulas, entregas pendentes |
-| ✅ **Central de Correções** | Corrija atividades práticas e dê feedback individual para cada aluno |
-| 📄 **Visualizador de PDF** | PDFs do Google Drive ou links diretos são exibidos inline na plataforma |
-| 🏆 **Conquistas e Gamificação** | Sistema de XP, ofensivas diárias, conquistas e ranking de turma |
-| 🔐 **Gestão de Turmas** | Crie turmas, gere códigos de acesso e vincule alunos |
-| 👤 **Perfil de Usuário** | Personalização de avatar, nome e dados do aluno |
+| 🏗️ **Criação de Cursos** | Crie trilhas de TI com módulos, aulas em vídeo, texto, quiz e atividades práticas |
+| 👨‍🎓 **Trilha Gamificada do Aluno** | Progresso sequencial, conquistas, XP e ranking motivam a aprendizagem em TI |
+| 📊 **Dashboard do Professor** | Métricas em tempo real de progresso, frequência, digitação e engajamento por turma |
+| 🗓️ **Diário de Classe Digital** | Registre presença, compreensão, participação e necessidade de apoio por aula |
+| 🧠 **Inteligência Pedagógica** | Zonas de domínio e pontos de atenção calculados automaticamente da ficha prática |
+| 🤖 **Análise com IA** | Diagnóstico pedagógico automático com PDI personalizado para cada aluno |
+| 📋 **Ficha de Observação Prática** | Avalie autonomia digital: computador, internet, arquivos, ferramentas e redes sociais |
+| ⌨️ **Rastreamento de Digitação** | Acompanhe a evolução da velocidade de digitação de cada aluno ao longo da trilha |
+| ✅ **Central de Correções** | Corrija atividades práticas e dê feedback individual com nota |
+| 💬 **Chat Professor-Aluno** | Comunicação direta e registrada dentro da plataforma |
+| 📄 **Visualizador de PDF** | PDFs do Google Drive ou links diretos exibidos inline |
+| 🏆 **Gamificação Completa** | XP, ofensivas diárias, conquistas e ranking de turma |
+| 🔐 **Gestão de Turmas** | Crie turmas, gere códigos de acesso e vincule alunos por código |
+| 👤 **Perfil do Aluno** | Avatar, progresso, frequência, autonomia digital e histórico de aulas |
+| ⚠️ **Sistema de Risco Automático** | Alerta pedagógico calculado automaticamente por frequência, atrasos e progresso |
+
+---
+
+## 📈 Como o Estudea acompanha o aluno de TI?
+
+O Estudea foi desenhado para ir além da simples marcação de presença. A **Central de Acompanhamento** oferece uma visão 360° do aluno:
+
+```
+Central de Acompanhamento
+├── Ficha de Acompanhamento
+│   ├── Ficha de Observação Prática (autonomia digital item a item)
+│   ├── Anotações Privadas do Professor
+│   ├── Inteligência Pedagógica (Zonas de Domínio + Pontos de Atenção)
+│   └── Histórico de Aulas com engajamento por registro
+├── Análise com IA
+│   ├── Diagnóstico Pedagógico Automático
+│   ├── Análise de frequência, digitação e engajamento
+│   └── Plano de Desenvolvimento Individual (PDI) com recomendações
+└── Notas & Entregas
+    ├── Histórico de atividades práticas entregues
+    ├── Notas e feedback do professor
+    └── Média geral e frequência acadêmica
+```
+
+O **Status de Risco** é calculado automaticamente no banco de dados e atualizado em tempo real com base em:
+- Frequência às aulas
+- Progresso na trilha
+- Nível de autonomia digital
+- Quantidade de atrasos recorrentes (≥ 3 atrasos → Alerta Médio automático)
 
 ---
 
@@ -51,7 +98,7 @@ Acreditamos que a tecnologia de ensino de qualidade não deveria ser um privilé
 - **Frontend:** [React 19](https://react.dev) + [TypeScript](https://typescriptlang.org)
 - **Build:** [Vite](https://vitejs.dev)
 - **Estilização:** [Tailwind CSS](https://tailwindcss.com)
-- **Backend / Banco de dados:** [Supabase](https://supabase.com) (PostgreSQL)
+- **Backend / Banco de dados:** [Supabase](https://supabase.com) (PostgreSQL + Edge Functions + RLS)
 - **Ícones:** [HugeIcons](https://hugeicons.com)
 - **Roteamento:** [React Router DOM v7](https://reactrouter.com)
 
@@ -88,6 +135,7 @@ cp .env.example .env
 ```env
 VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
 VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANONIMA
+VITE_GEMINI_API_KEY=SUA_CHAVE_GEMINI  # Opcional — para funcionalidades de IA
 ```
 
 ### 4. Execute o servidor de desenvolvimento
@@ -110,6 +158,11 @@ Para configurar o banco, importe os arquivos SQL no seu projeto Supabase ou use 
 supabase db push
 ```
 
+O schema inclui triggers automáticos para:
+- Atualização de frequência baseada no diário de classe
+- Cálculo de progresso geral baseado nas aulas concluídas
+- Classificação de risco do aluno baseada em múltiplas métricas pedagógicas
+
 ---
 
 ## 📁 Estrutura do Projeto
@@ -119,16 +172,20 @@ estudea/
 ├── src/
 │   ├── components/     # Componentes reutilizáveis (layout, UI, common)
 │   ├── pages/          # Páginas da aplicação
-│   │   ├── TrilhaAluno.tsx          # Ambiente gamificado do aluno
-│   │   ├── CourseBuilder.tsx        # Editor de cursos do professor
-│   │   ├── DashboardProfessor.tsx   # Painel de controle do professor
-│   │   ├── CentralCorrecoes.tsx     # Correção de atividades
-│   │   └── GerenciadorTurmas.tsx    # Gestão de turmas
+│   │   ├── TrilhaAluno.tsx              # Ambiente gamificado do aluno
+│   │   ├── CourseBuilder.tsx            # Editor de cursos do professor
+│   │   ├── DashboardProfessor.tsx       # Painel de controle do professor
+│   │   ├── ListaAlunos.tsx              # Lista de alunos com métricas
+│   │   ├── CentralAcompanhamento.tsx    # Ficha de acompanhamento 360° do aluno
+│   │   ├── DiarioClasse.tsx             # Diário de classe digital
+│   │   ├── CentralCorrecoes.tsx         # Correção de atividades práticas
+│   │   └── GerenciadorTurmas.tsx        # Gestão de turmas
 │   ├── lib/            # Configuração do Supabase
-│   ├── services/       # Serviços e chamadas de API
-│   ├── types/          # Tipos TypeScript
+│   ├── hooks/          # Custom hooks (notificações, correções pendentes)
+│   ├── types/          # Tipos TypeScript (schema do Supabase)
 │   └── utils/          # Utilitários (celebração, helpers)
-├── supabase/           # Migrations e schema do banco
+├── supabase/
+│   └── migrations/     # Migrations SQL com triggers automáticos
 └── public/             # Assets estáticos
 ```
 
@@ -136,7 +193,7 @@ estudea/
 
 ## 🤝 Contribuindo
 
-Contribuições são muito bem-vindas! O Estudea é feito pela comunidade, para a comunidade.
+Contribuições são muito bem-vindas! O Estudea é feito pela comunidade, para a comunidade de educadores de TI.
 
 1. Faça um fork do projeto
 2. Crie uma branch para sua feature: `git checkout -b feature/minha-feature`
@@ -158,7 +215,7 @@ Isso significa que você pode **usar, copiar, modificar, mesclar, publicar, dist
 
 A **Oxente Code** é um coletivo de desenvolvimento de software do Nordeste brasileiro, com o compromisso de criar soluções tecnológicas abertas e acessíveis.
 
-Acreditamos em código aberto, em educação de qualidade e em fazer mais com menos.
+Acreditamos que todo educador de TI merece uma plataforma à altura do seu trabalho — e que tecnologia de qualidade não deveria ser um privilégio de quem pode pagar por ela.
 
 ---
 
@@ -166,6 +223,6 @@ Acreditamos em código aberto, em educação de qualidade e em fazer mais com me
 
 Feito com muito ☕ e 🧡 pela **Oxente Code** 🧡
 
-⭐ Se o Estudea te ajudou, deixa uma estrela no repositório!
+⭐ Se o Estudea te ajudou a transformar a vida de algum aluno, deixa uma estrela no repositório!
 
 </div>

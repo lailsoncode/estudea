@@ -227,18 +227,21 @@ export type Database = {
           aluno_id: string;
           aula_id: string;
           concluido_em: string;
+          avaliacao: number | null;
         };
         Insert: {
           id?: string;
           aluno_id: string;
           aula_id: string;
           concluido_em?: string;
+          avaliacao?: number | null;
         };
         Update: {
           id?: string;
           aluno_id?: string;
           aula_id?: string;
           concluido_em?: string;
+          avaliacao?: number | null;
         };
       };
       entregas_atividades: {

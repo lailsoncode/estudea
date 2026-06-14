@@ -18,11 +18,15 @@ import {
   Award01Icon,
   Trophy,
   UserGroupIcon,
-  Calendar01Icon
+  Calendar01Icon,
+  Task01Icon,
+  KeyboardIcon
 } from '@hugeicons/core-free-icons';
+import { TreinadorDigitacao } from './pages/TreinadorDigitacao';
 import { ListaAlunos } from './pages/ListaAlunos';
 import { CentralAcompanhamento } from './pages/CentralAcompanhamento';
 import { DiarioClasse } from './pages/DiarioClasse';
+import { DashboardProfessor } from './pages/DashboardProfessor';
 
 import { supabase } from './lib/supabaseClient';
 import { usePendingCorrections } from './hooks/usePendingCorrections';
@@ -39,8 +43,8 @@ import { MateriaisApoio } from './pages/MateriaisApoio';
 import { ArenaRanking } from './pages/ArenaRanking';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario';
-type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-label-md transition-all w-full text-left ${
@@ -132,6 +136,7 @@ function App() {
       settings: 'Minha Conta | Estudea',
       arena_ranking: 'Ranking da Arena | Estudea',
       diario: 'Diário de Classe | Estudea',
+      lessons: 'Liberação de Aulas | Estudea',
     };
     document.title = titles[activeTeacherTab] ?? 'Estudea';
   }, [activeTeacherTab, session, isAdmin, teacherView]);
@@ -221,6 +226,18 @@ function App() {
               >
                 <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
                 <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTeacherTab('lessons');
+                  setMobileMenuOpen(false);
+                }}
+                className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
+                title="Liberação de Aulas"
+              >
+                <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Liberação de Aulas</span>
               </button>
 
               <button
@@ -328,6 +345,7 @@ function App() {
                   {activeTeacherTab === 'overview' && 'Visão geral das estatísticas.'}
                   {activeTeacherTab === 'progress' && 'Acompanhe a lista de alunos e a central de monitoramento de risco.'}
                   {activeTeacherTab === 'diario' && 'Registre a frequência diária e observações da aula.'}
+                  {activeTeacherTab === 'lessons' && 'Libere ou bloqueie lições por turma.'}
                   {activeTeacherTab === 'assignments' && 'Crie Cursos, gerencie módulos e organize lições.'}
                   {activeTeacherTab === 'turmas' && 'Gerencie turmas, códigos de acesso e enturmação de alunos.'}
                   {activeTeacherTab === 'corrections' && 'Avalie e dê feedbacks nas entregas dos alunos.'}
@@ -413,6 +431,7 @@ function App() {
                 />
               )}
               {activeTeacherTab === 'diario' && <DiarioClasse />}
+              {activeTeacherTab === 'lessons' && <DashboardProfessor />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
               
@@ -489,6 +508,15 @@ function App() {
               </button>
 
               <button
+                onClick={() => { setActiveUserTab('digitacao'); setMobileMenuOpen(false); }}
+                className={getSidebarItemClass(activeUserTab === 'digitacao', sidebarCollapsed)}
+                title="Treino de Digitação"
+              >
+                <HugeiconsIcon icon={KeyboardIcon} size={20} strokeWidth={2} />
+                <span className={getSidebarLabelClass(sidebarCollapsed)}>Treino de Digitação</span>
+              </button>
+
+              <button
                 onClick={() => { setActiveUserTab('profile'); setMobileMenuOpen(false); }}
                 className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
                 title="Meu Perfil"
@@ -541,6 +569,7 @@ function App() {
                   {activeUserTab === 'achievements' && 'Minhas Conquistas'}
                   {activeUserTab === 'profile' && 'Meu Perfil'}
                   {activeUserTab === 'arena_ranking' && 'Ranking da Arena'}
+                  {activeUserTab === 'digitacao' && 'Treino de Digitação'}
                 </h3>
               </div>
             </div>
@@ -611,6 +640,8 @@ function App() {
                 <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="achievements" />
               ) : activeUserTab === 'arena_ranking' ? (
                 <ArenaRanking session={session} isAdmin={false} />
+              ) : activeUserTab === 'digitacao' ? (
+                <TreinadorDigitacao session={session} />
               ) : (
                 <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="trail" />
               )}
