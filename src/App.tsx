@@ -52,12 +52,10 @@ type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'tur
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
-  `relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${
-    collapsed ? 'lg:justify-center lg:px-0' : ''
-  } ${
-    active
-      ? 'bg-primary text-on-primary shadow-sm shadow-primary/15'
-      : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+  `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
+  } ${active
+    ? 'bg-primary text-on-primary shadow-sm shadow-primary/15'
+    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
   }`;
 
 const sidebarActionClass =
@@ -70,7 +68,7 @@ function App() {
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [teacherView, setTeacherView] = useState<'content' | 'preview'>('content');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('dashboard');
-  
+
   // Teacher panel navigation & metrics states
   const [activeTeacherTab, setActiveTeacherTab] = useState<TeacherTab>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -95,7 +93,7 @@ function App() {
         .from('profiles')
         .select('id')
         .eq('role', 'student');
-      
+
       if (!students || students.length === 0) return;
       const studentIds = students.map(s => s.id);
 
@@ -144,7 +142,7 @@ function App() {
         fetchTotalUnreadChatCount();
       };
       window.addEventListener('storage', handleStorageChange);
-      
+
       const interval = setInterval(fetchTotalUnreadChatCount, 8000);
 
       return () => {
@@ -244,9 +242,8 @@ function App() {
   };
 
   const teacherSidebarNav = (
-    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
-      mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-    }`}>
+    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
       <div className="overflow-y-auto flex-1">
         <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
@@ -267,14 +264,14 @@ function App() {
             <HugeiconsIcon icon={Cancel01Icon} size={20} />
           </button>
         </div>
-        
-        <div className={`flex flex-col gap-1 px-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+
+        <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
           <button
             onClick={() => { setActiveTeacherTab('overview'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
             title="Visão Geral"
           >
-            <HugeiconsIcon icon={DashboardSquare01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={DashboardSquare01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Visão Geral</span>
           </button>
 
@@ -287,7 +284,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
             title="Alunos"
           >
-            <HugeiconsIcon icon={UserGroupIcon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Alunos</span>
           </button>
 
@@ -299,7 +296,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
             title="Diário de Classe"
           >
-            <HugeiconsIcon icon={Calendar01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
           </button>
 
@@ -311,7 +308,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
             title="Liberação de Aulas"
           >
-            <HugeiconsIcon icon={Task01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Liberação de Aulas</span>
           </button>
 
@@ -320,7 +317,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
             title="Central de Correções"
           >
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Central de Correções</span>
             {pendingCorrectionsCount > 0 && (
               <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
@@ -334,7 +331,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
             title="Criador de Cursos"
           >
-            <HugeiconsIcon icon={BookOpen01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Criador de Cursos</span>
           </button>
 
@@ -343,7 +340,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
             title="Gerenciar Turmas"
           >
-            <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={SchoolIcon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
           </button>
 
@@ -352,7 +349,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
             title="Materiais de Apoio (IA)"
           >
-            <HugeiconsIcon icon={SparklesIcon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
           </button>
 
@@ -361,7 +358,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
             title="Ranking da Arena"
           >
-            <HugeiconsIcon icon={Award01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
           </button>
 
@@ -373,7 +370,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'chat', sidebarCollapsed)}
             title="Chat com Alunos"
           >
-            <HugeiconsIcon icon={Chat01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={Chat01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Chat com Alunos</span>
             {totalUnreadChatCount > 0 && (
               <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
@@ -382,26 +379,26 @@ function App() {
             )}
           </button>
 
-          <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-2'}`}></div>
+          <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
 
           <button
             onClick={() => { setActiveTeacherTab('settings'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
             title="Minha Conta / Perfil"
           >
-            <HugeiconsIcon icon={Settings01Icon} size={18} strokeWidth={2} />
+            <HugeiconsIcon icon={Settings01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Minha Conta / Perfil</span>
           </button>
         </div>
       </div>
 
-      <div className={`p-3 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
         <button
           onClick={handleLogout}
           className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error-container/40`}
           title="Sair"
         >
-          <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
+          <HugeiconsIcon icon={Logout01Icon} size={20} strokeWidth={2} />
           <span className={getSidebarLabelClass(sidebarCollapsed)}>Sair</span>
         </button>
       </div>
@@ -409,9 +406,8 @@ function App() {
   );
 
   const studentSidebarNav = (
-    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
-      mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-    }`}>
+    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
       <div>
         <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
@@ -432,8 +428,8 @@ function App() {
             <HugeiconsIcon icon={Cancel01Icon} size={20} />
           </button>
         </div>
-        
-        <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+
+        <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
           <button
             onClick={() => { setActiveUserTab('dashboard'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'dashboard', sidebarCollapsed)}
@@ -492,7 +488,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Voltar ao Painel</span>
           </button>
         )}
-        
+
         <button
           onClick={handleLogout}
           className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error/10`}
@@ -544,7 +540,7 @@ function App() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <button
                 className="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-all relative"
@@ -571,14 +567,14 @@ function App() {
               <div className="h-8 w-px bg-outline-variant/30 mx-1"></div>
 
               {/* Profile click item */}
-              <div 
+              <div
                 onClick={() => { setActiveTeacherTab('settings'); }}
                 className="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low rounded-lg p-1.5 pr-3 transition-colors"
                 title="Ver Meu Perfil"
               >
-                <img 
-                  alt="Teacher Avatar" 
-                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20" 
+                <img
+                  alt="Teacher Avatar"
+                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20"
                   src={session?.user?.user_metadata?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuCS79ZaYToIkfTUIGNaC8uyMcC4bxm5aJv5aZ9Zv_m3tBPV-52R11_d1OzmpzEcpIJffY_KQwgQt_ljUFRrfMn2mon_Kc4P5STZ5QatEcpjaH4S515M9Uqjw-RNRThsLstiIoTnzzvOc2tSJw405oVGl04HQnMV1NWh6Wfv7j2kMW8IWb3BTnVm0wKf1J3FZDAuPq1Ntdf176ZCeDpOWYXp4h_TFxRBA-EuzBz5-AOfPZpxCh6erw3KD9_yVeWMNTHo-ypFDJRGchA"}
                 />
                 <div className="hidden md:block text-left text-xs">
@@ -624,11 +620,11 @@ function App() {
               {activeTeacherTab === 'lessons' && <DashboardProfessor />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
-              
+
               {activeTeacherTab === 'overview' && (
-                <DashboardProfessorOverview 
-                  setActiveTab={setActiveTeacherTab} 
-                  session={session} 
+                <DashboardProfessorOverview
+                  setActiveTab={setActiveTeacherTab}
+                  session={session}
                   onStartArena={() => {
                     setArenaActive(true);
                     setArenaRole('professor');
@@ -681,21 +677,21 @@ function App() {
                 </h3>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <NotificationBell userId={session.user.id} enabled={!isAdmin} />
 
               <div className="h-8 w-px bg-outline-variant/30 mx-1"></div>
 
               {/* User Avatar */}
-              <div 
+              <div
                 onClick={() => { setActiveUserTab('profile'); }}
                 className="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low rounded-lg p-1.5 pr-3 transition-colors"
                 title="Ver Meu Perfil"
               >
-                <img 
-                  alt="User Avatar" 
-                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20 shadow-sm" 
+                <img
+                  alt="User Avatar"
+                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20 shadow-sm"
                   src={session?.user?.user_metadata?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo"}
                 />
                 <div className="hidden md:block text-left text-xs">
@@ -739,16 +735,16 @@ function App() {
                   </div>
                 </div>
               ) : activeUserTab === 'profile' ? (
-                <PerfilUsuario 
-                  session={session} 
-                  isAdmin={isAdmin} 
-                  onBack={() => setActiveUserTab('dashboard')} 
+                <PerfilUsuario
+                  session={session}
+                  isAdmin={isAdmin}
+                  onBack={() => setActiveUserTab('dashboard')}
                 />
               ) : activeUserTab === 'achievements' ? (
-                <TrilhaAluno 
-                  session={session} 
-                  isAdmin={isAdmin} 
-                  initialViewMode="achievements" 
+                <TrilhaAluno
+                  session={session}
+                  isAdmin={isAdmin}
+                  initialViewMode="achievements"
                   onStartArena={() => {
                     setArenaActive(true);
                     setArenaRole('aluno');
@@ -760,10 +756,10 @@ function App() {
               ) : activeUserTab === 'digitacao' ? (
                 <TreinadorDigitacao session={session} />
               ) : (
-                <TrilhaAluno 
-                  session={session} 
-                  isAdmin={isAdmin} 
-                  initialViewMode="trail" 
+                <TrilhaAluno
+                  session={session}
+                  isAdmin={isAdmin}
+                  initialViewMode="trail"
                   onStartArena={() => {
                     setArenaActive(true);
                     setArenaRole('aluno');
@@ -796,7 +792,7 @@ function App() {
         {authView === 'login' ? (
           <LoginAluno
             onNavigateToSignup={() => setAuthView('signup')}
-            onAuthSuccess={() => {}}
+            onAuthSuccess={() => { }}
           />
         ) : (
           <CadastroAluno
