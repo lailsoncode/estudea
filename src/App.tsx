@@ -20,13 +20,15 @@ import {
   UserGroupIcon,
   Calendar01Icon,
   Task01Icon,
-  KeyboardIcon
+  KeyboardIcon,
+  Chat01Icon
 } from '@hugeicons/core-free-icons';
 import { TreinadorDigitacao } from './pages/TreinadorDigitacao';
 import { ListaAlunos } from './pages/ListaAlunos';
 import { CentralAcompanhamento } from './pages/CentralAcompanhamento';
 import { DiarioClasse } from './pages/DiarioClasse';
 import { DashboardProfessor } from './pages/DashboardProfessor';
+import { ChatProfessor } from './pages/ChatProfessor';
 
 import { supabase } from './lib/supabaseClient';
 import { usePendingCorrections } from './hooks/usePendingCorrections';
@@ -43,13 +45,14 @@ import { MateriaisApoio } from './pages/MateriaisApoio';
 import { ArenaRanking } from './pages/ArenaRanking';
 import { ArenaLiveProfessor } from './pages/ArenaLiveProfessor';
 import { ArenaLiveAluno } from './pages/ArenaLiveAluno';
+import { StudentChatWidget } from './components/common/StudentChatWidget';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat';
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
-  `relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-label-md transition-all w-full text-left ${
+  `relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${
     collapsed ? 'lg:justify-center lg:px-0' : ''
   } ${
     active
@@ -81,6 +84,76 @@ function App() {
   // Student list & tracking center states
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [initialTrackingSection, setInitialTrackingSection] = useState<'chat' | 'ficha'>('ficha');
+
+  const [totalUnreadChatCount, setTotalUnreadChatCount] = useState<number>(0);
+
+  const fetchTotalUnreadChatCount = async () => {
+    if (!session) return;
+    try {
+      const teacherId = session.user.id;
+      const { data: students } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'student');
+      
+      if (!students || students.length === 0) return;
+      const studentIds = students.map(s => s.id);
+
+      const { data: messages } = await supabase
+        .from('chat_messages')
+        .select('aluno_id, remetente_id, created_at')
+        .in('aluno_id', studentIds);
+
+      let totalUnread = 0;
+      studentIds.forEach(id => {
+        const lastOpenedKey = `chat_last_opened:${teacherId}:${id}`;
+        const lastOpenedStr = localStorage.getItem(lastOpenedKey) || new Date(0).toISOString();
+        const lastOpenedTime = new Date(lastOpenedStr).getTime();
+
+        const studentMessages = messages?.filter(m => m.aluno_id === id && m.remetente_id === id) || [];
+        const unread = studentMessages.filter(m => new Date(m.created_at).getTime() > lastOpenedTime).length;
+        totalUnread += unread;
+      });
+
+      setTotalUnreadChatCount(totalUnread);
+    } catch (err) {
+      console.error('Error fetching total unread chat count:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (session) {
+      fetchTotalUnreadChatCount();
+
+      const channel = supabase
+        .channel('app_total_unread_chat')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chat_messages'
+          },
+          () => {
+            fetchTotalUnreadChatCount();
+          }
+        )
+        .subscribe();
+
+      const handleStorageChange = () => {
+        fetchTotalUnreadChatCount();
+      };
+      window.addEventListener('storage', handleStorageChange);
+      
+      const interval = setInterval(fetchTotalUnreadChatCount, 8000);
+
+      return () => {
+        supabase.removeChannel(channel);
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
+  }, [session, activeTeacherTab]);
 
 
   const isAdmin = session?.user?.user_metadata?.role === 'admin';
@@ -174,13 +247,13 @@ function App() {
     <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
       mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
     }`}>
-      <div>
-        <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
+      <div className="overflow-y-auto flex-1">
+        <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
+            <img src={logoIcon} alt="Estudea Logo" className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-sm" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
-              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Painel do Professor</h1>
-              <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Gerenciar Cursos</p>
+              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">Painel do Professor</p>
             </div>
           </div>
           <button
@@ -195,13 +268,13 @@ function App() {
           </button>
         </div>
         
-        <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+        <div className={`flex flex-col gap-1 px-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
           <button
             onClick={() => { setActiveTeacherTab('overview'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
             title="Visão Geral"
           >
-            <HugeiconsIcon icon={DashboardSquare01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={DashboardSquare01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Visão Geral</span>
           </button>
 
@@ -214,7 +287,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
             title="Alunos"
           >
-            <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={UserGroupIcon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Alunos</span>
           </button>
 
@@ -226,7 +299,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
             title="Diário de Classe"
           >
-            <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={Calendar01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
           </button>
 
@@ -238,7 +311,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
             title="Liberação de Aulas"
           >
-            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={Task01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Liberação de Aulas</span>
           </button>
 
@@ -247,7 +320,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
             title="Central de Correções"
           >
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Central de Correções</span>
             {pendingCorrectionsCount > 0 && (
               <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
@@ -261,7 +334,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
             title="Criador de Cursos"
           >
-            <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={BookOpen01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Criador de Cursos</span>
           </button>
 
@@ -270,7 +343,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
             title="Gerenciar Turmas"
           >
-            <HugeiconsIcon icon={SchoolIcon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
           </button>
 
@@ -279,7 +352,7 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
             title="Materiais de Apoio (IA)"
           >
-            <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={SparklesIcon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
           </button>
 
@@ -288,33 +361,41 @@ function App() {
             className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
             title="Ranking da Arena"
           >
-            <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={Award01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
           </button>
 
-          <div className={`my-4 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
+          <button
+            onClick={() => {
+              setActiveTeacherTab('chat');
+              setMobileMenuOpen(false);
+            }}
+            className={getSidebarItemClass(activeTeacherTab === 'chat', sidebarCollapsed)}
+            title="Chat com Alunos"
+          >
+            <HugeiconsIcon icon={Chat01Icon} size={18} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Chat com Alunos</span>
+            {totalUnreadChatCount > 0 && (
+              <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
+                {totalUnreadChatCount}
+              </span>
+            )}
+          </button>
+
+          <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-2'}`}></div>
 
           <button
             onClick={() => { setActiveTeacherTab('settings'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
             title="Minha Conta / Perfil"
           >
-            <HugeiconsIcon icon={Settings01Icon} size={20} strokeWidth={2} />
+            <HugeiconsIcon icon={Settings01Icon} size={18} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Minha Conta / Perfil</span>
           </button>
         </div>
       </div>
 
-      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
-        <button
-          onClick={() => { setTeacherView('preview'); setMobileMenuOpen(false); }}
-          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface mb-2`}
-          title="Visualização do Aluno"
-        >
-          <HugeiconsIcon icon={SparklesIcon} size={18} strokeWidth={2} />
-          <span className={getSidebarLabelClass(sidebarCollapsed)}>Visualização do Aluno</span>
-        </button>
-        
+      <div className={`p-3 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
         <button
           onClick={handleLogout}
           className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error-container/40`}
@@ -452,6 +533,7 @@ function App() {
                   {activeTeacherTab === 'overview' && 'Visão geral das estatísticas.'}
                   {activeTeacherTab === 'progress' && 'Acompanhe a lista de alunos e a central de monitoramento de risco.'}
                   {activeTeacherTab === 'diario' && 'Registre a frequência diária e observações da aula.'}
+                  {activeTeacherTab === 'chat' && 'Comunicação integrada e em tempo real com todos os estudantes.'}
                   {activeTeacherTab === 'lessons' && 'Libere ou bloqueie lições por turma.'}
                   {activeTeacherTab === 'assignments' && 'Crie Cursos, gerencie módulos e organize lições.'}
                   {activeTeacherTab === 'turmas' && 'Gerencie turmas, códigos de acesso e enturmação de alunos.'}
@@ -538,6 +620,7 @@ function App() {
                 />
               )}
               {activeTeacherTab === 'diario' && <DiarioClasse />}
+              {activeTeacherTab === 'chat' && <ChatProfessor />}
               {activeTeacherTab === 'lessons' && <DashboardProfessor />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
@@ -583,7 +666,7 @@ function App() {
         {/* Main Canvas do Aluno */}
         <div className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
           {/* Top Navbar do Aluno */}
-          <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest flex justify-between items-center z-10 shadow-sm flex-shrink-0">
+          <header className="hidden lg:flex px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest justify-between items-center z-10 shadow-sm flex-shrink-0">
             <div className="flex items-center gap-3">
               <button className="lg:hidden p-2 rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={() => setMobileMenuOpen(true)}>
                 <HugeiconsIcon icon={Menu01Icon} size={20} />
@@ -693,6 +776,11 @@ function App() {
         </div>
         {arenaActive && arenaRole === 'aluno' && (
           <ArenaLiveAluno session={session} onClose={() => { setArenaActive(false); setArenaRole(null); }} />
+        )}
+        {!arenaActive && (
+          <StudentChatWidget
+            studentId={session.user.id}
+          />
         )}
       </div>
     );

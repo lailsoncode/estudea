@@ -41,14 +41,14 @@ interface StudentProfile {
 }
 
 interface AutonomiaData {
-  usa_computador: 'S' | 'P' | 'N';
-  navega_internet: 'S' | 'P' | 'N';
-  cria_salva_arquivos: 'S' | 'P' | 'N';
-  organiza_pastas: 'S' | 'P' | 'N';
-  copia_cola_links: 'S' | 'P' | 'N';
-  conhece_redes_sociais: 'S' | 'P' | 'N';
-  conhece_ferramentas: 'S' | 'P' | 'N';
-  precisa_apoio: 'S' | 'N';
+  usa_computador: 'S' | 'P' | 'N' | null;
+  navega_internet: 'S' | 'P' | 'N' | null;
+  cria_salva_arquivos: 'S' | 'P' | 'N' | null;
+  organiza_pastas: 'S' | 'P' | 'N' | null;
+  copia_cola_links: 'S' | 'P' | 'N' | null;
+  conhece_redes_sociais: 'S' | 'P' | 'N' | null;
+  conhece_ferramentas: 'S' | 'P' | 'N' | null;
+  precisa_apoio: 'S' | 'N' | null;
 }
 
 interface ChatMessage {
@@ -99,14 +99,14 @@ interface EntregaRecord {
 }
 
 const DEFAULT_AUTONOMIA: AutonomiaData = {
-  usa_computador: 'N',
-  navega_internet: 'N',
-  cria_salva_arquivos: 'N',
-  organiza_pastas: 'N',
-  copia_cola_links: 'N',
-  conhece_redes_sociais: 'N',
-  conhece_ferramentas: 'N',
-  precisa_apoio: 'N'
+  usa_computador: null,
+  navega_internet: null,
+  cria_salva_arquivos: null,
+  organiza_pastas: null,
+  copia_cola_links: null,
+  conhece_redes_sociais: null,
+  conhece_ferramentas: null,
+  precisa_apoio: null
 };
 
 const generateAIReport = (
@@ -126,10 +126,10 @@ const generateAIReport = (
   const improvingSkills: string[] = [];
   const criticalSkills: string[] = [];
 
-  const checkSkill = (label: string, value: 'S' | 'P' | 'N') => {
+  const checkSkill = (label: string, value: 'S' | 'P' | 'N' | null) => {
     if (value === 'S') masteredSkills.push(label);
     else if (value === 'P') improvingSkills.push(label);
-    else criticalSkills.push(label);
+    else if (value === 'N') criticalSkills.push(label);
   };
 
   checkSkill('Uso do Computador', autonomia.usa_computador);
@@ -224,6 +224,51 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Real-time chat listener for the teacher
+  useEffect(() => {
+    if (!alunoId) return;
+
+    const channel = supabase
+      .channel(`teacher-chat:${alunoId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `aluno_id=eq.${alunoId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new as ChatMessage;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedMsg = payload.new as ChatMessage;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [alunoId]);
+
+  useEffect(() => {
+    if (messages.length > 0 && currentTeacherId && alunoId) {
+      localStorage.setItem(`chat_last_opened:${currentTeacherId}:${alunoId}`, new Date().toISOString());
+    }
+  }, [messages, currentTeacherId, alunoId]);
 
   const getCurrentUser = async () => {
     try {
@@ -353,14 +398,14 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
 
       if (autoData) {
         setAutonomia({
-          usa_computador: autoData.usa_computador || 'N',
-          navega_internet: autoData.navega_internet || 'N',
-          cria_salva_arquivos: autoData.cria_salva_arquivos || 'N',
-          organiza_pastas: autoData.organiza_pastas || 'N',
-          copia_cola_links: autoData.copia_cola_links || 'N',
-          conhece_redes_sociais: autoData.conhece_redes_sociais || 'N',
-          conhece_ferramentas: autoData.conhece_ferramentas || 'N',
-          precisa_apoio: autoData.precisa_apoio || 'N'
+          usa_computador: autoData.usa_computador ?? null,
+          navega_internet: autoData.navega_internet ?? null,
+          cria_salva_arquivos: autoData.cria_salva_arquivos ?? null,
+          organiza_pastas: autoData.organiza_pastas ?? null,
+          copia_cola_links: autoData.copia_cola_links ?? null,
+          conhece_redes_sociais: autoData.conhece_redes_sociais ?? null,
+          conhece_ferramentas: autoData.conhece_ferramentas ?? null,
+          precisa_apoio: autoData.precisa_apoio ?? null
         });
       } else {
         setAutonomia(DEFAULT_AUTONOMIA);
@@ -760,23 +805,19 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-12">
+    <div className="w-full space-y-5 animate-fade-in pb-12">
       {error && (
         <div className="bg-red-50 border border-red-200 text-error px-4 py-3 rounded-xl text-xs font-semibold">
           {error}
         </div>
       )}
-      {/* Page Breadcrumb and Header */}
-      <div className="flex flex-col gap-2">
+      {/* Page Header */}
+      <div className="flex flex-col gap-1">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors w-fit group"
         >
-          <HugeiconsIcon
-            icon={ArrowLeft01Icon}
-            size={16}
-            className="group-hover:-translate-x-0.5 transition-transform"
-          />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           <span>Voltar para Lista de Alunos</span>
         </button>
         <h2 className="font-heading font-extrabold text-2xl text-on-surface">Central de Acompanhamento</h2>
@@ -784,32 +825,32 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
 
       {/* Hero Card */}
       {profile && (
-        <div className="bg-white border border-outline-variant/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="bg-white border border-outline-variant/30 rounded-2xl p-4 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Student Info */}
-            <div className="flex items-center gap-4.5 min-w-max">
+            <div className="flex items-center gap-4 min-w-0 flex-1">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={profile.nome}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-primary/20 shadow-inner"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 shadow-sm"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-heading text-xl font-bold shadow-inner">
+                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-lg font-bold shadow-inner shrink-0">
                   {getInitials(profile.nome)}
                 </div>
               )}
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="font-heading font-extrabold text-[22px] text-on-surface leading-tight">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="font-heading font-extrabold text-lg sm:text-xl text-on-surface leading-tight truncate">
                     {profile.nome}
                   </h3>
                   {classStudents.length > 1 && onChangeStudent && (
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <select
                         value={profile.id}
                         onChange={(e) => onChangeStudent(e.target.value)}
-                        className="bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold rounded-lg px-2.5 py-1 pr-7 cursor-pointer focus:outline-none appearance-none transition-colors"
+                        className="bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 text-xs font-bold rounded-lg px-2 py-1 pr-7 cursor-pointer focus:outline-none appearance-none transition-colors"
                         style={{
                           backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23004ac6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
                           backgroundRepeat: 'no-repeat',
@@ -826,22 +867,25 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                     </div>
                   )}
                 </div>
-                <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-bold text-on-surface-variant/70 bg-slate-50 border border-outline-variant/40 px-2.5 py-1 rounded-lg">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                  <span>{profile.turma_nome || 'Sem Turma'}</span>
+                <p className="text-xs sm:text-sm font-medium text-on-surface-variant/70 mt-1 truncate">{profile.email}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/5 border border-primary/10 px-2.5 py-1 rounded-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    <span>{profile.turma_nome || 'Sem Turma'}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Metrics */}
-            <div className="flex flex-wrap lg:flex-nowrap items-center gap-6 lg:gap-8 flex-1 justify-start lg:justify-end">
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-5 lg:gap-8 flex-1 justify-start lg:justify-end">
               {/* Progress */}
-              <div className="w-full lg:w-48 space-y-2 border-r-0 lg:border-r border-slate-100 lg:pr-8">
-                <div className="flex justify-between font-label-sm text-xs font-bold">
-                  <span className="text-on-surface-variant/60 uppercase tracking-wider">Progresso da Trilha</span>
-                  <span className="text-secondary">{profile.progresso_geral}% - Aula {profile.aulas_concluidas || 0}/{profile.total_aulas || 0}</span>
+              <div className="w-full lg:w-40 space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-on-surface-variant/50 uppercase tracking-wider">Progresso</span>
+                  <span className="text-secondary">{profile.progresso_geral}%</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-secondary rounded-full"
                     style={{ width: `${profile.progresso_geral}%` }}
@@ -849,29 +893,30 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                 </div>
               </div>
 
-              {/* Streak */}
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-outline-variant/30 flex items-center justify-center text-secondary">
-                  <HugeiconsIcon icon={FireIcon} size={20} strokeWidth={2} className="text-secondary" />
-                </div>
+              {/* Frequency */}
+              <div className="flex items-center gap-2.5 border-l border-slate-100 lg:pl-6 py-1">
+                <span className={`w-2 h-2 rounded-full ${profile.frequencia >= 75 ? 'bg-emerald-500' : 'bg-red-500'}`} />
                 <div>
-                  <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest leading-none mb-1">Dias Ofensiva</p>
-                  <p className="text-sm font-extrabold text-on-surface">
-                    {profile.ofensiva_atual} <span className="text-xs font-semibold text-on-surface-variant/60">dias</span>
-                  </p>
+                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-wider leading-none">Frequência</p>
+                  <p className="text-sm font-extrabold text-on-surface mt-1 leading-none">{profile.frequencia}%</p>
+                </div>
+              </div>
+
+              {/* Streak */}
+              <div className="flex items-center gap-2.5 border-l border-slate-100 lg:pl-6 py-1">
+                <HugeiconsIcon icon={FireIcon} size={16} className="text-orange-500" />
+                <div>
+                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-wider leading-none">Ofensiva</p>
+                  <p className="text-sm font-extrabold text-on-surface mt-1 leading-none">{profile.ofensiva_atual} dias</p>
                 </div>
               </div>
 
               {/* Typing Speed */}
-              <div className="flex items-center gap-3 lg:border-l border-slate-100 lg:pl-8">
-                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-outline-variant/30 flex items-center justify-center text-primary">
-                  <HugeiconsIcon icon={KeyboardIcon} size={20} strokeWidth={2} className="text-primary" />
-                </div>
+              <div className="flex items-center gap-2.5 border-l border-slate-100 lg:pl-6 py-1">
+                <HugeiconsIcon icon={KeyboardIcon} size={16} className="text-primary" />
                 <div>
-                  <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest leading-none mb-1">Média Digitação</p>
-                  <p className="text-sm font-extrabold text-on-surface">
-                    {profile.media_digitacao} <span className="text-xs font-semibold text-on-surface-variant/60">pal/m</span>
-                  </p>
+                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-wider leading-none">Digitação</p>
+                  <p className="text-sm font-extrabold text-on-surface mt-1 leading-none">{profile.media_digitacao} ppm</p>
                 </div>
               </div>
             </div>
@@ -879,8 +924,8 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         </div>
       )}
 
-      {/* Sub Tabs Selector */}
-      <div className="flex border-b border-outline-variant/30 gap-6 my-2">
+      {/* Sub Tabs */}
+      <div className="flex border-b border-outline-variant/30 gap-6">
         <button
           onClick={() => setActiveSubTab('ficha')}
           className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
@@ -922,14 +967,10 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         </button>
       </div>
 
-      {/* Tab Contents */}
       {activeSubTab === 'ficha' && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
-          {/* Left Container (col-span-8) */}
-          <div className="xl:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Column A: Checklist + Teacher Notes */}
-            <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+          {/* Col 1: Checklist */}
+          <div className="flex flex-col gap-5">
               
               {/* Practical Observation Checklist */}
               <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm flex flex-col overflow-hidden">
@@ -940,7 +981,7 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   </h4>
                 </div>
 
-                <div className="p-5 space-y-3.5">
+                <div className="p-5 space-y-3">
                   {[
                     { label: 'Usa computador', key: 'usa_computador', hasP: true },
                     { label: 'Navega na internet', key: 'navega_internet', hasP: true },
@@ -962,59 +1003,14 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                         <div className="flex gap-1 bg-slate-50 p-1 rounded-full border border-slate-100">
                           {item.hasP ? (
                             <>
-                              <button
-                                onClick={() => handleUpdateAutonomia(key, 'S')}
-                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                  value === 'S'
-                                    ? 'bg-emerald-500 text-white shadow-sm scale-105'
-                                    : 'text-on-surface-variant/40 hover:bg-slate-200/50'
-                                }`}
-                              >
-                                S
-                              </button>
-                              <button
-                                onClick={() => handleUpdateAutonomia(key, 'P')}
-                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                  value === 'P'
-                                    ? 'bg-amber-500 text-white shadow-sm scale-105'
-                                    : 'text-on-surface-variant/40 hover:bg-slate-200/50'
-                                }`}
-                              >
-                                P
-                              </button>
-                              <button
-                                onClick={() => handleUpdateAutonomia(key, 'N')}
-                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                  value === 'N'
-                                    ? 'bg-red-500 text-white shadow-sm scale-105'
-                                    : 'text-on-surface-variant/40 hover:bg-slate-200/50'
-                                }`}
-                              >
-                                N
-                              </button>
+                              <button onClick={() => handleUpdateAutonomia(key, 'S')} className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${value === 'S' ? 'bg-emerald-500 text-white shadow-sm scale-105' : 'text-on-surface-variant/40 hover:bg-slate-200/50'}`}>S</button>
+                              <button onClick={() => handleUpdateAutonomia(key, 'P')} className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${value === 'P' ? 'bg-amber-500 text-white shadow-sm scale-105' : 'text-on-surface-variant/40 hover:bg-slate-200/50'}`}>P</button>
+                              <button onClick={() => handleUpdateAutonomia(key, 'N')} className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${value === 'N' ? 'bg-red-500 text-white shadow-sm scale-105' : 'text-on-surface-variant/40 hover:bg-slate-200/50'}`}>N</button>
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => handleUpdateAutonomia(key, 'S')}
-                                className={`w-9 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                  value === 'S'
-                                    ? 'bg-red-500 text-white shadow-sm scale-105'
-                                    : 'text-on-surface-variant/40 hover:bg-slate-200/50'
-                                }`}
-                              >
-                                Sim
-                              </button>
-                              <button
-                                onClick={() => handleUpdateAutonomia(key, 'N')}
-                                className={`w-9 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                  value === 'N'
-                                    ? 'bg-slate-300 text-on-surface shadow-sm scale-105'
-                                    : 'text-on-surface-variant/40 hover:bg-slate-200/50'
-                                }`}
-                              >
-                                Não
-                              </button>
+                              <button onClick={() => handleUpdateAutonomia(key, 'S')} className={`w-8 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${value === 'S' ? 'bg-red-500 text-white shadow-sm scale-105' : 'text-on-surface-variant/40 hover:bg-slate-200/50'}`}>Sim</button>
+                              <button onClick={() => handleUpdateAutonomia(key, 'N')} className={`w-8 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${value === 'N' ? 'bg-slate-300 text-on-surface shadow-sm scale-105' : 'text-on-surface-variant/40 hover:bg-slate-200/50'}`}>Não</button>
                             </>
                           )}
                         </div>
@@ -1023,36 +1019,13 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   })}
                 </div>
               </div>
+          </div>
 
-              {/* Teacher Notes Area */}
-              <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm p-5 flex flex-col gap-3">
-                <h4 className="font-heading font-bold text-sm text-on-surface flex items-center gap-2">
-                  <HugeiconsIcon icon={Edit01Icon} size={18} strokeWidth={2} className="text-primary" />
-                  <span>Anotações do Professor</span>
-                </h4>
-                <textarea
-                  className="w-full bg-slate-50/50 border border-outline-variant/40 rounded-xl p-3.5 text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-                  placeholder="Escreva anotações pedagógicas sobre a evolução, dificuldades e comportamento do aluno..."
-                  rows={6}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-                <button
-                  onClick={handleSaveNotes}
-                  disabled={savingNotes}
-                  className="bg-primary hover:bg-primary/95 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all disabled:opacity-50 self-end"
-                >
-                  {savingNotes ? 'Salvando...' : 'Salvar Anotações'}
-                </button>
-              </div>
 
-            </div>
-
-            {/* Column B: Pedagogical Intelligence + Diary History */}
-            <div className="flex flex-col gap-6">
-              
-              {/* Pedagogical Intelligence Cards */}
-              <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm p-5 flex flex-col gap-4">
+          {/* Col 2: Intelligence + Diary + Notes */}
+          <div className="flex flex-col gap-5">
+            {/* Pedagogical Intelligence Cards */}
+            <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm p-5 flex flex-col gap-4">
                 <h4 className="font-heading font-bold text-sm text-on-surface flex items-center gap-2">
                   <svg className="w-5 h-5 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
@@ -1062,11 +1035,9 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   <span>Inteligência Pedagógica</span>
                 </h4>
 
-                <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-4 border-l-4 border-l-emerald-500">
-                  <h5 className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5 mb-2.5">
-                    <svg className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-3.5 border-l-4 border-l-emerald-500">
+                  <h5 className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <svg className="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Zonas de Domínio
                   </h5>
                   <div className="flex flex-wrap gap-1.5">
@@ -1093,9 +1064,9 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-red-50/20 border border-red-100 rounded-xl p-4 border-l-4 border-l-red-500">
-                  <h5 className="text-[10px] font-extrabold text-red-700 uppercase tracking-wider flex items-center gap-1.5 mb-2.5">
-                    <HugeiconsIcon icon={Alert01Icon} size={14} strokeWidth={2.5} className="text-red-600" />
+                <div className="bg-red-50/20 border border-red-100 rounded-xl p-3.5 border-l-4 border-l-red-500">
+                  <h5 className="text-[10px] font-extrabold text-red-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <HugeiconsIcon icon={Alert01Icon} size={12} strokeWidth={2.5} className="text-red-600" />
                     Pontos de Atenção
                   </h5>
                   <div className="flex flex-wrap gap-1.5">
@@ -1118,16 +1089,39 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                 </div>
               </div>
 
-              {/* Class Attendance History (Diary) */}
-              <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm flex flex-col overflow-hidden flex-1">
+              {/* Teacher Notes */}
+              <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm p-5 flex flex-col gap-3">
+                <h4 className="font-heading font-bold text-sm text-on-surface flex items-center gap-2">
+                  <HugeiconsIcon icon={Edit01Icon} size={18} strokeWidth={2} className="text-primary" />
+                  <span>Anotações do Professor</span>
+                </h4>
+                <textarea
+                  className="w-full bg-slate-50/50 border border-outline-variant/40 rounded-xl p-3.5 text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                  placeholder="Escreva anotações pedagógicas sobre a evolução, dificuldades e comportamento do aluno..."
+                  rows={5}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+                <button
+                  onClick={handleSaveNotes}
+                  disabled={savingNotes}
+                  className="bg-primary hover:bg-primary/95 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all disabled:opacity-50 self-end"
+                >
+                  {savingNotes ? 'Salvando...' : 'Salvar Anotações'}
+                </button>
+              </div>
+            </div>
+
+            {/* Col 3: Class Attendance History */}
+            <div className="flex flex-col gap-5">
+              <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm flex flex-col overflow-hidden">
                 <div className="p-5 border-b border-slate-100 bg-slate-50/50">
                   <h4 className="font-heading font-bold text-sm text-on-surface flex items-center gap-2">
                     <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} className="text-primary" />
                     <span>Histórico de Aulas (Diário)</span>
                   </h4>
                 </div>
-
-                <div className="p-4 overflow-y-auto max-h-[480px] flex-1 space-y-3">
+                <div className="p-4 space-y-3">
                   {loadingDiario ? (
                     <div className="text-center py-8 text-xs font-semibold text-on-surface-variant/40">Carregando diário...</div>
                   ) : diarioRecords.length > 0 ? (
@@ -1183,17 +1177,10 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   )}
                 </div>
               </div>
-
             </div>
-
           </div>
-
-          {/* Right Container: Direct Communication (col-span-4) */}
-          <div className="xl:col-span-4 flex flex-col min-h-[550px] xl:h-auto">
-            {renderChatCard()}
-          </div>
-        </div>
       )}
+
 
       {/* AI Report View */}
       {activeSubTab === 'ia' && (

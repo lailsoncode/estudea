@@ -86,6 +86,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchTurmas();
@@ -489,6 +490,62 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     document.body.removeChild(link);
   };
 
+  const fetchUnreadChatCounts = async (studentIds: string[]) => {
+    if (studentIds.length === 0) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const teacherId = session.user.id;
+
+      const { data: messages, error } = await supabase
+        .from('chat_messages')
+        .select('aluno_id, remetente_id, created_at')
+        .in('aluno_id', studentIds);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      studentIds.forEach(id => {
+        const lastOpenedKey = `chat_last_opened:${teacherId}:${id}`;
+        const lastOpenedStr = localStorage.getItem(lastOpenedKey) || new Date(0).toISOString();
+        const lastOpenedTime = new Date(lastOpenedStr).getTime();
+
+        const studentMessages = messages?.filter(m => m.aluno_id === id && m.remetente_id === id) || [];
+        const unread = studentMessages.filter(m => new Date(m.created_at).getTime() > lastOpenedTime).length;
+        counts[id] = unread;
+      });
+
+      setUnreadCounts(counts);
+    } catch (err) {
+      console.error('Error fetching unread chat counts:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (students.length === 0) return;
+    const studentIds = students.map(s => s.id);
+    fetchUnreadChatCounts(studentIds);
+
+    const channel = supabase
+      .channel('lista_alunos_chat')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        () => {
+          fetchUnreadChatCounts(studentIds);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [students]);
+
   // Get initials for profile placeholder
   const getInitials = (name: string) => {
     return name
@@ -853,11 +910,16 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                         <div className="flex gap-2">
                           <button
                             onClick={() => onSelectStudent(student.id, 'chat')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/5 hover:bg-secondary/15 text-secondary text-xs font-bold rounded-xl transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/5 hover:bg-secondary/15 text-secondary text-xs font-bold rounded-xl transition-all relative"
                             title="Abrir Chat"
                           >
                             <HugeiconsIcon icon={Chat01Icon} size={15} strokeWidth={2} />
                             <span>Chat</span>
+                            {unreadCounts[student.id] > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-error text-white text-[9px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center border border-white animate-pulse shadow-sm">
+                                {unreadCounts[student.id]}
+                              </span>
+                            )}
                           </button>
                           <button
                             onClick={() => onSelectStudent(student.id, 'ficha')}
