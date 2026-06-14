@@ -41,6 +41,8 @@ import { DashboardProfessorOverview } from './pages/DashboardProfessorOverview';
 import { NotificationBell } from './components/common/NotificationBell';
 import { MateriaisApoio } from './pages/MateriaisApoio';
 import { ArenaRanking } from './pages/ArenaRanking';
+import { ArenaLiveProfessor } from './pages/ArenaLiveProfessor';
+import { ArenaLiveAluno } from './pages/ArenaLiveAluno';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons';
@@ -72,6 +74,10 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileStatus, setProfileStatus] = useState<string>('ativo');
 
+  // Arena states
+  const [arenaActive, setArenaActive] = useState(false);
+  const [arenaRole, setArenaRole] = useState<'professor' | 'aluno' | null>(null);
+
   // Student list & tracking center states
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [initialTrackingSection, setInitialTrackingSection] = useState<'chat' | 'ficha'>('ficha');
@@ -79,7 +85,7 @@ function App() {
 
   const isAdmin = session?.user?.user_metadata?.role === 'admin';
   const shellStyle = {
-    '--sidebar-width': sidebarCollapsed ? '80px' : '280px',
+    '--sidebar-width': arenaActive ? '0px' : (sidebarCollapsed ? '80px' : '280px'),
   } as CSSProperties;
 
   // Hook centralizado — elimina query duplicada que existia em 3 lugares
@@ -164,168 +170,269 @@ function App() {
     setProfileStatus('ativo');
   };
 
+  const teacherSidebarNav = (
+    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
+      mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+    }`}>
+      <div>
+        <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
+          <div className="flex items-center gap-3">
+            <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
+            <div className={getSidebarLabelClass(sidebarCollapsed)}>
+              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Painel do Professor</h1>
+              <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Gerenciar Cursos</p>
+            </div>
+          </div>
+          <button
+            className="hidden lg:inline-flex app-icon-button"
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
+          </button>
+          <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
+            <HugeiconsIcon icon={Cancel01Icon} size={20} />
+          </button>
+        </div>
+        
+        <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+          <button
+            onClick={() => { setActiveTeacherTab('overview'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
+            title="Visão Geral"
+          >
+            <HugeiconsIcon icon={DashboardSquare01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Visão Geral</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTeacherTab('progress');
+              setSelectedStudentId(null);
+              setMobileMenuOpen(false);
+            }}
+            className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
+            title="Alunos"
+          >
+            <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Alunos</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTeacherTab('diario');
+              setMobileMenuOpen(false);
+            }}
+            className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
+            title="Diário de Classe"
+          >
+            <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTeacherTab('lessons');
+              setMobileMenuOpen(false);
+            }}
+            className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
+            title="Liberação de Aulas"
+          >
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Liberação de Aulas</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTeacherTab('corrections'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
+            title="Central de Correções"
+          >
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Central de Correções</span>
+            {pendingCorrectionsCount > 0 && (
+              <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
+                {pendingCorrectionsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => { setActiveTeacherTab('assignments'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
+            title="Criador de Cursos"
+          >
+            <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Criador de Cursos</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTeacherTab('turmas'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
+            title="Gerenciar Turmas"
+          >
+            <HugeiconsIcon icon={SchoolIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTeacherTab('materials'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
+            title="Materiais de Apoio (IA)"
+          >
+            <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTeacherTab('arena_ranking'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
+            title="Ranking da Arena"
+          >
+            <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
+          </button>
+
+          <div className={`my-4 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
+
+          <button
+            onClick={() => { setActiveTeacherTab('settings'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
+            title="Minha Conta / Perfil"
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Minha Conta / Perfil</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+        <button
+          onClick={() => { setTeacherView('preview'); setMobileMenuOpen(false); }}
+          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface mb-2`}
+          title="Visualização do Aluno"
+        >
+          <HugeiconsIcon icon={SparklesIcon} size={18} strokeWidth={2} />
+          <span className={getSidebarLabelClass(sidebarCollapsed)}>Visualização do Aluno</span>
+        </button>
+        
+        <button
+          onClick={handleLogout}
+          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error-container/40`}
+          title="Sair"
+        >
+          <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
+          <span className={getSidebarLabelClass(sidebarCollapsed)}>Sair</span>
+        </button>
+      </div>
+    </nav>
+  );
+
+  const studentSidebarNav = (
+    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
+      mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+    }`}>
+      <div>
+        <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
+          <div className="flex items-center gap-3">
+            <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
+            <div className={getSidebarLabelClass(sidebarCollapsed)}>
+              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
+              <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
+            </div>
+          </div>
+          <button
+            className="hidden lg:inline-flex app-icon-button"
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
+          </button>
+          <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
+            <HugeiconsIcon icon={Cancel01Icon} size={20} />
+          </button>
+        </div>
+        
+        <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+          <button
+            onClick={() => { setActiveUserTab('dashboard'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'dashboard', sidebarCollapsed)}
+            title="Minhas Aulas"
+          >
+            <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Minhas Aulas</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveUserTab('achievements'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'achievements', sidebarCollapsed)}
+            title="Minhas Conquistas"
+          >
+            <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Minhas Conquistas</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveUserTab('arena_ranking'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
+            title="Ranking da Arena"
+          >
+            <HugeiconsIcon icon={Trophy} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveUserTab('digitacao'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'digitacao', sidebarCollapsed)}
+            title="Treino de Digitação"
+          >
+            <HugeiconsIcon icon={KeyboardIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Treino de Digitação</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveUserTab('profile'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
+            title="Meu Perfil"
+          >
+            <HugeiconsIcon icon={UserCircleIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Meu Perfil</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+        {isAdmin && teacherView === 'preview' && (
+          <button
+            onClick={() => { setTeacherView('content'); setMobileMenuOpen(false); }}
+            className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-primary/50 text-primary hover:bg-primary/5 mb-3`}
+            title="Voltar ao Painel"
+          >
+            <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Voltar ao Painel</span>
+          </button>
+        )}
+        
+        <button
+          onClick={handleLogout}
+          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error/10`}
+          title="Sair da Conta"
+        >
+          <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
+          <span className={getSidebarLabelClass(sidebarCollapsed)}>Sair da Conta</span>
+        </button>
+      </div>
+    </nav>
+  );
+
   // If teacher is logged in and viewing content dashboard, show full-screen admin layout with sidebar
   if (session && isAdmin && teacherView === 'content') {
     return (
       <div className="min-h-screen w-full bg-background text-on-background flex font-sans overflow-hidden" style={shellStyle}>
         {/* Sidebar Nav */}
-        <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <div>
-            <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-              <div className="flex items-center gap-3">
-                <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
-                <div className={getSidebarLabelClass(sidebarCollapsed)}>
-                  <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Painel do Professor</h1>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Gerenciar Cursos</p>
-                </div>
-              </div>
-              <button
-                className="hidden lg:inline-flex app-icon-button"
-                onClick={() => setSidebarCollapsed((value) => !value)}
-                title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-              >
-                <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
-              </button>
-              <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
-                <HugeiconsIcon icon={Cancel01Icon} size={20} />
-              </button>
-            </div>
-            
-            <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
-              <button
-                onClick={() => { setActiveTeacherTab('overview'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
-                title="Visão Geral"
-              >
-                <HugeiconsIcon icon={DashboardSquare01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Visão Geral</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTeacherTab('progress');
-                  setSelectedStudentId(null);
-                  setMobileMenuOpen(false);
-                }}
-                className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
-                title="Alunos"
-              >
-                <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Alunos</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTeacherTab('diario');
-                  setMobileMenuOpen(false);
-                }}
-                className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
-                title="Diário de Classe"
-              >
-                <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTeacherTab('lessons');
-                  setMobileMenuOpen(false);
-                }}
-                className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
-                title="Liberação de Aulas"
-              >
-                <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Liberação de Aulas</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTeacherTab('corrections'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
-                title="Central de Correções"
-              >
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Central de Correções</span>
-                {pendingCorrectionsCount > 0 && (
-                  <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
-                    {pendingCorrectionsCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => { setActiveTeacherTab('assignments'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
-                title="Criador de Cursos"
-              >
-                <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Criador de Cursos</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTeacherTab('turmas'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
-                title="Gerenciar Turmas"
-              >
-                <HugeiconsIcon icon={SchoolIcon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTeacherTab('materials'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
-                title="Materiais de Apoio (IA)"
-              >
-                <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTeacherTab('arena_ranking'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
-                title="Ranking da Arena"
-              >
-                <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
-              </button>
-
-              <div className={`my-4 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
-
-              <button
-                onClick={() => { setActiveTeacherTab('settings'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
-                title="Minha Conta / Perfil"
-              >
-                <HugeiconsIcon icon={Settings01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Minha Conta / Perfil</span>
-              </button>
-            </div>
-          </div>
-
-          <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
-            <button
-              onClick={() => { setTeacherView('preview'); setMobileMenuOpen(false); }}
-              className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface mb-2`}
-              title="Visualização do Aluno"
-            >
-              <HugeiconsIcon icon={SparklesIcon} size={18} strokeWidth={2} />
-              <span className={getSidebarLabelClass(sidebarCollapsed)}>Visualização do Aluno</span>
-            </button>
-            
-            <button
-              onClick={handleLogout}
-              className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error-container/40`}
-              title="Sair"
-            >
-              <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
-              <span className={getSidebarLabelClass(sidebarCollapsed)}>Sair</span>
-            </button>
-          </div>
-        </nav>
+        {!arenaActive && teacherSidebarNav}
 
         {/* Overlay for mobile drawer */}
-        {mobileMenuOpen && (
+        {!arenaActive && mobileMenuOpen && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
         )}
 
@@ -436,7 +543,15 @@ function App() {
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
               
               {activeTeacherTab === 'overview' && (
-                <DashboardProfessorOverview setActiveTab={setActiveTeacherTab} session={session} />
+                <DashboardProfessorOverview 
+                  setActiveTab={setActiveTeacherTab} 
+                  session={session} 
+                  onStartArena={() => {
+                    setArenaActive(true);
+                    setArenaRole('professor');
+                    setSidebarCollapsed(true);
+                  }}
+                />
               )}
 
               {activeTeacherTab === 'corrections' && <CentralCorrecoes />}
@@ -447,6 +562,9 @@ function App() {
             </div>
           </main>
         </div>
+        {arenaActive && arenaRole === 'professor' && (
+          <ArenaLiveProfessor session={session} onClose={() => { setArenaActive(false); setArenaRole(null); }} />
+        )}
       </div>
     );
   }
@@ -455,103 +573,10 @@ function App() {
     return (
       <div className="min-h-screen w-full bg-background text-on-background flex font-sans overflow-hidden" style={shellStyle}>
         {/* Sidebar Nav do Aluno */}
-        <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <div>
-            <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-              <div className="flex items-center gap-3">
-                <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
-                <div className={getSidebarLabelClass(sidebarCollapsed)}>
-                  <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
-                </div>
-              </div>
-              <button
-                className="hidden lg:inline-flex app-icon-button"
-                onClick={() => setSidebarCollapsed((value) => !value)}
-                title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-              >
-                <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
-              </button>
-              <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
-                <HugeiconsIcon icon={Cancel01Icon} size={20} />
-              </button>
-            </div>
-            
-            <div className={`flex flex-col gap-1.5 px-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
-              <button
-                onClick={() => { setActiveUserTab('dashboard'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeUserTab === 'dashboard', sidebarCollapsed)}
-                title="Minhas Aulas"
-              >
-                <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Minhas Aulas</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveUserTab('achievements'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeUserTab === 'achievements', sidebarCollapsed)}
-                title="Minhas Conquistas"
-              >
-                <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Minhas Conquistas</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveUserTab('arena_ranking'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
-                title="Ranking da Arena"
-              >
-                <HugeiconsIcon icon={Trophy} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveUserTab('digitacao'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeUserTab === 'digitacao', sidebarCollapsed)}
-                title="Treino de Digitação"
-              >
-                <HugeiconsIcon icon={KeyboardIcon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Treino de Digitação</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveUserTab('profile'); setMobileMenuOpen(false); }}
-                className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
-                title="Meu Perfil"
-              >
-                <HugeiconsIcon icon={UserCircleIcon} size={20} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Meu Perfil</span>
-              </button>
-            </div>
-          </div>
-
-          <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
-            {isAdmin && teacherView === 'preview' && (
-              <button
-                onClick={() => { setTeacherView('content'); setMobileMenuOpen(false); }}
-                className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-primary/50 text-primary hover:bg-primary/5 mb-3`}
-                title="Voltar ao Painel"
-              >
-                <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
-                <span className={getSidebarLabelClass(sidebarCollapsed)}>Voltar ao Painel</span>
-              </button>
-            )}
-            
-            <button
-              onClick={handleLogout}
-              className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error/10`}
-              title="Sair da Conta"
-            >
-              <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
-              <span className={getSidebarLabelClass(sidebarCollapsed)}>Sair da Conta</span>
-            </button>
-          </div>
-        </nav>
+        {!arenaActive && studentSidebarNav}
 
         {/* Overlay for mobile drawer */}
-        {mobileMenuOpen && (
+        {!arenaActive && mobileMenuOpen && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
         )}
 
@@ -637,17 +662,38 @@ function App() {
                   onBack={() => setActiveUserTab('dashboard')} 
                 />
               ) : activeUserTab === 'achievements' ? (
-                <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="achievements" />
+                <TrilhaAluno 
+                  session={session} 
+                  isAdmin={isAdmin} 
+                  initialViewMode="achievements" 
+                  onStartArena={() => {
+                    setArenaActive(true);
+                    setArenaRole('aluno');
+                    setSidebarCollapsed(true);
+                  }}
+                />
               ) : activeUserTab === 'arena_ranking' ? (
                 <ArenaRanking session={session} isAdmin={false} />
               ) : activeUserTab === 'digitacao' ? (
                 <TreinadorDigitacao session={session} />
               ) : (
-                <TrilhaAluno session={session} isAdmin={isAdmin} initialViewMode="trail" />
+                <TrilhaAluno 
+                  session={session} 
+                  isAdmin={isAdmin} 
+                  initialViewMode="trail" 
+                  onStartArena={() => {
+                    setArenaActive(true);
+                    setArenaRole('aluno');
+                    setSidebarCollapsed(true);
+                  }}
+                />
               )}
             </div>
           </main>
         </div>
+        {arenaActive && arenaRole === 'aluno' && (
+          <ArenaLiveAluno session={session} onClose={() => { setArenaActive(false); setArenaRole(null); }} />
+        )}
       </div>
     );
   }

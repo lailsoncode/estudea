@@ -76,6 +76,7 @@ interface TrilhaAlunoProps {
   session: any;
   isAdmin: boolean;
   initialViewMode?: 'trail' | 'achievements';
+  onStartArena: () => void;
 }
 
 interface Curso {
@@ -174,7 +175,7 @@ const RocketModuleIcon = () => (
   <HugeiconsIcon icon={Rocket01Icon} size={28} strokeWidth={2} className="text-green-600" />
 );
 
-export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, initialViewMode = 'trail' }) => {
+export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, initialViewMode = 'trail', onStartArena }) => {
   const userId = session?.user?.id;
   const userName = session?.user?.user_metadata?.nome || session?.user?.email?.split('@')[0] || 'Estudante';
 
@@ -195,7 +196,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const [schedule, setSchedule] = useState<any[]>([]);
   const [classStudents, setClassStudents] = useState<any[]>([]);
   const [classProgress, setClassProgress] = useState<any[]>([]);
-  const [showArenaLive, setShowArenaLive] = useState(false);
+
 
   // Selected lesson navigation states
   const [selectedAula, setSelectedAula] = useState<Aula | null>(null);
@@ -1517,7 +1518,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                   </p>
                 </div>
                 <button 
-                  onClick={() => setShowArenaLive(true)}
+                  onClick={onStartArena}
                   className="w-full mt-5 py-3 bg-primary hover:bg-blue-700 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   Entrar na Arena Live
@@ -3875,9 +3876,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           <span className="mt-1 font-medium text-[10px]">Perfil</span>
         </button>
       </nav>
-      {showArenaLive && (
-        <ArenaLiveAluno session={session} onClose={() => setShowArenaLive(false)} />
-      )}
+
       {showRatingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-250">
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl w-full max-w-sm space-y-4 animate-in zoom-in-95 duration-200">

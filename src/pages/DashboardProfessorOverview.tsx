@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { usePendingCorrections } from '../hooks/usePendingCorrections';
-import { ArenaLiveProfessor } from './ArenaLiveProfessor';
-
 interface DashboardProfessorOverviewProps {
   setActiveTab: (tab: 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings') => void;
   session: any;
+  onStartArena: () => void;
 }
 
 // Inline SVGs matching design style
@@ -93,7 +92,7 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   return fallback;
 };
 
-export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, session }) => {
+export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, session, onStartArena }) => {
 
   // DB States
   const [loading, setLoading] = useState(true);
@@ -130,7 +129,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
   // Schedule list loaded from LocalStorage or default fallback
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
 
-  const [showArenaLive, setShowArenaLive] = useState(false);
+
 
 
 
@@ -621,7 +620,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
               <button 
                 onClick={() => {
                   if (classes.length > 0) {
-                    setShowArenaLive(true);
+                    onStartArena();
                   } else {
                     alert('Cadastre uma turma e um quiz antes de iniciar a Arena Live.');
                   }
@@ -1029,9 +1028,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
         </div>
       )}
 
-      {showArenaLive && (
-        <ArenaLiveProfessor session={session} onClose={() => setShowArenaLive(false)} />
-      )}
+
 
     </div>
   );

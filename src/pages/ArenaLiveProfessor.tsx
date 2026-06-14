@@ -63,6 +63,10 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
   const timerIntervalRef = useRef<any>(null);
   const questionStartRef = useRef<number>(0);
 
+  // Custom Arena configurations
+  const [exibirPerguntas, setExibirPerguntas] = useState<boolean>(true);
+  const [projectorMode, setProjectorMode] = useState<boolean>(true);
+
   // Color schemas for options
   const optionStyles = [
     { bg: 'bg-red-500 hover:bg-red-600', border: 'border-red-600', shape: '▲', colorName: 'Vermelho' },
@@ -223,18 +227,33 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
 
       // 2. Create session freezing the questions
       const gamePin = generatePin();
-      const { data: sessionData, error: sError } = await supabase
+      const insertPayload: any = {
+        pin: gamePin,
+        professor_id: professorId,
+        aula_id: selectedAulaId,
+        status: 'lobby',
+        current_question_index: 0,
+        questoes_customizadas: finalQuestions,
+        exibir_perguntas: exibirPerguntas
+      };
+
+      let { data: sessionData, error: sError } = await supabase
         .from('kahoot_sessions')
-        .insert({
-          pin: gamePin,
-          professor_id: professorId,
-          aula_id: selectedAulaId,
-          status: 'lobby',
-          current_question_index: 0,
-          questoes_customizadas: finalQuestions
-        })
+        .insert(insertPayload)
         .select()
         .single();
+
+      if (sError) {
+        console.warn('Erro ao inserir com exibir_perguntas, tentando sem a coluna:', sError);
+        delete insertPayload.exibir_perguntas;
+        const retryResult = await supabase
+          .from('kahoot_sessions')
+          .insert(insertPayload)
+          .select()
+          .single();
+        sessionData = retryResult.data;
+        sError = retryResult.error;
+      }
 
       if (sError) throw sError;
 
@@ -342,7 +361,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
         status: 'question',
         questionIndex: nextIdx,
         questionLength: questions.length,
-        optionsCount: questions[nextIdx].opcoes.length
+        optionsCount: questions[nextIdx].opcoes.length,
+        exibirPerguntas: exibirPerguntas
       }
     });
 
@@ -382,33 +402,46 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950 text-white z-50 overflow-hidden flex flex-col font-sans">
+    <div className={`fixed inset-0 z-50 overflow-hidden flex flex-col font-sans transition-colors duration-300 ${projectorMode ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-white'}`}>
       
       {/* Upper header */}
-      <header className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
+      <header className={`px-6 py-4 flex justify-between items-center flex-shrink-0 transition-colors duration-300 border-b ${projectorMode ? 'bg-white border-slate-200 text-slate-900 shadow-sm' : 'bg-slate-900 border-slate-800 text-white'}`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
             <HugeiconsIcon icon={GameControllerIcon} size={18} strokeWidth={2} />
           </div>
           <div>
-            <h1 className="font-heading font-black text-body-lg text-white leading-tight">Arena Estudea Live</h1>
-            <p className="text-xs text-slate-400">Quiz Multiplayer em Tempo Real</p>
+            <h1 className={`font-heading font-black text-body-lg leading-tight ${projectorMode ? 'text-slate-900' : 'text-white'}`}>Arena Estudea Live</h1>
+            <p className={`text-xs ${projectorMode ? 'text-slate-500' : 'text-slate-400'}`}>Quiz Multiplayer em Tempo Real</p>
           </div>
         </div>
-        <button 
-          onClick={endSession}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
-        >
-          Encerrar Partida
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setProjectorMode(!projectorMode)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+              projectorMode 
+                ? 'bg-slate-100 hover:bg-slate-200 border-slate-350 text-slate-750' 
+                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+            }`}
+            title="Alternar entre tema claro (projetor) e escuro"
+          >
+            {projectorMode ? '☀ Modo Projetor (Claro)' : '🌙 Modo Escuro'}
+          </button>
+          <button 
+            onClick={endSession}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+          >
+            Encerrar Partida
+          </button>
+        </div>
       </header>
 
       {/* Main Game Screen */}
       {!gameStarted ? (
-        <div className="flex-1 flex items-center justify-center p-6 bg-radial-at-t from-slate-900 via-slate-950 to-black">
-          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl text-center">
-            <h2 className="font-heading font-black text-headline-lg text-white">Criar Nova Arena</h2>
-            <p className="text-slate-400 text-sm">Selecione um dos quizzes disponíveis no curso para criar uma sessão multiplayer ao vivo com seus alunos.</p>
+        <div className={`flex-1 flex items-center justify-center p-6 transition-colors duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-radial-at-t from-slate-900 via-slate-950 to-black'}`}>
+          <div className={`max-w-md w-full border rounded-3xl p-8 space-y-6 shadow-2xl text-center transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'}`}>
+            <h2 className="font-heading font-black text-headline-lg">Criar Nova Arena</h2>
+            <p className={`text-sm ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>Selecione um dos quizzes disponíveis no curso para criar uma sessão multiplayer ao vivo com seus alunos.</p>
             
             {loading ? (
               <div className="py-8 flex flex-col items-center gap-3">
@@ -422,16 +455,33 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
             ) : (
               <div className="space-y-4 text-left">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-1.5">Escolha o Quiz:</label>
+                  <label className={`text-xs font-bold uppercase tracking-wide block mb-1.5 ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>Escolha o Quiz:</label>
                   <select 
                     value={selectedAulaId} 
                     onChange={(e) => setSelectedAulaId(e.target.value)}
-                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl focus:border-primary text-white text-sm outline-none"
+                    className={`w-full p-3 border rounded-xl focus:border-primary text-sm outline-none ${projectorMode ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'}`}
                   >
                     {quizzes.map(q => (
                       <option key={q.id} value={q.id}>{q.titulo}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="flex items-center gap-2.5 py-1">
+                  <input
+                    type="checkbox"
+                    id="exibirPerguntas"
+                    checked={exibirPerguntas}
+                    onChange={(e) => setExibirPerguntas(e.target.checked)}
+                    className={`w-4 h-4 rounded border focus:ring-primary ${
+                      projectorMode 
+                        ? 'border-slate-300 bg-slate-50 text-primary' 
+                        : 'border-slate-800 bg-slate-950 text-primary'
+                    }`}
+                  />
+                  <label htmlFor="exibirPerguntas" className={`text-xs font-bold cursor-pointer select-none ${projectorMode ? 'text-slate-700' : 'text-slate-300'}`}>
+                    Mostrar perguntas e alternativas na tela do aluno
+                  </label>
                 </div>
 
                 <button
@@ -445,20 +495,20 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col bg-slate-950 relative">
+        <div className={`flex-1 flex flex-col relative transition-all duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-slate-950'}`}>
           
           {/* LOBBY STATE */}
           {gameStatus === 'lobby' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 bg-radial-at-t from-indigo-950 via-slate-950 to-black text-center space-y-8 animate-fade-in">
+            <div className={`flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-fade-in transition-all duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-radial-at-t from-indigo-950 via-slate-950 to-black'}`}>
               <div className="space-y-2">
-                <p className="text-slate-400 text-sm font-semibold uppercase tracking-widest">Entre no painel do aluno e digite o PIN:</p>
-                <h2 className="text-7xl font-heading font-black tracking-widest text-primary-fixed-dim drop-shadow-md select-all">{pin}</h2>
+                <p className={`text-sm font-semibold uppercase tracking-widest ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>Entre no painel do aluno e digite o PIN:</p>
+                <h2 className={`text-7xl font-heading font-black tracking-widest drop-shadow-sm select-all ${projectorMode ? 'text-primary' : 'text-primary-fixed-dim'}`}>{pin}</h2>
               </div>
 
-              <div className="w-full max-w-2xl bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur flex flex-col h-[350px]">
-                <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                  <span className="font-bold text-sm text-slate-400">Jogadores no Lobby</span>
-                  <span className="bg-primary/20 text-primary-fixed-dim text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+              <div className={`w-full max-w-2xl border rounded-3xl p-6 flex flex-col h-[350px] transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/40 border-slate-800/60 backdrop-blur'}`}>
+                <div className={`flex justify-between items-center pb-3 border-b ${projectorMode ? 'border-slate-100' : 'border-slate-800'}`}>
+                  <span className={`font-bold text-sm ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>Jogadores no Lobby</span>
+                  <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider ${projectorMode ? 'bg-primary/10 text-primary' : 'bg-primary/20 text-primary-fixed-dim'}`}>
                     {players.length} Conectados
                   </span>
                 </div>
@@ -467,13 +517,13 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                   {players.map(p => (
                     <div 
                       key={p.id} 
-                      className="px-4 py-2.5 bg-slate-800/80 border border-slate-700/50 rounded-xl font-sans font-bold text-sm text-white text-center shadow-sm animate-scale-up"
+                      className={`px-4 py-2.5 border rounded-xl font-sans font-bold text-sm text-center shadow-sm animate-scale-up ${projectorMode ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-800/80 border-slate-700/50 text-white'}`}
                     >
                       {p.nickname}
                     </div>
                   ))}
                   {players.length === 0 && (
-                    <div className="col-span-full h-full flex items-center justify-center text-slate-500 italic text-sm">
+                    <div className={`col-span-full h-full flex items-center justify-center italic text-sm ${projectorMode ? 'text-slate-400' : 'text-slate-500'}`}>
                       Aguardando alunos entrarem...
                     </div>
                   )}
@@ -483,7 +533,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
               <button
                 onClick={nextQuestion}
                 disabled={players.length === 0}
-                className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-heading font-black text-body-md rounded-xl transition-all shadow-lg shadow-emerald-500/10"
+                className="px-12 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-heading font-black text-body-md rounded-xl transition-all shadow-lg"
               >
                 Começar Partida
               </button>
@@ -495,9 +545,9 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
             <div className="flex-1 flex flex-col p-6 space-y-6 animate-fade-in">
               
               {/* Question card */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 text-center backdrop-blur shadow-md">
+              <div className={`border rounded-3xl p-6 text-center shadow-md transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200' : 'bg-slate-900/50 border-slate-800'}`}>
                 <span className="text-xs text-primary font-bold uppercase tracking-wider">Questão {currentQuestionIdx + 1} de {questions.length}</span>
-                <h2 className="text-2xl sm:text-3xl font-heading font-extrabold mt-3 text-white max-w-4xl mx-auto leading-tight">
+                <h2 className={`text-2xl sm:text-3xl font-heading font-extrabold mt-3 max-w-4xl mx-auto leading-tight ${projectorMode ? 'text-slate-900' : 'text-white'}`}>
                   {questions[currentQuestionIdx].enunciado}
                 </h2>
               </div>
@@ -506,15 +556,15 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
               <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 
                 {/* Timer Column (3 Columns) */}
-                <div className="lg:col-span-3 flex flex-col items-center justify-center bg-slate-900/30 border border-slate-800 rounded-3xl p-6 backdrop-blur text-center space-y-4">
+                <div className={`lg:col-span-3 flex flex-col items-center justify-center border rounded-3xl p-6 text-center space-y-4 transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-slate-900/30 border-slate-800 backdrop-blur'}`}>
                   <div className="relative w-32 h-32 flex items-center justify-center">
                     {/* Ring indicator */}
                     <div className={`w-28 h-28 rounded-full border-8 ${timer < 5 ? 'border-red-600 animate-ping absolute opacity-10' : 'border-primary/10 absolute'}`} />
-                    <div className={`w-28 h-28 rounded-full border-8 ${timer < 5 ? 'border-red-600' : 'border-primary'} flex items-center justify-center font-heading font-black text-4xl`}>
+                    <div className={`w-28 h-28 rounded-full border-8 ${timer < 5 ? 'border-red-600' : 'border-primary'} flex items-center justify-center font-heading font-black text-4xl ${projectorMode ? 'text-slate-900' : 'text-white'}`}>
                       {timer}
                     </div>
                   </div>
-                  <span className="text-slate-400 font-bold text-xs uppercase tracking-wide">Segundos Restantes</span>
+                  <span className={`font-bold text-xs uppercase tracking-wide ${projectorMode ? 'text-slate-650 font-bold' : 'text-slate-400'}`}>Segundos Restantes</span>
                 </div>
 
                 {/* Question Options (6 Columns) */}
@@ -534,10 +584,10 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                 </div>
 
                 {/* Answers Counter (3 Columns) */}
-                <div className="lg:col-span-3 flex flex-col items-center justify-center bg-slate-900/30 border border-slate-800 rounded-3xl p-6 backdrop-blur text-center space-y-4">
-                  <div className="text-5xl font-heading font-black text-white">{responses.length}</div>
-                  <span className="text-slate-400 font-bold text-xs uppercase tracking-wide">Respostas Recebidas</span>
-                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden mt-2">
+                <div className={`lg:col-span-3 flex flex-col items-center justify-center border rounded-3xl p-6 text-center space-y-4 transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-slate-900/30 border-slate-800 backdrop-blur'}`}>
+                  <div className={`text-5xl font-heading font-black ${projectorMode ? 'text-slate-900' : 'text-white'}`}>{responses.length}</div>
+                  <span className={`font-bold text-xs uppercase tracking-wide ${projectorMode ? 'text-slate-650 font-bold' : 'text-slate-400'}`}>Respostas Recebidas</span>
+                  <div className={`w-full rounded-full h-2 overflow-hidden mt-2 ${projectorMode ? 'bg-slate-250' : 'bg-slate-800'}`}>
                     <div 
                       className="bg-primary h-full rounded-full transition-all duration-300" 
                       style={{ width: `${players.length > 0 ? (responses.length / players.length) * 100 : 0}%` }}
@@ -555,8 +605,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
             <div className="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto scrollbar-thin animate-fade-in">
               <div className="text-center space-y-2">
                 <span className="text-xs text-primary font-bold uppercase tracking-wider">Resultado da Questão {currentQuestionIdx + 1}</span>
-                <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white">Opção Correta:</h2>
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl font-heading font-bold text-sm max-w-lg mx-auto">
+                <h2 className={`text-xl sm:text-2xl font-heading font-extrabold ${projectorMode ? 'text-slate-900' : 'text-white'}`}>Opção Correta:</h2>
+                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl font-heading font-bold text-sm max-w-lg mx-auto border ${projectorMode ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                   <span className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
                     <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} strokeWidth={3} />
                   </span>
@@ -568,8 +618,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Options answers count bar chart (6 Columns) */}
-                <div className="lg:col-span-6 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 backdrop-blur space-y-4">
-                  <h3 className="font-heading font-bold text-sm text-slate-300">Respostas dos Alunos</h3>
+                <div className={`lg:col-span-6 border rounded-3xl p-6 space-y-4 transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-slate-900/40 border-slate-800/60 backdrop-blur'}`}>
+                  <h3 className={`font-heading font-bold text-sm ${projectorMode ? 'text-slate-700' : 'text-slate-300'}`}>Respostas dos Alunos</h3>
                   <div className="space-y-4">
                     {questions[currentQuestionIdx].opcoes.map((option, idx) => {
                       const style = optionStyles[idx];
@@ -583,14 +633,14 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                           <div className="flex justify-between font-sans text-xs font-bold">
                             <span className="flex items-center gap-1.5">
                               <span className="opacity-80">{style.shape}</span>
-                              <span className="truncate max-w-[200px] sm:max-w-xs">{option}</span>
+                              <span className={`truncate max-w-[200px] sm:max-w-xs ${projectorMode ? 'text-slate-700' : 'text-white'}`}>{option}</span>
                             </span>
                             <span className="flex items-center gap-2">
                               {isCorrect && <span className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">Correta</span>}
-                              <span className="text-slate-400">{count} votos ({percent}%)</span>
+                              <span className={projectorMode ? 'text-slate-500' : 'text-slate-400'}>{count} votos ({percent}%)</span>
                             </span>
                           </div>
-                          <div className="w-full bg-slate-950 rounded-full h-3.5 overflow-hidden border border-slate-800 relative">
+                          <div className={`w-full rounded-full h-3.5 overflow-hidden border relative ${projectorMode ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
                             <div 
                               className={`h-full rounded-full ${isCorrect ? 'bg-emerald-500' : 'bg-slate-600'}`}
                               style={{ width: `${percent}%` }}
@@ -603,14 +653,14 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                 </div>
 
                 {/* Score list leaderboard (6 Columns) */}
-                <div className="lg:col-span-6 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 backdrop-blur space-y-4">
-                  <h3 className="font-heading font-bold text-sm text-slate-300">Líderes da Rodada</h3>
+                <div className={`lg:col-span-6 border rounded-3xl p-6 space-y-4 transition-all duration-300 ${projectorMode ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-slate-900/40 border-slate-800/60 backdrop-blur'}`}>
+                  <h3 className={`font-heading font-bold text-sm ${projectorMode ? 'text-slate-700' : 'text-slate-300'}`}>Líderes da Rodada</h3>
                   <div className="space-y-2.5">
                     {(() => {
                       // Fetch sorted players lists
                       const list = [...players].sort((a, b) => b.total_score - a.total_score).slice(0, 5);
                       return list.map((p, idx) => (
-                        <div key={p.id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
+                        <div key={p.id} className={`flex items-center justify-between p-3 border rounded-xl ${projectorMode ? 'bg-slate-50 border-slate-150 text-slate-900' : 'bg-slate-950/50 border-slate-800 text-white'}`}>
                           <div className="flex items-center gap-3">
                             <span className="w-6 text-center font-heading font-black text-sm text-slate-400">
                               {idx === 0 ? (
@@ -623,7 +673,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                                 `#${idx + 1}`
                               )}
                             </span>
-                            <span className="font-sans font-bold text-sm text-white">{p.nickname}</span>
+                            <span className={`font-sans font-bold text-sm ${projectorMode ? 'text-slate-850' : 'text-white'}`}>{p.nickname}</span>
                             {p.streak >= 3 && (
                               <span className="text-[9px] bg-orange-500 text-white px-2 py-0.5 rounded font-extrabold uppercase animate-pulse flex items-center gap-1">
                                 <HugeiconsIcon icon={FireIcon} size={10} strokeWidth={2.5} />
@@ -631,7 +681,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                               </span>
                             )}
                           </div>
-                          <div className="font-heading font-black text-sm text-primary-fixed-dim">{p.total_score} pts</div>
+                          <div className={`font-heading font-black text-sm ${projectorMode ? 'text-primary' : 'text-primary-fixed-dim'}`}>{p.total_score} pts</div>
                         </div>
                       ));
                     })()}
@@ -654,11 +704,11 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
 
           {/* FINISHED STATE (PODIUM) */}
           {gameStatus === 'finished' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 bg-radial-at-t from-purple-950 via-slate-950 to-black text-center space-y-12 animate-fade-in overflow-y-auto scrollbar-thin">
+            <div className={`flex-1 flex flex-col items-center justify-center p-6 text-center space-y-12 animate-fade-in overflow-y-auto scrollbar-thin transition-all duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-radial-at-t from-purple-950 via-slate-950 to-black'}`}>
               <div className="space-y-2 flex flex-col items-center">
                 <HugeiconsIcon icon={Trophy} size={40} className="text-yellow-400 drop-shadow" />
-                <h2 className="text-4xl font-heading font-black text-white">Grande Pódio</h2>
-                <p className="text-slate-400 text-sm">Parabéns a todos os participantes!</p>
+                <h2 className={`text-4xl font-heading font-black ${projectorMode ? 'text-slate-900 font-extrabold' : 'text-white'}`}>Grande Pódio</h2>
+                <p className={`text-sm ${projectorMode ? 'text-slate-655 font-bold' : 'text-slate-400'}`}>Parabéns a todos os participantes!</p>
               </div>
 
               {/* Podium podium visual display */}
@@ -674,10 +724,10 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                       {/* 2nd place */}
                       {second && (
                         <div className="flex flex-col items-center flex-1 h-[70%] group">
-                          <div className="font-sans font-extrabold text-sm text-slate-300 mb-2 truncate max-w-[100px]">{second.nickname}</div>
-                          <div className="w-full bg-slate-700 border-t-4 border-slate-500 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-lg relative">
+                          <div className={`font-sans font-extrabold text-sm mb-2 truncate max-w-[100px] ${projectorMode ? 'text-slate-800' : 'text-slate-300'}`}>{second.nickname}</div>
+                          <div className={`w-full border-t-4 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-lg relative ${projectorMode ? 'bg-slate-200 border-slate-350 text-slate-800 shadow' : 'bg-slate-700 border-slate-500 text-slate-300'}`}>
                             <span className="text-3xl font-heading font-black text-slate-400">2</span>
-                            <span className="text-[10px] text-slate-400 font-semibold absolute bottom-2">{second.total_score} pts</span>
+                            <span className={`text-[10px] font-semibold absolute bottom-2 ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>{second.total_score} pts</span>
                           </div>
                         </div>
                       )}
@@ -688,7 +738,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                           <div className="text-yellow-400 mb-1 animate-bounce">
                             <HugeiconsIcon icon={CrownIcon} size={22} strokeWidth={2} />
                           </div>
-                          <div className="font-sans font-extrabold text-body-md text-yellow-300 mb-2 truncate max-w-[120px]">{first.nickname}</div>
+                          <div className={`font-sans font-extrabold text-body-md mb-2 truncate max-w-[120px] ${projectorMode ? 'text-yellow-600 font-black' : 'text-yellow-300'}`}>{first.nickname}</div>
                           <div className="w-full bg-gradient-to-t from-yellow-600 to-yellow-500 border-t-4 border-yellow-400 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-2xl relative">
                             <span className="text-4xl font-heading font-black text-white">1</span>
                             <span className="text-xs text-yellow-100 font-black absolute bottom-3">{first.total_score} pts</span>
@@ -699,10 +749,10 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                       {/* 3rd place */}
                       {third && (
                         <div className="flex flex-col items-center flex-1 h-[55%] group">
-                          <div className="font-sans font-extrabold text-sm text-amber-700 mb-2 truncate max-w-[100px]">{third.nickname}</div>
-                          <div className="w-full bg-slate-800 border-t-4 border-slate-600 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-md relative">
+                          <div className={`font-sans font-extrabold text-sm mb-2 truncate max-w-[100px] ${projectorMode ? 'text-amber-900' : 'text-amber-700'}`}>{third.nickname}</div>
+                          <div className={`w-full border-t-4 rounded-t-2xl flex-1 flex flex-col items-center justify-center shadow-md relative ${projectorMode ? 'bg-slate-300 border-slate-400 text-slate-800 shadow' : 'bg-slate-800 border-slate-600'}`}>
                             <span className="text-2xl font-heading font-black text-amber-700">3</span>
-                            <span className="text-[10px] text-slate-500 font-semibold absolute bottom-2">{third.total_score} pts</span>
+                            <span className={`text-[10px] font-semibold absolute bottom-2 ${projectorMode ? 'text-slate-600' : 'text-slate-500'}`}>{third.total_score} pts</span>
                           </div>
                         </div>
                       )}

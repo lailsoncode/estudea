@@ -57,6 +57,7 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
   const [questionStartedAt, setQuestionStartedAt] = useState<number>(0);
   const [ranking, setRanking] = useState<number>(1);
   const [optionsCount, setOptionsCount] = useState<number>(4);
+  const [exibirPerguntas, setExibirPerguntas] = useState<boolean>(true);
 
   // Geometric shapes and styles for options
   const optionStyles = [
@@ -96,6 +97,9 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
       }
 
       setGameSession(sData);
+      if (sData.exibir_perguntas !== undefined && sData.exibir_perguntas !== null) {
+        setExibirPerguntas(sData.exibir_perguntas);
+      }
 
       // 2. Fetch the quiz questions to check correctness client-side
       let activeQuestions: Question[] = [];
@@ -142,6 +146,9 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
       sessionChannel
         .on('broadcast', { event: 'game_state' }, async ({ payload }) => {
           setGameStatus(payload.status);
+          if (payload.exibirPerguntas !== undefined && payload.exibirPerguntas !== null) {
+            setExibirPerguntas(payload.exibirPerguntas);
+          }
           if (payload.status === 'question') {
             const index = payload.questionIndex;
             setCurrentQuestionIdx(index);
@@ -360,24 +367,38 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
                 <div className="flex-1 flex flex-col justify-between py-6">
                   
                   {/* Status header */}
-                  <div className="text-center px-4">
+                  <div className="text-center px-4 space-y-2">
                     <span className="text-[10px] bg-primary/10 border border-primary/20 text-primary-fixed-dim font-black px-2.5 py-1 rounded-full uppercase tracking-widest">
                       Questão {currentQuestionIdx + 1} de {totalQuestions}
                     </span>
-                    <h2 className="font-heading font-bold text-body-md text-slate-300 mt-2">Escolha a resposta correspondente no projetor:</h2>
+                    {exibirPerguntas && currentQuestion ? (
+                      <h2 className="font-heading font-black text-body-lg text-white mt-2 leading-snug">
+                        {currentQuestion.enunciado}
+                      </h2>
+                    ) : (
+                      <h2 className="font-heading font-bold text-body-md text-slate-300 mt-2">
+                        Escolha a resposta correspondente no projetor:
+                      </h2>
+                    )}
                   </div>
 
                   {/* Shapes Controller Grid */}
                   <div className="grid grid-cols-2 gap-4 h-[70%] max-h-[450px] px-2 mt-4">
                     {Array.from({ length: optionsCount }).map((_, idx) => {
                       const style = optionStyles[idx];
+                      const optionText = currentQuestion?.opcoes[idx] || '';
                       return (
                         <button
                           key={idx}
                           onClick={() => handleAnswerClick(idx)}
-                          className={`flex flex-col items-center justify-center rounded-3xl ${style.bg} transition-all border-b-8 ${style.border} active:border-b-0 shadow-lg text-white`}
+                          className={`flex flex-col items-center justify-center rounded-3xl ${style.bg} transition-all border-b-8 ${style.border} active:border-b-0 shadow-lg text-white p-4`}
                         >
-                          <span className="text-5xl drop-shadow-md select-none">{style.shape}</span>
+                          <span className={`${exibirPerguntas ? 'text-2xl mb-1' : 'text-5xl'} drop-shadow-md select-none`}>{style.shape}</span>
+                          {exibirPerguntas && (
+                            <span className="text-xs sm:text-sm font-bold text-center mt-1 max-w-full break-words line-clamp-3 overflow-hidden px-1">
+                              {optionText}
+                            </span>
+                          )}
                         </button>
                       );
                     })}

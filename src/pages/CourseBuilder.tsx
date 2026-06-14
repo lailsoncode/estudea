@@ -733,6 +733,22 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     fetchCursos();
   }, []);
 
+  // Auto-clear success messages after 4 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Clear success and error when switching views
+  useEffect(() => {
+    setSuccess(null);
+    setError(null);
+  }, [view]);
+
   const fetchCursos = async () => {
     setLoading(true);
     setError(null);
