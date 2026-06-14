@@ -23,10 +23,13 @@ interface Entrega {
   aluno_nome?: string;
   aluno_turma_nome?: string;
   atividade_enunciado?: string;
-  atividade_tipo_entrega?: 'texto' | 'imagem';
+  atividade_tipo_entrega?: 'texto' | 'imagem' | 'quiz' | 'multipla';
+  atividade_pontua?: boolean;
+  atividade_permite_refazer?: boolean;
   aula_titulo?: string;
   aula_numero?: number;
   isHighPriority?: boolean;
+  questoes?: any[];
 }
 
 export const CentralCorrecoes: React.FC = () => {
@@ -45,6 +48,7 @@ export const CentralCorrecoes: React.FC = () => {
   const [correctedCount, setCorrectedCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [activeToday, setActiveToday] = useState(0);
+  const [avgGrade, setAvgGrade] = useState<number | null>(null);
 
   // Correction Form States
   const [gradeInput, setGradeInput] = useState<number>(85);
@@ -100,10 +104,13 @@ export const CentralCorrecoes: React.FC = () => {
             id,
             enunciado,
             tipo_entrega,
+            pontua,
+            permite_refazer,
             aulas:aula_id (
               id,
               titulo,
-              numero_aula
+              numero_aula,
+              questoes(*)
             )
           )
         `);
@@ -134,9 +141,18 @@ export const CentralCorrecoes: React.FC = () => {
           aluno_turma_nome: turma?.nome || 'Sem Turma',
           atividade_enunciado: atividade?.enunciado || 'Atividade sem enunciado',
           atividade_tipo_entrega: atividade?.tipo_entrega || 'texto',
+          atividade_pontua: atividade?.pontua ?? true,
+          atividade_permite_refazer: atividade?.permite_refazer ?? true,
           aula_titulo: aula?.titulo || 'Aula sem título',
           aula_numero: aula?.numero_aula || 0,
-          isHighPriority
+          isHighPriority,
+          questoes: (() => {
+            const allQuestions = aula?.questoes || [];
+            const isProprio = allQuestions.some((q: any) => q.atividade_id === item.atividade_id);
+            return isProprio
+              ? allQuestions.filter((q: any) => q.atividade_id === item.atividade_id)
+              : allQuestions.filter((q: any) => !q.atividade_id && !q.para_arena);
+          })()
         };
       });
 
@@ -144,7 +160,7 @@ export const CentralCorrecoes: React.FC = () => {
       const total = formatted.length;
       const corrected = formatted.filter(e => e.nota !== null).length;
       const pending = total - corrected;
-      
+
       // Calculate active today (unique students who submitted in the last 24h)
       const activeUsers = new Set(
         formatted
@@ -155,10 +171,18 @@ export const CentralCorrecoes: React.FC = () => {
           .map(e => e.aluno_id)
       ).size;
 
+      // Calculate average grade from corrected submissions
+      const gradedEntries = formatted.filter(e => e.nota !== null && e.atividade_pontua);
+      const avg =
+        gradedEntries.length > 0
+          ? gradedEntries.reduce((sum, e) => sum + (e.nota as number), 0) / gradedEntries.length
+          : null;
+
       setTotalSubmissions(total);
       setCorrectedCount(corrected);
       setPendingCount(pending);
       setActiveToday(activeUsers);
+      setAvgGrade(avg !== null ? Math.round(avg * 10) / 10 : null);
 
       // 4. Apply filters to list view
       // Filter by Turma
@@ -221,9 +245,46 @@ export const CentralCorrecoes: React.FC = () => {
     }
   };
 
+  const isQuestionCorrect = (q: any, answer: string) => {
+    if (!answer || !answer.trim()) return false;
+    
+    if (q.tipo === 'aberta') {
+      const keywordsStr = q.opcoes?.[1] || '';
+      if (!keywordsStr.trim()) {
+        return true;
+      }
+      
+      const keywords = keywordsStr.toLowerCase().split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
+      const studentAnswer = answer.toLowerCase();
+      
+      return keywords.every((k: string) => studentAnswer.includes(k));
+    }
+
+    if (q.tipo === 'multipla_selecao') {
+      const correctParts = (q.resposta_correta || '').split(';').map((p: string) => p.trim().toLowerCase()).filter((p: string) => p.length > 0).sort();
+      const answerParts = answer.split(';').map((p: string) => p.trim().toLowerCase()).filter((p: string) => p.length > 0).sort();
+      return correctParts.length === answerParts.length && correctParts.every((val: string, index: number) => val === answerParts[index]);
+    }
+    
+    return answer.trim().toLowerCase() === q.resposta_correta?.trim().toLowerCase();
+  };
+
   const selectSubmission = (entrega: Entrega) => {
     setSelectedEntrega(entrega);
-    setGradeInput(entrega.nota !== null ? entrega.nota : 85);
+    let initialGrade = 85;
+    if (entrega.nota !== null) {
+      initialGrade = entrega.nota;
+    } else if (entrega.atividade_tipo_entrega === 'quiz') {
+      try {
+        const payload = JSON.parse(entrega.resposta);
+        if (payload && typeof payload.score === 'number') {
+          initialGrade = payload.score;
+        }
+      } catch (e) {
+        console.error('Erro ao fazer parse da resposta do quiz:', e);
+      }
+    }
+    setGradeInput(initialGrade);
     setFeedbackInput(entrega.feedback_professor || '');
     setSuccess(null);
     setError(null);
@@ -236,10 +297,12 @@ export const CentralCorrecoes: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
+      const isGradedActivity = selectedEntrega.atividade_pontua ?? true;
+
       const { error: updateError } = await supabase
         .from('entregas_atividades')
         .update({
-          nota: gradeInput,
+          nota: isGradedActivity ? gradeInput : 100,
           feedback_professor: feedbackInput.trim() || null,
           updated_at: new Date().toISOString(),
         })
@@ -264,7 +327,11 @@ export const CentralCorrecoes: React.FC = () => {
           }, { onConflict: 'aluno_id,aula_id' });
       }
 
-      setSuccess(`Nota ${gradeInput}/100 publicada para ${selectedEntrega.aluno_nome}!`);
+      if (isGradedActivity) {
+        setSuccess(`Nota ${gradeInput}/100 publicada para ${selectedEntrega.aluno_nome}!`);
+      } else {
+        setSuccess(`Feedback e revisão concluídos para ${selectedEntrega.aluno_nome}!`);
+      }
       
       // Auto advance to next pending submission if available
       const currentIndex = entregas.findIndex(e => e.id === selectedEntrega.id);
@@ -402,12 +469,29 @@ export const CentralCorrecoes: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="app-card p-4 flex items-center justify-between transition-all hover:shadow-sm">
             <div>
-              <p className="app-metric-label mb-1">Média de Correção</p>
-              <p className="app-metric-value">5m 30s</p>
+              <p className="app-metric-label mb-1">Nota Média</p>
+              <p className="app-metric-value">
+                {avgGrade !== null ? (
+                  <>
+                    {avgGrade}
+                    <span className="text-on-surface-variant text-lg font-normal">/100</span>
+                  </>
+                ) : (
+                  <span className="text-on-surface-variant text-lg font-normal">—</span>
+                )}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {correctedCount > 0 ? `Baseado em ${correctedCount} correç${correctedCount === 1 ? 'ão' : 'ões'}` : 'Nenhuma nota publicada'}
+              </p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${
+              avgGrade === null ? 'bg-slate-100 text-slate-400 border-slate-200'
+              : avgGrade >= 70 ? 'bg-secondary/10 text-secondary border-secondary/20'
+              : avgGrade >= 50 ? 'bg-amber-50 text-amber-500 border-amber-200'
+              : 'bg-error-container/30 text-error border-error/20'
+            }`}>
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
           </div>
@@ -630,14 +714,34 @@ export const CentralCorrecoes: React.FC = () => {
                   {/* Task Instructions */}
                   <div className="border-b border-slate-100 pb-4">
                     <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider mb-1">Enunciado da Atividade</p>
-                    <p className="text-body-md text-slate-600 font-semibold leading-relaxed">
+                    <p className="text-body-md text-slate-600 font-semibold leading-relaxed whitespace-pre-wrap">
                       {selectedEntrega.atividade_enunciado}
                     </p>
                   </div>
 
                   {/* Student Answer */}
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider mb-2">Resposta Enviada</p>
+                    <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider">Resposta Enviada</p>
+                      <div className="flex gap-2">
+                        {selectedEntrega.atividade_tipo_entrega === 'quiz' && (
+                          <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${
+                            selectedEntrega.atividade_pontua 
+                              ? 'bg-blue-50 border-blue-200 text-blue-800' 
+                              : 'bg-amber-50 border-amber-200 text-amber-800'
+                          }`}>
+                            {selectedEntrega.atividade_pontua ? 'Atividade Avaliativa' : 'Atividade Formativa'}
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${
+                          selectedEntrega.atividade_permite_refazer !== false
+                            ? 'bg-emerald-50 border-emerald-250 text-emerald-800'
+                            : 'bg-rose-50 border-rose-200 text-rose-800'
+                        }`}>
+                          {selectedEntrega.atividade_permite_refazer !== false ? 'Permite Reenvio' : 'Reenvio Bloqueado'}
+                        </span>
+                      </div>
+                    </div>
                     
                     {selectedEntrega.atividade_tipo_entrega === 'imagem' && isImageUrl(selectedEntrega.resposta) ? (
                       <div className="space-y-3">
@@ -663,6 +767,167 @@ export const CentralCorrecoes: React.FC = () => {
                           />
                         </div>
                       </div>
+                    ) : selectedEntrega.atividade_tipo_entrega === 'quiz' ? (
+                      (() => {
+                        try {
+                          const payload = JSON.parse(selectedEntrega.resposta);
+                          const correct = payload.correctCount ?? 0;
+                          const total = payload.totalQuestions ?? 0;
+                          const score = payload.score ?? 0;
+                          const hasDefinedAnswers = selectedEntrega.questoes?.some((q: any) => q.resposta_correta && q.resposta_correta.trim() !== '');
+                          const isGraded = (selectedEntrega.atividade_pontua ?? true) && hasDefinedAnswers;
+                          
+                          return (
+                            <div className="space-y-4 text-left">
+                              {/* Quiz Stats Row */}
+                              {isGraded ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  <div className="bg-slate-50 border border-slate-150 p-3 rounded-xl">
+                                    <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Sugestão de Nota</span>
+                                    <span className="text-body-lg font-extrabold text-primary font-mono">{score}/100</span>
+                                  </div>
+                                  <div className="bg-slate-50 border border-slate-150 p-3 rounded-xl">
+                                    <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Questões Corretas</span>
+                                    <span className="text-body-md font-bold text-slate-700">{correct} de {total}</span>
+                                  </div>
+                                  <div className="bg-slate-50 border border-slate-150 p-3 rounded-xl col-span-2 md:col-span-1">
+                                    <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Aproveitamento</span>
+                                    <span className="text-body-md font-bold text-slate-700 font-mono">{Math.round((correct / (total || 1)) * 100)}%</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-slate-600 font-medium text-body-md">
+                                  Este envio é um questionário formativo (não pontua). Nenhuma nota foi calculada pelo sistema.
+                                </div>
+                              )}
+
+                              {/* Question by question analysis */}
+                              <div className="space-y-3 pt-2">
+                                <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider">Detalhamento das Respostas</p>
+                                {selectedEntrega.questoes && selectedEntrega.questoes.length > 0 ? (
+                                  selectedEntrega.questoes.map((q: any, qIdx: number) => {
+                                    const alunoResp = payload.respostas?.[q.id] || '';
+                                    const isCorrect = isGraded ? isQuestionCorrect(q, alunoResp) : false;
+                                    
+                                    return (
+                                      <div key={q.id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-200/80 space-y-2">
+                                        <div className="flex justify-between items-start gap-3">
+                                          <p className="font-semibold text-slate-700 text-body-md leading-relaxed flex items-start gap-1.5">
+                                            <span className="text-secondary font-mono">Q{qIdx + 1}.</span>
+                                            <span>{q.enunciado}</span>
+                                          </p>
+                                          {isGraded && (
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded shrink-0 ${
+                                              isCorrect 
+                                                ? 'bg-emerald-100 text-emerald-800' 
+                                                : 'bg-error-container/20 text-error'
+                                            }`}>
+                                              {isCorrect ? 'Correta' : 'Incorreta'}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {isGraded ? (
+                                          <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 border-t border-slate-100 text-label-sm">
+                                              <div>
+                                                <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Resposta do Aluno:</span>
+                                                <p className={`font-semibold ${isCorrect ? 'text-emerald-700' : 'text-error'}`}>
+                                                  {q.tipo === 'multipla_selecao' && alunoResp
+                                                    ? alunoResp.split(';').join(', ')
+                                                    : (alunoResp || '(Sem resposta)')}
+                                                </p>
+                                              </div>
+                                              <div>
+                                                <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Gabarito Esperado:</span>
+                                                <p className="font-semibold text-emerald-700">
+                                                  {q.tipo === 'aberta'
+                                                    ? (q.opcoes?.[0] || q.resposta_correta)
+                                                    : q.tipo === 'multipla_selecao' && q.resposta_correta
+                                                      ? q.resposta_correta.split(';').join(', ')
+                                                      : q.resposta_correta}
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            {q.tipo === 'aberta' && q.opcoes?.[1] && (
+                                              <div className="bg-slate-100/60 p-2.5 rounded-lg border border-slate-200/50 text-[12px] text-slate-600">
+                                                <span className="font-bold text-slate-500 font-mono text-[9px] uppercase block mb-0.5">Palavras-chave exigidas pela IA para aprovação automática:</span>
+                                                <span className="font-mono text-slate-700 bg-white px-2 py-1 rounded border border-slate-200/50 block mt-1">
+                                                  {q.opcoes[1]}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="pt-1 border-t border-slate-100 text-label-sm">
+                                            <span className="text-[10px] text-slate-400 font-mono font-bold uppercase block">Resposta do Aluno:</span>
+                                            <p className="font-semibold text-slate-700">
+                                              {q.tipo === 'multipla_selecao' && alunoResp
+                                                ? alunoResp.split(';').join(', ')
+                                                : (alunoResp || '(Sem resposta)')}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <p className="text-label-md text-slate-400 font-mono">As questões associadas a esta aula não foram encontradas.</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        } catch (e) {
+                          return <p className="text-label-sm bg-slate-50 p-3 rounded border border-slate-200 text-error font-mono">Erro ao interpretar o payload do quiz do aluno.</p>;
+                        }
+                      })()
+                    ) : selectedEntrega.atividade_tipo_entrega === 'multipla' ? (
+                      (() => {
+                        try {
+                          const payload = JSON.parse(selectedEntrega.resposta);
+                          return (
+                            <div className="space-y-6">
+                              {payload.texto && (
+                                <div className="space-y-2 text-left">
+                                  <p className="text-[11px] font-bold text-slate-450 uppercase font-mono tracking-wider">Resposta em Texto / Código</p>
+                                  <div className="prose max-w-none text-body-md text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100 font-sans">
+                                    {payload.texto}
+                                  </div>
+                                </div>
+                              )}
+                              {payload.imagem && (
+                                <div className="space-y-3 text-left">
+                                  <p className="text-[11px] font-bold text-slate-450 uppercase font-mono tracking-wider">Imagem Anexada</p>
+                                  <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <span className="text-[12px] text-slate-500 font-semibold truncate max-w-xs">{payload.imagem}</span>
+                                    <a
+                                      href={payload.imagem}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-primary hover:underline font-bold text-label-sm"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                      </svg>
+                                      Abrir em Nova Guia &nearr;
+                                    </a>
+                                  </div>
+                                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2 flex justify-center shadow-inner">
+                                    <img
+                                      src={payload.imagem}
+                                      alt="Solução do Aluno"
+                                      className="max-h-96 object-contain rounded-lg bg-white"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } catch (e) {
+                          return <p className="text-label-sm bg-slate-50 p-3 rounded border border-slate-200 text-error font-mono">Erro ao ler o envio misto do aluno.</p>;
+                        }
+                      })()
                     ) : (
                       <div className="prose max-w-none text-body-md text-on-surface whitespace-pre-wrap leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100 font-sans">
                         {selectedEntrega.resposta}
@@ -675,87 +940,96 @@ export const CentralCorrecoes: React.FC = () => {
               {/* Grading & Feedback Sticky Panel */}
               <footer className="border-t border-slate-200 bg-white p-5 shrink-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
                 <div className="flex flex-col xl:flex-row gap-5 max-w-5xl mx-auto">
-                  {/* Slider Control */}
-                  <div className="xl:w-1/3 flex flex-col justify-center border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0 xl:pr-5">
-                    <div className="flex justify-between items-end mb-2">
-                      <label className="font-heading font-extrabold text-label-md text-on-surface uppercase tracking-wide">Nota Final</label>
-                      <span className="font-heading font-extrabold text-headline-md text-primary">
-                        {gradeInput}<span className="text-slate-400 text-lg font-normal">/100</span>
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={gradeInput}
-                      onChange={(e) => setGradeInput(Number(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
-                    />
-                    <div className="flex justify-between mt-1.5 text-[10px] text-slate-400 font-bold font-mono">
-                      <span>0</span>
-                      <span>50</span>
-                      <span>100</span>
-                    </div>
-                  </div>
-
-                  {/* Feedback Form */}
-                  <div className="flex-1 flex flex-col gap-3">
-                    <textarea
-                      value={feedbackInput}
-                      onChange={(e) => setFeedbackInput(e.target.value)}
-                      placeholder="Escreva comentários sobre o envio, correções de passos ou elogios pedagógicos..."
-                      disabled={saving}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-20 leading-relaxed font-sans"
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      {/* Quick Templates */}
-                      <div className="flex gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Retornos rápidos:</span>
-                        <button
-                          type="button"
-                          onClick={() => handleQuickTemplate("Excelente trabalho!")}
-                          className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
-                        >
-                          Excelente Trabalho
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleQuickTemplate("Falta detalhar melhor a resposta.")}
-                          className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
-                        >
-                          Faltou Detalhe
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleQuickTemplate("Revise o passo a passo da aula.")}
-                          className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
-                        >
-                          Revisar Passo
-                        </button>
-                      </div>
-
-                      {/* Save Action */}
-                      <button
-                        onClick={handleSaveCorrection}
-                        disabled={saving}
-                        className="px-6 py-2.5 rounded-xl font-heading font-bold text-label-md bg-gradient-to-b from-primary to-primary-container text-on-primary hover:opacity-95 transition-opacity shadow-sm flex items-center gap-2 ml-auto"
-                      >
-                        {saving ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Salvando...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                            <span>Publicar Nota</span>
-                          </>
+                  {(() => {
+                    const isGradedActivity = selectedEntrega.atividade_pontua ?? true;
+                    return (
+                      <>
+                        {/* Slider Control */}
+                        {isGradedActivity && (
+                          <div className="xl:w-1/3 flex flex-col justify-center border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0 xl:pr-5">
+                            <div className="flex justify-between items-end mb-2">
+                              <label className="font-heading font-extrabold text-label-md text-on-surface uppercase tracking-wide">Nota Final</label>
+                              <span className="font-heading font-extrabold text-headline-md text-primary">
+                                {gradeInput}<span className="text-slate-400 text-lg font-normal">/100</span>
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={gradeInput}
+                              onChange={(e) => setGradeInput(Number(e.target.value))}
+                              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                            />
+                            <div className="flex justify-between mt-1.5 text-[10px] text-slate-400 font-bold font-mono">
+                              <span>0</span>
+                              <span>50</span>
+                              <span>100</span>
+                            </div>
+                          </div>
                         )}
-                      </button>
-                    </div>
-                  </div>
+
+                        {/* Feedback Form */}
+                        <div className="flex-1 flex flex-col gap-3">
+                          <textarea
+                            value={feedbackInput}
+                            onChange={(e) => setFeedbackInput(e.target.value)}
+                            placeholder={isGradedActivity ? "Escreva comentários sobre o envio, correções de passos ou elogios pedagógicos..." : "Escreva comentários pedagógicos ou feedback sobre as respostas do aluno..."}
+                            disabled={saving}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-20 leading-relaxed font-sans"
+                          />
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            {/* Quick Templates */}
+                            <div className="flex gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Retornos rápidos:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleQuickTemplate("Excelente trabalho!")}
+                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                              >
+                                Excelente Trabalho
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleQuickTemplate("Falta detalhar melhor a resposta.")}
+                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                              >
+                                Faltou Detalhe
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleQuickTemplate("Revise o passo a passo da aula.")}
+                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                              >
+                                Revisar Passo
+                              </button>
+                            </div>
+
+                            {/* Save Action */}
+                            <button
+                              onClick={handleSaveCorrection}
+                              disabled={saving}
+                              className="px-6 py-2.5 rounded-xl font-heading font-bold text-label-md bg-gradient-to-b from-primary to-primary-container text-on-primary hover:opacity-95 transition-opacity shadow-sm flex items-center gap-2 ml-auto"
+                            >
+                              {saving ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  <span>Salvando...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                  </svg>
+                                  <span>{isGradedActivity ? 'Publicar Nota' : 'Concluir Revisão'}</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </footer>
             </div>

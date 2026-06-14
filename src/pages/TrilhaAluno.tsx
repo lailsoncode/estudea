@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ArenaLiveAluno } from './ArenaLiveAluno';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CardConquista } from '../components/common/CardConquista';
@@ -119,7 +120,9 @@ interface Atividade {
   id: string;
   aula_id: string;
   enunciado: string;
-  tipo_entrega: 'texto' | 'imagem';
+  tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+  pontua?: boolean;
+  permite_refazer?: boolean;
 }
 
 interface Questao {
@@ -129,7 +132,9 @@ interface Questao {
   opcoes: string[];
   resposta_correta: string;
   ordem: number;
-  tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta';
+  tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta' | 'multipla_selecao';
+  atividade_id?: string | null;
+  para_arena?: boolean;
 }
 
 interface Progresso {
@@ -179,6 +184,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [aulasLiberadas, setAulasLiberadas] = useState<string[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [classStudents, setClassStudents] = useState<any[]>([]);
+  const [classProgress, setClassProgress] = useState<any[]>([]);
+  const [showArenaLive, setShowArenaLive] = useState(false);
 
   // Selected lesson navigation states
   const [selectedAula, setSelectedAula] = useState<Aula | null>(null);
@@ -212,6 +221,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const [submittingActivity, setSubmittingActivity] = useState(false);
   const [activitySuccessMsg, setActivitySuccessMsg] = useState<string | null>(null);
   const [activityErrorMsg, setActivityErrorMsg] = useState<string | null>(null);
+  const [isRedoingActivity, setIsRedoingActivity] = useState<Record<string, boolean>>({});
 
   // Progress submission state
   const [updatingProgress, setUpdatingProgress] = useState(false);
@@ -337,6 +347,36 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       if (liberadasError) throw liberadasError;
       setAulasLiberadas((liberadasData || []).map(r => r.aula_id));
 
+      // 9. Fetch schedule/calendar from agenda
+      const { data: agendaData, error: agendaError } = await supabase
+        .from('agenda')
+        .select('*')
+        .order('time', { ascending: true });
+
+      if (agendaError) throw agendaError;
+      setSchedule(agendaData || []);
+
+      // 10. Fetch all profiles (students) in the same class (turma) to calculate ranking
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url, ofensiva_atual, maior_ofensiva')
+        .eq('turma_id', profileData.turma_id)
+        .eq('role', 'student');
+
+      if (studentsError) throw studentsError;
+      setClassStudents(studentsData || []);
+
+      if (studentsData && studentsData.length > 0) {
+        const studentIds = studentsData.map(s => s.id);
+        const { data: progressListData, error: progressListError } = await supabase
+          .from('progresso_alunos')
+          .select('aluno_id, aula_id')
+          .in('aluno_id', studentIds);
+
+        if (progressListError) throw progressListError;
+        setClassProgress(progressListData || []);
+      }
+
     } catch (err: any) {
       console.error('Erro ao buscar dados da trilha:', err);
       setError(err.message || 'Falha ao carregar a trilha do aluno.');
@@ -344,6 +384,29 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       setLoading(false);
     }
   };
+
+  const leaderboard = useMemo(() => {
+    // Group other students' progress by student
+    const progressCountMap = new Map<string, number>();
+    classProgress.forEach(p => {
+      progressCountMap.set(p.aluno_id, (progressCountMap.get(p.aluno_id) || 0) + 1);
+    });
+
+    let list = classStudents.map(student => {
+      const isSelf = student.id === userId;
+      // If it's the current user, use the live 'progresso' state length
+      const completedCount = isSelf ? progresso.length : (progressCountMap.get(student.id) || 0);
+      const xp = (completedCount * 50) + ((student.maior_ofensiva || 0) * 20);
+      return {
+        id: student.id,
+        name: student.nome || (isSelf ? userName : 'Estudante'),
+        avatar: student.avatar_url || (isSelf ? (session?.user?.user_metadata?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo") : "https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo"),
+        xp,
+        isSelf
+      };
+    });
+    return list.sort((a, b) => b.xp - a.xp);
+  }, [classStudents, classProgress, progresso, userId, userName, session]);
 
   useEffect(() => {
     fetchData();
@@ -368,12 +431,15 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     setActivityImage('');
     setActivitySuccessMsg(null);
     setActivityErrorMsg(null);
+    setIsRedoingActivity({});
 
     // Set default active tab based on available contents
     if (selectedAula) {
+      const hasActivityQuiz = selectedAula.atividades && selectedAula.atividades.some(a => a.tipo_entrega === 'quiz');
+
       if (selectedAula.video_url || selectedAula.conteudo) {
         setActiveLessonTab('conteudo');
-      } else if (selectedAula.questoes && selectedAula.questoes.length > 0) {
+      } else if (selectedAula.questoes && selectedAula.questoes.length > 0 && !hasActivityQuiz) {
         setActiveLessonTab('quiz');
       } else if (selectedAula.arquivo_url) {
         setActiveLessonTab('arquivos');
@@ -387,9 +453,20 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       const activeAtividade = selectedAula.atividades[0];
       const existingEntrega = entregas.find(e => e.atividade_id === activeAtividade.id);
       if (existingEntrega) {
-        setActivityResponse(existingEntrega.resposta);
-        if (activeAtividade.tipo_entrega === 'imagem') {
-          setActivityImage(existingEntrega.resposta);
+        if (activeAtividade.tipo_entrega === 'quiz') {
+          try {
+            const parsed = JSON.parse(existingEntrega.resposta);
+            if (parsed && parsed.respostas) {
+              setQuizAnswers(parsed.respostas);
+            }
+          } catch (e) {
+            console.error('Erro ao fazer parse da resposta do quiz:', e);
+          }
+        } else {
+          setActivityResponse(existingEntrega.resposta);
+          if (activeAtividade.tipo_entrega === 'imagem') {
+            setActivityImage(existingEntrega.resposta);
+          }
         }
       }
     }
@@ -445,7 +522,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     if (!answer || !answer.trim()) return false;
     
     if (q.tipo === 'aberta') {
-      const keywordsStr = q.opcoes[1] || '';
+      const keywordsStr = q.opcoes?.[1] || '';
       if (!keywordsStr.trim()) {
         return true;
       }
@@ -456,9 +533,29 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       // Verifica se o aluno escreveu TODAS as palavras-chave na resposta
       return keywords.every(k => studentAnswer.includes(k));
     }
+
+    if (q.tipo === 'multipla_selecao') {
+      const correctParts = (q.resposta_correta || '').split(';').map(p => p.trim().toLowerCase()).filter(p => p.length > 0).sort();
+      const answerParts = answer.split(';').map(p => p.trim().toLowerCase()).filter(p => p.length > 0).sort();
+      return correctParts.length === answerParts.length && correctParts.every((val, index) => val === answerParts[index]);
+    }
     
-    // Para multipla escolha e verdadeiro/falso, é igualdade simples
-    return answer.trim().toLowerCase() === q.resposta_correta.trim().toLowerCase();
+  };
+
+  const handleToggleAnswerMulti = (qId: string, option: string) => {
+    setQuizAnswers(prev => {
+      const currentAnswer = prev[qId] || '';
+      const selected = currentAnswer ? currentAnswer.split(';').map(o => o.trim()).filter(o => o.length > 0) : [];
+      
+      let updated: string[];
+      if (selected.includes(option)) {
+        updated = selected.filter(o => o !== option);
+      } else {
+        updated = [...selected, option];
+      }
+      
+      return { ...prev, [qId]: updated.join(';') };
+    });
   };
 
   // Submit quiz responses
@@ -466,16 +563,19 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     if (!selectedAula || !selectedAula.questoes || selectedAula.questoes.length === 0) return;
 
     const questions = selectedAula.questoes;
+    const hasDefinedAnswers = questions.some(q => q.resposta_correta && q.resposta_correta.trim() !== '');
+    
     let correctCount = 0;
+    if (hasDefinedAnswers) {
+      questions.forEach(q => {
+        if (isQuestionCorrect(q, quizAnswers[q.id] || '')) {
+          correctCount++;
+        }
+      });
+    }
 
-    questions.forEach(q => {
-      if (isQuestionCorrect(q, quizAnswers[q.id] || '')) {
-        correctCount++;
-      }
-    });
-
-    const score = Math.round((correctCount / questions.length) * 100);
-    const passed = score >= selectedAula.nota_aprovacao;
+    const score = hasDefinedAnswers ? Math.round((correctCount / questions.length) * 100) : null;
+    const passed = hasDefinedAnswers ? (score !== null && score >= selectedAula.nota_aprovacao) : true;
 
     setQuizScore(score);
     setQuizPassed(passed);
@@ -485,11 +585,72 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       // Automatically complete the lesson
       await handleToggleCompletion(selectedAula.id, true);
     }
+
+    // Rede de segurança: Se a aula tem uma atividade vinculada do tipo quiz,
+    // e o aluno por algum motivo submeteu o Quiz tradicional da Aula (Tab 3),
+    // salvamos a resposta dele como a entrega da Atividade Prática
+    const quizActivity = selectedAula.atividades?.find(a => a.tipo_entrega === 'quiz');
+    if (quizActivity) {
+      await handleSubmitActivity(quizActivity.id, 'quiz');
+    }
   };
 
-  // Submit activity response
-  const handleSubmitActivity = async (atividadeId: string, tipo: 'texto' | 'imagem') => {
-    const answer = tipo === 'texto' ? activityResponse : activityImage;
+  const handleSubmitActivity = async (atividadeId: string, tipo: 'texto' | 'imagem' | 'quiz' | 'multipla') => {
+    let answer = '';
+
+    if (tipo === 'quiz') {
+      const activityRecord = selectedAula?.atividades?.find(a => a.id === atividadeId);
+      const isProprio = selectedAula?.questoes?.some(q => q.atividade_id === atividadeId);
+      const questions = isProprio
+        ? (selectedAula?.questoes?.filter(q => q.atividade_id === atividadeId) || [])
+        : (selectedAula?.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+
+      const isGraded = activityRecord ? (activityRecord.pontua ?? true) : true;
+      const hasDefinedAnswers = questions.some(q => q.resposta_correta && q.resposta_correta.trim() !== '');
+      const shouldGrade = isGraded && hasDefinedAnswers;
+
+      let payload: any = {};
+
+      if (shouldGrade) {
+        let correctCount = 0;
+        questions.forEach(q => {
+          if (isQuestionCorrect(q, quizAnswers[q.id] || '')) {
+            correctCount++;
+          }
+        });
+
+        const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+        const passed = score >= (selectedAula?.nota_aprovacao || 70);
+
+        payload = {
+          respostas: quizAnswers,
+          score,
+          correctCount,
+          totalQuestions: questions.length,
+          passed
+        };
+      } else {
+        payload = {
+          respostas: quizAnswers,
+          score: null,
+          correctCount: null,
+          totalQuestions: questions.length,
+          passed: null
+        };
+      }
+      answer = JSON.stringify(payload);
+    } else if (tipo === 'multipla') {
+      if (!activityResponse.trim() && !activityImage.trim()) {
+        setActivityErrorMsg('Por favor, insira um texto ou o link de uma imagem para enviar.');
+        return;
+      }
+      answer = JSON.stringify({
+        texto: activityResponse.trim(),
+        imagem: activityImage.trim()
+      });
+    } else {
+      answer = tipo === 'texto' ? activityResponse : activityImage;
+    }
 
     if (!answer.trim()) {
       setActivityErrorMsg('Por favor, insira uma resposta antes de enviar.');
@@ -503,12 +664,18 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     try {
       const existingEntrega = entregas.find(e => e.atividade_id === atividadeId);
 
+      // Automatically fill the grade if the quiz is graded (pontua === true)
+      // We will set nota to null initially so it arrives in the Corrections Center as pending review,
+      // but we can still store it. Wait, if we keep nota null, it's marked as pending. Let's do that!
+      const gradeValue = null; // Instructor reviews and confirms score
+
       if (existingEntrega) {
         // Update
         const { error: updateError } = await supabase
           .from('entregas_atividades')
           .update({
             resposta: answer.trim(),
+            nota: gradeValue,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingEntrega.id);
@@ -522,7 +689,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           .insert({
             aluno_id: userId,
             atividade_id: atividadeId,
-            resposta: answer.trim()
+            resposta: answer.trim(),
+            nota: gradeValue
           })
           .select();
 
@@ -548,6 +716,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         await handleToggleCompletion(selectedAula.id, true);
       }
 
+      setIsRedoingActivity(prev => ({ ...prev, [atividadeId]: false }));
     } catch (err: any) {
       console.error('Erro ao enviar atividade:', err);
       setActivityErrorMsg(err.message || 'Erro ao enviar a atividade.');
@@ -589,6 +758,19 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   const totalAulasCount = aulas.length;
   const completedAulasCount = aulas.filter(a => isLessonCompleted(a.id)).length;
   const percentComplete = totalAulasCount > 0 ? Math.round((completedAulasCount / totalAulasCount) * 100) : 0;
+
+  // League calculations based on student XP
+  const studentXP = (completedAulasCount * 50) + ((profile?.maior_ofensiva || 0) * 20);
+
+  const obterLiga = (xp: number) => {
+    if (xp <= 200) return { nome: 'Liga Bronze', emoji: '🥉', cor: 'from-amber-700 to-amber-500', shadow: 'shadow-amber-500/20', text: 'text-amber-700' };
+    if (xp <= 500) return { nome: 'Liga Prata', emoji: '🥈', cor: 'from-slate-400 to-slate-500', shadow: 'shadow-slate-500/20', text: 'text-slate-600' };
+    if (xp <= 1000) return { nome: 'Liga Ouro', emoji: '🥇', cor: 'from-yellow-400 to-yellow-500', shadow: 'shadow-yellow-500/20', text: 'text-yellow-600' };
+    if (xp <= 2000) return { nome: 'Liga Platina', emoji: '💎', cor: 'from-cyan-400 to-cyan-500', shadow: 'shadow-cyan-500/20', text: 'text-cyan-600' };
+    return { nome: 'Liga Diamante', emoji: '👑', cor: 'from-purple-500 to-indigo-600', shadow: 'shadow-purple-500/20', text: 'text-purple-600' };
+  };
+
+  const ligaUsuario = obterLiga(studentXP);
 
   // Find the next lesson to resume studying (first uncompleted lesson)
   const resumeLesson = aulas.find(a => !isLessonCompleted(a.id)) || (aulas.length > 0 ? aulas[0] : null);
@@ -669,7 +851,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       desc: 'Manteve uma sequência de 3 dias de acessos.',
       icon: FireIcon,
       iconName: 'FireIcon',
-      unlocked: (profile?.ofensiva_atual ?? 0) >= 3,
+      unlocked: (profile?.maior_ofensiva ?? 0) >= 3,
       bgClass: 'bg-orange-50',
       iconClass: 'text-orange-500'
     },
@@ -679,7 +861,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       desc: 'Manteve uma sequência de 7 dias de acessos.',
       icon: FireIcon,
       iconName: 'FireIcon',
-      unlocked: (profile?.ofensiva_atual ?? 0) >= 7,
+      unlocked: (profile?.maior_ofensiva ?? 0) >= 7,
       bgClass: 'bg-red-50',
       iconClass: 'text-red-500'
     },
@@ -1137,8 +1319,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
                                   const typesList: string[] = [];
                                   if (aula.video_url) typesList.push('Vídeo');
-                                  if (aula.questoes && aula.questoes.length > 0) typesList.push('Quiz');
+                                  if (aula.questoes && aula.questoes.length > 0 && !(aula.atividades && aula.atividades.some(a => a.tipo_entrega === 'quiz'))) typesList.push('Quiz');
                                   if (aula.arquivo_url) typesList.push('Material');
+                                  if (aula.atividades && aula.atividades.length > 0) typesList.push('Atividade');
                                   if (aula.conteudo && typesList.length === 0) typesList.push('Texto');
                                   const typeLabel = typesList.join(' + ') || 'Teórica';
 
@@ -1228,6 +1411,28 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
             {/* Right Column: Sidebar Widgets (4 Columns) */}
             <div className="lg:col-span-4 flex flex-col gap-8">
+
+              {/* Arena Live Widget */}
+              <div className="app-card-padded border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-primary/10 rounded-full blur-xl pointer-events-none"></div>
+                <div>
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black text-primary uppercase tracking-widest mb-3">
+                    Multiplayer Live
+                  </span>
+                  <h3 className="font-heading font-black text-body-md text-on-surface flex items-center gap-2">
+                    <span>🎮</span> Arena Estudea
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-1.5 font-medium leading-relaxed">
+                    Entre com o código PIN fornecido pelo seu professor para participar do quiz competitivo em tempo real!
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setShowArenaLive(true)}
+                  className="w-full mt-5 py-3 bg-primary hover:bg-blue-700 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  Entrar na Arena Live
+                </button>
+              </div>
               
               {/* Quick Stats Widget */}
               <div className="app-card-padded">
@@ -1279,23 +1484,39 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                   </button>
                 </div>
                 <div className="flex flex-col gap-4">
-                  <div className="border-l-2 border-primary pl-4 py-1">
-                    <div className="text-xs font-bold text-primary mb-1">HOJE, 14:00</div>
-                    <div className="font-semibold text-on-surface text-sm">Live de Mentoria</div>
-                    <div className="text-xs text-on-surface-variant mt-1">Link no portal de materiais</div>
-                  </div>
-                  <div className="border-l-2 border-orange-400 pl-4 py-1">
-                    <div className="text-xs font-bold text-orange-500 mb-1">AMANHÃ, 23:59</div>
-                    <div className="font-semibold text-on-surface text-sm">Entrega de Atividade</div>
-                    <div className="text-xs text-on-surface-variant mt-1 truncate">
-                      {resumeLesson?.titulo ? `Referente à Aula: ${resumeLesson.titulo}` : 'Módulo de Design de Soluções'}
-                    </div>
-                  </div>
-                  <div className="border-l-2 border-gray-300 pl-4 py-1 opacity-70">
-                    <div className="text-xs font-bold text-gray-500 mb-1">SEXTA-FEIRA</div>
-                    <div className="font-semibold text-on-surface text-sm">Revisão Semanal</div>
-                    <div className="text-xs text-on-surface-variant mt-1">Sugerido: 1 hora de estudo</div>
-                  </div>
+                  {schedule.length === 0 ? (
+                    <div className="text-xs text-on-surface-variant italic pl-2">Nenhum compromisso hoje.</div>
+                  ) : (
+                    schedule.map((item) => {
+                      let borderColor = 'border-gray-300';
+                      let textColor = 'text-gray-500';
+                      if (item.type === 'live') {
+                        borderColor = 'border-primary';
+                        textColor = 'text-primary';
+                      } else if (item.type === 'deadline') {
+                        borderColor = 'border-orange-400';
+                        textColor = 'text-orange-500';
+                      } else if (item.type === 'mentorship') {
+                        borderColor = 'border-purple-600';
+                        textColor = 'text-purple-600';
+                      }
+
+                      return (
+                        <div key={item.id} className={`border-l-2 ${borderColor} pl-4 py-1`}>
+                          <div className={`text-xs font-bold ${textColor} mb-1 uppercase tracking-wide flex items-center gap-1.5`}>
+                            {item.time}
+                            {item.type === 'live' && (
+                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest animate-pulse">Live</span>
+                            )}
+                          </div>
+                          <div className="font-semibold text-on-surface text-sm">{item.title}</div>
+                          <div className="text-xs text-on-surface-variant mt-1 truncate">
+                            {item.cohort} • {item.duration}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -1498,8 +1719,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
                       const typesList: string[] = [];
                       if (aula.video_url) typesList.push('Vídeo');
-                      if (aula.questoes && aula.questoes.length > 0) typesList.push('Quiz');
+                      if (aula.questoes && aula.questoes.length > 0 && !(aula.atividades && aula.atividades.some(a => a.tipo_entrega === 'quiz'))) typesList.push('Quiz');
                       if (aula.arquivo_url) typesList.push('Material');
+                      if (aula.atividades && aula.atividades.length > 0) typesList.push('Atividade');
                       if (aula.conteudo && typesList.length === 0) typesList.push('Texto');
                       const typeLabel = typesList.join(' + ') || 'Teórica';
 
@@ -1731,7 +1953,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 <span className="font-heading font-extrabold text-label-md text-purple-700 dark:text-purple-300 uppercase tracking-wider">Pontuação (XP)</span>
               </div>
               <div className="text-5xl font-heading font-black text-purple-600 dark:text-purple-400">
-                {(completedAulasCount * 50) + ((profile?.ofensiva_atual || 0) * 20)} <span className="text-body-lg font-bold">XP</span>
+                {(completedAulasCount * 50) + ((profile?.maior_ofensiva || 0) * 20)} <span className="text-body-lg font-bold">XP</span>
               </div>
               <p className="text-sm text-purple-700/80 dark:text-purple-400/80 font-semibold mt-2">
                 Você ganha 50 XP por aula e 20 XP por dia de ofensiva!
@@ -1879,11 +2101,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                       targetVal = 100;
                       unit = '%';
                     } else if (ach.id === 'fogo3') {
-                      currentVal = profile?.ofensiva_atual || 0;
+                      currentVal = profile?.maior_ofensiva || 0;
                       targetVal = 3;
                       unit = 'dias';
                     } else if (ach.id === 'fogo7') {
-                      currentVal = profile?.ofensiva_atual || 0;
+                      currentVal = profile?.maior_ofensiva || 0;
                       targetVal = 7;
                       unit = 'dias';
                     } else if (ach.id === 'maratonista') {
@@ -1975,68 +2197,92 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
               {/* Class Ranking Card */}
               <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 shadow-sm space-y-5">
                 <div className="text-center space-y-1">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-white flex items-center justify-center mx-auto shadow-md shadow-amber-500/20">
-                    <HugeiconsIcon icon={Award01Icon} size={24} strokeWidth={2.5} />
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${ligaUsuario.cor} text-white flex items-center justify-center mx-auto shadow-md ${ligaUsuario.shadow}`}>
+                    <span className="text-xl">{ligaUsuario.emoji}</span>
                   </div>
-                  <h3 className="font-heading font-black text-body-lg text-on-surface mt-3">Liga Diamante</h3>
+                  <h3 className="font-heading font-black text-body-lg text-on-surface mt-3">{ligaUsuario.nome}</h3>
                   <p className="text-label-sm text-on-surface-variant">Classificação Semanal da Turma</p>
+                </div>
+
+                {/* League Progression Map */}
+                <div className="flex items-center justify-between px-2 pt-3 pb-1 text-[11px] font-bold text-on-surface-variant border-t border-slate-100/80">
+                  {['Bronze', 'Prata', 'Ouro', 'Platina', 'Diamante'].map((ligaNome, lIdx) => {
+                    const lName = 'Liga ' + ligaNome;
+                    const isCurrent = ligaUsuario.nome === lName;
+                    const isPassed = 
+                      (ligaUsuario.nome === 'Liga Bronze' && lIdx === 0) ||
+                      (ligaUsuario.nome === 'Liga Prata' && lIdx <= 1) ||
+                      (ligaUsuario.nome === 'Liga Ouro' && lIdx <= 2) ||
+                      (ligaUsuario.nome === 'Liga Platina' && lIdx <= 3) ||
+                      (ligaUsuario.nome === 'Liga Diamante' && lIdx <= 4);
+
+                    return (
+                      <div key={lIdx} className="flex flex-col items-center gap-1 flex-1 relative z-10">
+                        {/* Line between steps */}
+                        {lIdx > 0 && (
+                          <div className={`absolute right-1/2 top-[7px] -translate-y-1/2 w-full h-[3px] -z-10 ${
+                            isPassed ? 'bg-primary' : 'bg-slate-200'
+                          }`} />
+                        )}
+                        <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                          isCurrent 
+                            ? 'bg-white border-primary ring-2 ring-primary/30 scale-125' 
+                            : isPassed 
+                              ? 'bg-primary border-primary' 
+                              : 'bg-white border-slate-300'
+                        }`} />
+                        <span className={`text-[9px] tracking-tight ${isCurrent ? 'text-primary font-black scale-105' : 'text-slate-400 font-medium'}`}>
+                          {ligaNome}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Leaderboard list */}
                 <div className="space-y-2.5">
-                  {(() => {
-                    const studentXP = (completedAulasCount * 50) + ((profile?.ofensiva_atual || 0) * 20);
-                    const list = [
-                      { name: 'Gustavo Lima', xp: 1200, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80', isSelf: false },
-                      { name: 'Beatriz Souza', xp: 950, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80', isSelf: false },
-                      { name: userName, xp: studentXP, avatar: session?.user?.user_metadata?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo", isSelf: true },
-                      { name: 'Felipe Costa', xp: 450, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&h=80&q=80', isSelf: false },
-                      { name: 'Mariana Santos', xp: 300, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=80&h=80&q=80', isSelf: false },
-                    ].sort((a, b) => b.xp - a.xp);
+                  {leaderboard.map((user, index) => {
+                    const position = index + 1;
+                    let posBadge = '';
+                    
+                    if (position === 1) posBadge = '🥇';
+                    else if (position === 2) posBadge = '🥈';
+                    else if (position === 3) posBadge = '🥉';
+                    else posBadge = `#${position}`;
 
-                    return list.map((user, index) => {
-                      const position = index + 1;
-                      let posBadge = '';
-                      
-                      if (position === 1) posBadge = '🥇';
-                      else if (position === 2) posBadge = '🥈';
-                      else if (position === 3) posBadge = '🥉';
-                      else posBadge = `#${position}`;
-
-                      return (
-                        <div 
-                          key={index} 
-                          className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
-                            user.isSelf 
-                              ? 'bg-primary/5 border-primary/30 shadow-inner' 
-                              : 'bg-slate-50 border-slate-100 hover:border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 text-center font-heading font-black text-body-md text-on-surface-variant">
-                              {posBadge}
-                            </span>
-                            <img 
-                              src={user.avatar} 
-                              alt={user.name} 
-                              className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0" 
-                            />
-                            <div className="text-left">
-                              <p className={`text-label-md text-on-surface ${user.isSelf ? 'font-bold text-primary' : 'font-medium'}`}>
-                                {user.name} {user.isSelf && '(Você)'}
-                              </p>
-                              <p className="text-[10px] text-on-surface-variant/80 font-bold uppercase tracking-wider">
-                                {position <= 3 ? 'Zona de Promoção' : 'Estável'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right font-heading font-extrabold text-label-md text-on-surface shrink-0">
-                            {user.xp} <span className="text-[10px] text-on-surface-variant font-medium">XP</span>
+                    return (
+                      <div 
+                        key={user.id || index} 
+                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                          user.isSelf 
+                            ? 'bg-primary/5 border-primary/30 shadow-inner' 
+                            : 'bg-slate-50 border-slate-100 hover:border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 text-center font-heading font-black text-body-md text-on-surface-variant">
+                            {posBadge}
+                          </span>
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name} 
+                            className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0" 
+                          />
+                          <div className="text-left">
+                            <p className={`text-label-md text-on-surface ${user.isSelf ? 'font-bold text-primary' : 'font-medium'}`}>
+                              {user.name} {user.isSelf && '(Você)'}
+                            </p>
+                            <p className="text-[10px] text-on-surface-variant/80 font-bold uppercase tracking-wider">
+                              {position <= 3 ? 'Zona de Promoção' : 'Estável'}
+                            </p>
                           </div>
                         </div>
-                      );
-                    });
-                  })()}
+                        <div className="text-right font-heading font-extrabold text-label-md text-on-surface shrink-0">
+                          {user.xp} <span className="text-[10px] text-on-surface-variant font-medium">XP</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Explanatory footer */}
@@ -2285,7 +2531,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                           </button>
                         )}
 
-                        {selectedAula.questoes && selectedAula.questoes.length > 0 && (
+                        {selectedAula.questoes && selectedAula.questoes.length > 0 && !(selectedAula.atividades && selectedAula.atividades.some(a => a.tipo_entrega === 'quiz')) && (
                           <button
                             onClick={() => setActiveLessonTab('quiz')}
                             className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
@@ -2552,8 +2798,59 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                   {q.tipo === 'aberta' && (
                                     <span className="ml-2 text-[10px] font-extrabold uppercase bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-200">Prática Aberta</span>
                                   )}
+                                  {q.tipo === 'multipla_selecao' && (
+                                    <span className="ml-2 text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200">Múltiplas Respostas</span>
+                                  )}
                                 </span>
                               </p>
+
+                              {/* Options list: Múltipla Seleção */}
+                              {q.tipo === 'multipla_selecao' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                                  {q.opcoes.map((opcao, optIdx) => {
+                                    const selectedAnswers = quizAnswers[q.id] ? quizAnswers[q.id].split(';').map(o => o.trim()) : [];
+                                    const isSelected = selectedAnswers.includes(opcao);
+                                    
+                                    const correctOptions = q.resposta_correta ? q.resposta_correta.split(';').map(o => o.trim()) : [];
+                                    const isCorrect = correctOptions.includes(opcao);
+                                    
+                                    let optionStyle = 'bg-surface-container-lowest border-outline-variant/50 hover:bg-surface-container-low/50';
+
+                                    if (quizSubmitted) {
+                                      if (isSelected && isCorrect) {
+                                        optionStyle = 'bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm';
+                                      } else if (isSelected && !isCorrect) {
+                                        optionStyle = 'bg-error-container/20 border-error/40 text-error';
+                                      } else if (isCorrect) {
+                                        optionStyle = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                                      } else {
+                                        optionStyle = 'bg-surface-container-lowest border-outline-variant/20 opacity-60';
+                                      }
+                                    } else if (isSelected) {
+                                      optionStyle = 'bg-secondary/5 border-secondary text-secondary font-medium shadow-sm';
+                                    }
+
+                                    return (
+                                      <button
+                                        key={optIdx}
+                                        type="button"
+                                        disabled={quizSubmitted}
+                                        onClick={() => handleToggleAnswerMulti(q.id, opcao)}
+                                        className={`w-full text-left p-3.5 rounded-lg border text-label-md transition-all flex items-start gap-2.5 ${optionStyle}`}
+                                      >
+                                        <div className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center text-[10px] font-extrabold mt-0.5 ${
+                                          isSelected
+                                            ? 'bg-secondary border-secondary text-white'
+                                            : 'border-slate-300'
+                                        }`}>
+                                          {isSelected && '✓'}
+                                        </div>
+                                        <span>{opcao}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
 
                               {/* Options list: Múltipla Escolha */}
                               {(!q.tipo || q.tipo === 'multipla_escolha') && (
@@ -2685,7 +2982,18 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                             </div>
                           ) : (
                             <div className="p-6 rounded-xl border text-center space-y-4 shadow-sm bg-surface-container-lowest">
-                              {quizPassed ? (
+                              {quizScore === null ? (
+                                <div className="space-y-2">
+                                  <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
+                                    <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
+                                  </div>
+                                  <h4 className="app-section-title text-emerald-700">Questionário Respondido!</h4>
+                                  <p className="text-on-surface-variant text-label-md">
+                                    Suas respostas foram salvas com sucesso.
+                                  </p>
+                                  <p className="text-label-sm text-on-surface-variant/80">Esta aula foi concluída automaticamente.</p>
+                                </div>
+                              ) : quizPassed ? (
                                 <div className="space-y-2">
                                   <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
                                     <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
@@ -2735,12 +3043,19 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                           {selectedAula.atividades.map((atividade) => {
                             // Find the exact delivery match
                             const exactEntrega = entregas.find(e => e.atividade_id === atividade.id);
+                            const canRedo = exactEntrega && (atividade.permite_refazer !== false) && exactEntrega.nota === null;
+                            const isRedoing = isRedoingActivity[atividade.id] || false;
+                            
+                            const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
+                            const activeQuestions = isProprio
+                              ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
+                              : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
 
                             return (
                               <div key={atividade.id} className="space-y-4">
                                 <div className="p-4 bg-surface rounded-xl border border-outline-variant/40 space-y-2">
                                   <p className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider">Instruções</p>
-                                  <p className="text-body-md text-on-surface font-medium leading-relaxed">
+                                  <p className="text-body-md text-on-surface font-medium leading-relaxed whitespace-pre-wrap">
                                     {atividade.enunciado}
                                   </p>
                                   <div className="flex gap-4 pt-1 text-[11px] text-on-surface-variant font-mono">
@@ -2782,8 +3097,131 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                             </div>
                                           )}
                                         </div>
+                                      ) : atividade.tipo_entrega === 'multipla' ? (
+                                        (() => {
+                                          try {
+                                            const payload = JSON.parse(exactEntrega.resposta);
+                                            return (
+                                              <div className="space-y-4">
+                                                {payload.texto && (
+                                                  <div className="space-y-1">
+                                                    <p className="text-[10px] text-on-surface-variant font-mono font-bold uppercase">Resposta em Texto:</p>
+                                                    <div className="text-body-md leading-relaxed text-on-surface bg-surface p-4 rounded-xl border border-outline-variant/30 whitespace-pre-wrap font-sans">
+                                                      {payload.texto}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                                {payload.imagem && (
+                                                  <div className="space-y-1">
+                                                    <p className="text-[10px] text-on-surface-variant font-mono font-bold uppercase">Imagem Anexada:</p>
+                                                    <div className="space-y-2">
+                                                      <p className="text-label-sm font-mono truncate bg-surface p-2 rounded border border-outline-variant/30">{payload.imagem}</p>
+                                                      {payload.imagem.startsWith('http') && (
+                                                        <div className="max-w-xs border border-outline-variant/40 rounded overflow-hidden mt-1">
+                                                          <img src={payload.imagem} alt="Envio do aluno" className="max-h-40 object-cover" />
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          } catch (e) {
+                                            return <p className="text-label-sm bg-surface p-3 rounded border border-outline-variant/30 text-error font-mono">Erro ao ler o envio misto.</p>;
+                                          }
+                                        })()
+                                      ) : atividade.tipo_entrega === 'quiz' ? (
+                                        (() => {
+                                          try {
+                                            const payload = JSON.parse(exactEntrega.resposta);
+                                            const correct = payload.correctCount ?? 0;
+                                            const total = payload.totalQuestions ?? 0;
+                                            const score = payload.score ?? 0;
+                                            const isGraded = (atividade.pontua ?? true) && payload.score !== null;
+                                            
+                                            return (
+                                              <div className="space-y-4">
+                                                {isGraded ? (
+                                                  <div className="flex items-center gap-4 bg-surface p-3 rounded-xl border border-outline-variant/30">
+                                                    <div className="flex flex-col">
+                                                      <span className="text-[10px] uppercase font-mono text-on-surface-variant font-bold">Aproveitamento</span>
+                                                      <span className="text-body-lg font-extrabold text-secondary font-mono">{score}%</span>
+                                                    </div>
+                                                    <div className="h-8 w-[1px] bg-outline-variant/30" />
+                                                    <div className="flex flex-col">
+                                                      <span className="text-[10px] uppercase font-mono text-on-surface-variant font-bold">Respostas Corretas</span>
+                                                      <span className="text-body-md font-bold text-on-surface">{correct} de {total}</span>
+                                                    </div>
+                                                  </div>
+                                                ) : (
+                                                  <div className="p-3 bg-surface rounded-xl border border-outline-variant/30 text-label-sm font-semibold text-on-surface-variant">
+                                                    Respostas enviadas com sucesso (Questionário formativo).
+                                                  </div>
+                                                )}
+
+                                                <div className="space-y-2">
+                                                  <p className="text-[11px] text-on-surface-variant font-mono font-bold">Detalhamento das Respostas:</p>
+                                                  {activeQuestions && activeQuestions.map((q, qIdx) => {
+                                                    const alunoResp = payload.respostas?.[q.id] || '';
+                                                    const isCorrect = isGraded ? isQuestionCorrect(q, alunoResp) : false;
+                                                    return (
+                                                      <div key={q.id} className="p-3 bg-surface rounded-lg border border-outline-variant/20 space-y-1 text-left">
+                                                        <p className="text-label-sm font-semibold text-on-surface flex items-start gap-1">
+                                                          <span className="text-secondary font-mono">Q{qIdx + 1}.</span>
+                                                          <span>{q.enunciado}</span>
+                                                        </p>
+                                                        {isGraded ? (
+                                                          <>
+                                                            <p className="text-label-sm">
+                                                              <span className="text-on-surface-variant font-mono text-[10px] uppercase block">Sua Resposta:</span>
+                                                              <span className={`font-semibold ${isCorrect ? 'text-emerald-600' : 'text-error'}`}>
+                                                                {q.tipo === 'multipla_selecao' && alunoResp
+                                                                  ? alunoResp.split(';').join(', ')
+                                                                  : (alunoResp || '(Sem resposta)')}
+                                                              </span>
+                                                              {isCorrect ? (
+                                                                <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold uppercase">Correto</span>
+                                                              ) : (
+                                                                <span className="ml-2 text-[10px] bg-error-container/20 text-error px-1.5 py-0.2 rounded font-bold uppercase">Incorreto</span>
+                                                              )}
+                                                            </p>
+                                                            {!isCorrect && (
+                                                              <p className="text-label-sm">
+                                                                <span className="text-on-surface-variant font-mono text-[10px] uppercase block">Gabarito:</span>
+                                                                <span className="font-semibold text-emerald-600">
+                                                                  {q.tipo === 'aberta'
+                                                                    ? (q.opcoes?.[0] || q.resposta_correta)
+                                                                    : q.tipo === 'multipla_selecao' && q.resposta_correta
+                                                                      ? q.resposta_correta.split(';').join(', ')
+                                                                      : q.resposta_correta}
+                                                                </span>
+                                                              </p>
+                                                            )}
+                                                          </>
+                                                        ) : (
+                                                          <p className="text-label-sm">
+                                                            <span className="text-on-surface-variant font-mono text-[10px] uppercase block">Sua Resposta:</span>
+                                                            <span className="font-semibold text-on-surface">
+                                                              {q.tipo === 'multipla_selecao' && alunoResp
+                                                                ? alunoResp.split(';').join(', ')
+                                                                : (alunoResp || '(Sem resposta)')}
+                                                            </span>
+                                                          </p>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            );
+                                          } catch (e) {
+                                            return <p className="text-label-sm bg-surface p-3 rounded border border-outline-variant/30 text-error font-mono">Erro ao ler as respostas do quiz.</p>;
+                                          }
+                                        })()
                                       ) : (
-                                        <p className="text-label-sm bg-surface p-3 rounded border border-outline-variant/30 whitespace-pre-wrap">{exactEntrega.resposta}</p>
+                                        <div className="text-body-md leading-relaxed text-on-surface bg-surface p-4 rounded-xl border border-outline-variant/30 whitespace-pre-wrap font-sans">
+                                          {exactEntrega.resposta}
+                                        </div>
                                       )}
                                     </div>
 
@@ -2795,11 +3233,47 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                         </p>
                                       </div>
                                     )}
+
+                                    {canRedo && !isRedoing && (
+                                      <div className="pt-3 border-t border-outline-variant/30 flex justify-end">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setIsRedoingActivity(prev => ({ ...prev, [atividade.id]: true }));
+                                            if (atividade.tipo_entrega === 'multipla') {
+                                              try {
+                                                const parsed = JSON.parse(exactEntrega.resposta);
+                                                setActivityResponse(parsed.texto || '');
+                                                setActivityImage(parsed.imagem || '');
+                                              } catch (e) {}
+                                            } else if (atividade.tipo_entrega !== 'quiz') {
+                                              setActivityResponse(exactEntrega.resposta);
+                                              if (atividade.tipo_entrega === 'imagem') {
+                                                setActivityImage(exactEntrega.resposta);
+                                              }
+                                            }
+                                          }}
+                                          className="px-4 py-2 bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/25 hover:border-secondary/40 font-heading font-bold text-label-sm rounded-lg transition-all flex items-center gap-1.5"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+                                          </svg>
+                                          Refazer Atividade
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {atividade.permite_refazer === false && exactEntrega.nota === null && (
+                                      <div className="pt-2 border-t border-outline-variant/30 mt-2 text-[11px] text-on-surface-variant/75 italic flex items-center gap-1">
+                                        <HugeiconsIcon icon={Alert01Icon} size={12} className="text-amber-500" />
+                                        <span>Esta atividade não permite reenvio de respostas.</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
                                 {/* Submit Form */}
-                                {(!exactEntrega || exactEntrega.nota === null) && (
+                                {(!exactEntrega || (canRedo && isRedoing)) && (
                                   <form 
                                     onSubmit={(e) => {
                                       e.preventDefault();
@@ -2811,7 +3285,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                       <label className="text-label-sm font-semibold text-on-surface">
                                         {atividade.tipo_entrega === 'texto' 
                                           ? 'Escreva sua resposta para a atividade' 
-                                          : 'Cole o link/URL da sua imagem para entrega'}
+                                          : atividade.tipo_entrega === 'quiz'
+                                            ? 'Responda as questões do quiz abaixo:'
+                                            : atividade.tipo_entrega === 'multipla'
+                                              ? 'Preencha os campos abaixo (texto e/ou imagem) para entrega:'
+                                              : 'Cole o link/URL da sua imagem para entrega'}
                                       </label>
 
                                       {atividade.tipo_entrega === 'texto' ? (
@@ -2819,10 +3297,170 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                           value={activityResponse}
                                           onChange={(e) => setActivityResponse(e.target.value)}
                                           placeholder="Escreva sua resposta detalhada aqui..."
-                                          rows={5}
+                                          rows={8}
                                           disabled={submittingActivity}
-                                          className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                                          className="w-full p-4 text-body-md leading-relaxed font-sans min-h-[200px] rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                                         />
+                                      ) : atividade.tipo_entrega === 'multipla' ? (
+                                        <div className="space-y-4">
+                                          <div className="space-y-1.5 text-left">
+                                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">1. Resposta Escrita (Código ou Texto)</span>
+                                            <textarea
+                                              value={activityResponse}
+                                              onChange={(e) => setActivityResponse(e.target.value)}
+                                              placeholder="Escreva sua resposta detalhada aqui..."
+                                              rows={6}
+                                              disabled={submittingActivity}
+                                              className="w-full p-4 text-body-md leading-relaxed font-sans min-h-[150px] rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                                            />
+                                          </div>
+                                          <div className="space-y-1.5 text-left">
+                                            <span className="text-[11px] font-bold text-slate-500 tracking-wider font-mono uppercase">2. Link/URL de Imagem (Opcional se preencheu texto)</span>
+                                            <input
+                                              type="url"
+                                              value={activityImage}
+                                              onChange={(e) => setActivityImage(e.target.value)}
+                                              placeholder="https://exemplo.com/sua-imagem.png"
+                                              disabled={submittingActivity}
+                                              className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                                            />
+                                            {activityImage.trim().startsWith('http') && (
+                                              <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
+                                                <img src={activityImage} alt="Preview do envio" className="max-h-36 object-cover" />
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ) : atividade.tipo_entrega === 'quiz' ? (
+                                        <div className="space-y-4">
+                                          {activeQuestions && activeQuestions.length > 0 ? (
+                                            activeQuestions.map((q, idx) => (
+                                              <div key={q.id} className="space-y-3 p-4 bg-surface rounded-xl border border-outline-variant/45">
+                                                <p className="font-semibold text-on-surface text-body-md flex items-start gap-2">
+                                                  <span className="text-secondary font-bold font-mono">Q{idx + 1}.</span>
+                                                  <span>
+                                                    {q.enunciado}
+                                                    {q.tipo === 'verdadeiro_falso' && (
+                                                      <span className="ml-2 text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-200">V / F</span>
+                                                    )}
+                                                    {q.tipo === 'aberta' && (
+                                                      <span className="ml-2 text-[10px] font-extrabold uppercase bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-200">Prática Aberta</span>
+                                                    )}
+                                                    {q.tipo === 'multipla_selecao' && (
+                                                      <span className="ml-2 text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200">Múltiplas Respostas</span>
+                                                    )}
+                                                  </span>
+                                                </p>
+
+                                                {/* Options list: Múltipla Seleção */}
+                                                {q.tipo === 'multipla_selecao' && (
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                                                    {q.opcoes.map((opcao, optIdx) => {
+                                                      const selectedAnswers = quizAnswers[q.id] ? quizAnswers[q.id].split(';').map(o => o.trim()) : [];
+                                                      const isSelected = selectedAnswers.includes(opcao);
+                                                      let optionStyle = 'bg-surface-container-lowest border-outline-variant/50 hover:bg-surface-container-low/50';
+
+                                                      if (isSelected) {
+                                                        optionStyle = 'bg-secondary/5 border-secondary text-secondary font-medium shadow-sm';
+                                                      }
+
+                                                      return (
+                                                        <button
+                                                          key={optIdx}
+                                                          type="button"
+                                                          disabled={submittingActivity}
+                                                          onClick={() => handleToggleAnswerMulti(q.id, opcao)}
+                                                          className={`w-full text-left p-3.5 rounded-lg border text-label-md transition-all flex items-start gap-2.5 ${optionStyle}`}
+                                                        >
+                                                          <div className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center text-[10px] font-extrabold mt-0.5 ${
+                                                            isSelected
+                                                              ? 'bg-secondary border-secondary text-white'
+                                                              : 'border-slate-300'
+                                                          }`}>
+                                                            {isSelected && '✓'}
+                                                          </div>
+                                                          <span>{opcao}</span>
+                                                        </button>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                )}
+
+                                                {/* Options list: Múltipla Escolha */}
+                                                {(!q.tipo || q.tipo === 'multipla_escolha') && (
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                                                    {q.opcoes.map((opcao, optIdx) => {
+                                                      const isSelected = quizAnswers[q.id] === opcao;
+                                                      let optionStyle = 'bg-surface-container-lowest border-outline-variant/50 hover:bg-surface-container-low/50';
+
+                                                      if (isSelected) {
+                                                        optionStyle = 'bg-secondary/5 border-secondary text-secondary font-medium shadow-sm';
+                                                      }
+
+                                                      return (
+                                                        <button
+                                                          key={optIdx}
+                                                          type="button"
+                                                          disabled={submittingActivity}
+                                                          onClick={() => setQuizAnswers(prev => ({ ...prev, [q.id]: opcao }))}
+                                                          className={`w-full text-left p-3.5 rounded-lg border text-label-md transition-all flex items-start gap-2 ${optionStyle}`}
+                                                        >
+                                                          <span className="font-bold font-mono text-outline-variant shrink-0">
+                                                            {String.fromCharCode(65 + optIdx)})
+                                                          </span>
+                                                          <span>{opcao}</span>
+                                                        </button>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                )}
+
+                                                {/* Options list: Verdadeiro ou Falso */}
+                                                {q.tipo === 'verdadeiro_falso' && (
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                                                    {['Verdadeiro', 'Falso'].map((opcao, optIdx) => {
+                                                      const isSelected = quizAnswers[q.id] === opcao;
+                                                      let optionStyle = 'bg-surface-container-lowest border-outline-variant/50 hover:bg-surface-container-low/50';
+
+                                                      if (isSelected) {
+                                                        optionStyle = 'bg-secondary/5 border-secondary text-secondary font-medium shadow-sm';
+                                                      }
+
+                                                      return (
+                                                        <button
+                                                          key={optIdx}
+                                                          type="button"
+                                                          disabled={submittingActivity}
+                                                          onClick={() => setQuizAnswers(prev => ({ ...prev, [q.id]: opcao }))}
+                                                          className={`w-full text-center p-3.5 rounded-lg border text-label-md font-bold transition-all flex items-center justify-center gap-2 ${optionStyle}`}
+                                                        >
+                                                          <span className={`w-2 h-2 rounded-full ${opcao === 'Verdadeiro' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                                          <span>{opcao}</span>
+                                                        </button>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                )}
+
+                                                {/* Options list: Questão Aberta */}
+                                                {q.tipo === 'aberta' && (
+                                                  <div className="pl-6 space-y-3">
+                                                    <textarea
+                                                      rows={3}
+                                                      disabled={submittingActivity}
+                                                      value={quizAnswers[q.id] || ''}
+                                                      onChange={(e) => setQuizAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                                                      placeholder="Digite a sua resposta prática/teórica para validação..."
+                                                      className="w-full px-4 py-3 rounded-xl border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none transition-all text-body-md bg-white disabled:bg-slate-50 disabled:text-slate-500"
+                                                    />
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))
+                                          ) : (
+                                            <p className="text-label-md text-on-surface-variant font-mono">Esta atividade não possui questões de quiz configuradas.</p>
+                                          )}
+                                        </div>
                                       ) : (
                                         <div className="space-y-2">
                                           <input
@@ -2856,12 +3494,70 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                       </div>
                                     )}
 
-                                    <div className="flex justify-end">
+                                    <div className="flex justify-end gap-3">
+                                      {canRedo && isRedoing && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setIsRedoingActivity(prev => ({ ...prev, [atividade.id]: false }));
+                                            // Reset inputs to original submission
+                                            if (atividade.tipo_entrega === 'quiz') {
+                                              try {
+                                                const parsed = JSON.parse(exactEntrega.resposta);
+                                                if (parsed && parsed.respostas) {
+                                                  setQuizAnswers(parsed.respostas);
+                                                }
+                                              } catch (e) {}
+                                            } else if (atividade.tipo_entrega === 'multipla') {
+                                              try {
+                                                const parsed = JSON.parse(exactEntrega.resposta);
+                                                setActivityResponse(parsed.texto || '');
+                                                setActivityImage(parsed.imagem || '');
+                                              } catch (e) {}
+                                            } else {
+                                              setActivityResponse(exactEntrega.resposta);
+                                              if (atividade.tipo_entrega === 'imagem') {
+                                                setActivityImage(exactEntrega.resposta);
+                                              }
+                                            }
+                                          }}
+                                          className="px-5 py-2.5 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-high font-heading font-bold text-label-md transition-all"
+                                        >
+                                          Cancelar
+                                        </button>
+                                      )}
                                       <button
                                         type="submit"
-                                        disabled={submittingActivity || (atividade.tipo_entrega === 'texto' ? !activityResponse.trim() : !activityImage.trim())}
+                                        disabled={
+                                          submittingActivity || 
+                                          (atividade.tipo_entrega === 'texto' 
+                                            ? !activityResponse.trim() 
+                                            : atividade.tipo_entrega === 'quiz'
+                                              ? (() => {
+                                                  const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
+                                                  const activeQuestions = isProprio
+                                                    ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
+                                                    : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                                                  return activeQuestions.length === 0 || activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
+                                                })()
+                                              : atividade.tipo_entrega === 'multipla'
+                                                ? (!activityResponse.trim() && !activityImage.trim())
+                                                : !activityImage.trim())
+                                        }
                                         className={`px-5 py-2.5 rounded-lg font-heading font-bold text-label-md flex items-center gap-2 transition-all ${
-                                          (atividade.tipo_entrega === 'texto' ? activityResponse.trim() : activityImage.trim()) && !submittingActivity
+                                          (atividade.tipo_entrega === 'texto' 
+                                            ? activityResponse.trim() 
+                                            : atividade.tipo_entrega === 'quiz'
+                                              ? (() => {
+                                                  const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
+                                                  const activeQuestions = isProprio
+                                                    ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
+                                                    : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                                                  return activeQuestions.length > 0 && !activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
+                                                })()
+                                              : atividade.tipo_entrega === 'multipla'
+                                                ? (activityResponse.trim() || activityImage.trim())
+                                                : activityImage.trim()) && !submittingActivity
                                             ? 'bg-primary text-on-primary shadow shadow-primary/15 hover:shadow-md hover:bg-primary-container hover:-translate-y-0.5'
                                             : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
                                         }`}
@@ -3020,6 +3716,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           <span className="mt-1 font-medium text-[10px]">Perfil</span>
         </button>
       </nav>
+      {showArenaLive && (
+        <ArenaLiveAluno session={session} onClose={() => setShowArenaLive(false)} />
+      )}
     </div>
   );
 };

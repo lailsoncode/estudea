@@ -107,6 +107,35 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Dynamic page title — teacher panel
+  useEffect(() => {
+    if (!session || !isAdmin || teacherView !== 'content') return;
+    const titles: Record<string, string> = {
+      overview: 'Visão Geral | Estudea',
+      progress: 'Progresso dos Alunos | Estudea',
+      corrections: 'Central de Correções | Estudea',
+      assignments: 'Criador de Cursos | Estudea',
+      turmas: 'Gerenciar Turmas | Estudea',
+      settings: 'Minha Conta | Estudea',
+    };
+    document.title = titles[activeTeacherTab] ?? 'Estudea';
+  }, [activeTeacherTab, session, isAdmin, teacherView]);
+
+  // Dynamic page title — student portal
+  useEffect(() => {
+    if (!session || (isAdmin && teacherView === 'content')) return;
+    const titles: Record<string, string> = {
+      dashboard: 'Minhas Aulas | Estudea',
+      achievements: 'Minhas Conquistas | Estudea',
+      profile: 'Meu Perfil | Estudea',
+    };
+    document.title = titles[activeUserTab] ?? 'Estudea';
+  }, [activeUserTab, session, isAdmin, teacherView]);
+
+  // Reset title on logout
+  useEffect(() => {
+    if (!session) document.title = 'Estudea';
+  }, [session]);
 
 
   const handleLogout = async () => {
@@ -310,7 +339,7 @@ function App() {
               {activeTeacherTab === 'turmas' && <GerenciadorTurmas />}
               
               {activeTeacherTab === 'overview' && (
-                <DashboardProfessorOverview setActiveTab={setActiveTeacherTab} />
+                <DashboardProfessorOverview setActiveTab={setActiveTeacherTab} session={session} />
               )}
 
               {activeTeacherTab === 'corrections' && <CentralCorrecoes />}
@@ -423,7 +452,9 @@ function App() {
               </button>
               <div>
                 <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
-                  Plataforma Estudea
+                  {activeUserTab === 'dashboard' && 'Minhas Aulas'}
+                  {activeUserTab === 'achievements' && 'Minhas Conquistas'}
+                  {activeUserTab === 'profile' && 'Meu Perfil'}
                 </h3>
               </div>
             </div>

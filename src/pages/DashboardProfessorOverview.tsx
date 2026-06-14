@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { usePendingCorrections } from '../hooks/usePendingCorrections';
+import { ArenaLiveProfessor } from './ArenaLiveProfessor';
 
 interface DashboardProfessorOverviewProps {
   setActiveTab: (tab: 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings') => void;
+  session: any;
 }
 
 // Inline SVGs matching design style
@@ -91,7 +93,7 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   return fallback;
 };
 
-export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab }) => {
+export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, session }) => {
 
   // DB States
   const [loading, setLoading] = useState(true);
@@ -127,6 +129,8 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
 
   // Schedule list loaded from LocalStorage or default fallback
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+
+  const [showArenaLive, setShowArenaLive] = useState(false);
 
 
 
@@ -602,6 +606,32 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                 <ArrowForwardIcon />
               </button>
 
+              {/* Action: Start Arena Live (Kahoot) */}
+              <button 
+                onClick={() => {
+                  if (classes.length > 0) {
+                    setShowArenaLive(true);
+                  } else {
+                    alert('Cadastre uma turma e um quiz antes de iniciar a Arena Live.');
+                  }
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20 shrink-0">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
+                      <line x1="6" y1="12" x2="10" y2="12" />
+                      <line x1="8" y1="10" x2="8" y2="14" />
+                      <line x1="15" y1="13" x2="15.01" y2="13" />
+                      <line x1="18" y1="11" x2="18.01" y2="11" />
+                    </svg>
+                  </div>
+                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-indigo-500 transition-colors">Iniciar Arena Estudea</span>
+                </div>
+                <ArrowForwardIcon />
+              </button>
+
               {/* Action 4: Export CSV */}
               <button 
                 onClick={exportProgressReport}
@@ -986,6 +1016,10 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
 
           </div>
         </div>
+      )}
+
+      {showArenaLive && (
+        <ArenaLiveProfessor session={session} onClose={() => setShowArenaLive(false)} />
       )}
 
     </div>

@@ -56,13 +56,14 @@ interface Aula {
   nota_aprovacao: number;
   obrigatorio: boolean;
   embaralhar_questoes: boolean;
+  permite_arena?: boolean;
   tempo_limite: number | null;
   questoes?: Questao[];
   atividades?: {
     id: string;
     aula_id: string;
     enunciado: string;
-    tipo_entrega: 'texto' | 'imagem';
+    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
   }[];
 }
 
@@ -73,7 +74,9 @@ interface Questao {
   opcoes: string[];
   resposta_correta: string;
   ordem: number;
-  tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta';
+  tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta' | 'multipla_selecao';
+  para_arena?: boolean;
+  atividade_id?: string | null;
 }
 
 const renderFormattedText = (text: string) => {
@@ -162,12 +165,20 @@ export const CourseBuilder: React.FC = () => {
     nota_aprovacao: 70,
     obrigatorio: true,
     embaralhar_questoes: true,
+    permite_arena: true,
     tempo_limite_enabled: false,
     tempo_limite: 15,
     has_atividade: false,
     atividade_enunciado: '',
-    atividade_tipo_entrega: 'texto' as 'texto' | 'imagem'
+    atividade_tipo_entrega: 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla',
+    atividade_pontua: true,
+    atividade_permite_refazer: true,
+    atividade_quiz_proprio: false
   });
+
+  const [quizSubTab, setQuizSubTab] = useState<'standard' | 'arena' | 'atividade'>('standard');
+  const [aiMaterial, setAiMaterial] = useState<string>('');
+  const [aiGeneratingArena, setAiGeneratingArena] = useState<boolean>(false);
 
   const [editorTab, setEditorTab] = useState<'write' | 'preview'>('write');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -258,10 +269,12 @@ ${aiPrompt}
 
 Você deve retornar um objeto JSON válido estruturado exatamente de acordo com as seguintes regras de negócio da plataforma:
 1. Se houver um link na solicitação que aponte para um material de leitura/pdf/drive (ex: link com terminação .pdf, ou link do Google Drive), preencha o campo "arquivo_url" e certifique-se de que "tipo" seja "arquivo".
-2. Se a solicitação pedir a criação ou adaptação de um questionário/quiz (ex: questões com múltipla escolha, verdadeiro ou falso, ou abertas), monte a lista de questões no campo "questoes". Defina "tipo" como "quiz".
+2. Se a solicitação pedir a criação ou adaptação de um questionário/quiz tradicional vinculado à aula (ex: questões com múltipla escolha, verdadeiro ou falso, abertas ou múltipla seleção), monte a lista de questões no campo "questoes". Defina "tipo" como "quiz".
 3. Se a solicitação pedir ou fornecer um conteúdo teórico (texto para leitura), escreva e estruture o texto no campo "conteudo" usando Markdown simples (suportando negrito como **texto** e código inline como \`código\`). Defina "tipo" como "texto".
 4. Defina os campos "titulo" (Título da aula) e "descricao" (Descrição/Objetivos da aula) com base nas informações fornecidas ou criadas para a aula.
 5. Se for pedida ou inferida uma atividade prática/projeto/exercício de entrega, configure "has_atividade": true e escreva o enunciado em "atividade_enunciado". Caso contrário, configure "has_atividade": false.
+6. Para o tipo de entrega da atividade prática ("atividade_tipo_entrega"), os valores aceitos são "texto", "imagem", "quiz" (questionário/perguntas) ou "multipla" (envio misto de texto e imagem).
+7. Se a atividade for do formato de entrega "quiz", ela pode possuir um questionário exclusivo (independente do quiz principal da aula). Nesse caso, defina "atividade_quiz_proprio" como true, liste as perguntas dessa atividade no campo "questoes" e configure a flag "pertence_a_atividade": true em cada uma dessas perguntas.
 
 O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extras como \`\`\`json, apenas retorne o JSON cru):
 {
@@ -273,13 +286,15 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
   "arquivo_url": "URL do material de apoio se aplicável",
   "has_atividade": false,
   "atividade_enunciado": "Enunciado da atividade prática se aplicável",
-  "atividade_tipo_entrega": "texto | imagem",
+  "atividade_tipo_entrega": "texto | imagem | quiz | multipla",
+  "atividade_quiz_proprio": false,
   "questoes": [
     {
       "enunciado": "Texto da pergunta?",
       "opcoes": ["Opção A", "Opção B", "Opção C", "Opção D"],
-      "resposta_correta": "Opção correspondente exatamente a uma das opções listadas",
-      "tipo": "multipla_escolha | verdadeiro_falso | aberta"
+      "resposta_correta": "Opção correspondente exatamente a uma das opções listadas (ou separadas por ponto e vírgula se for múltipla seleção)",
+      "tipo": "multipla_escolha | verdadeiro_falso | aberta | multipla_selecao",
+      "pertence_a_atividade": false
     }
   ]
 }`
@@ -288,7 +303,8 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
               }
             ],
             generationConfig: {
-              responseMimeType: 'application/json'
+              responseMimeType: 'application/json',
+              maxOutputTokens: 8192
             }
           })
         }
@@ -305,7 +321,28 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         throw new Error('Nenhuma resposta retornada do Gemini.');
       }
 
-      const parsedData = JSON.parse(textResponse);
+      // Sanitiza a resposta: remove blocos markdown (```json ... ```) caso a IA os inclua
+      const sanitizeJsonResponse = (raw: string): string => {
+        const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenced) return fenced[1].trim();
+        // Extrai o primeiro objeto JSON da string, caso haja texto extra
+        const firstBrace = raw.indexOf('{');
+        const lastBrace = raw.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          return raw.slice(firstBrace, lastBrace + 1);
+        }
+        return raw.trim();
+      };
+
+      let parsedData: any;
+      try {
+        parsedData = JSON.parse(sanitizeJsonResponse(textResponse));
+      } catch (parseErr) {
+        console.error('Resposta bruta da IA:', textResponse);
+        throw new Error(
+          'A IA retornou uma resposta em formato inválido. Tente simplificar ou encurtar o conteúdo colado e tente novamente.'
+        );
+      }
 
       // Populate form state with AI response
       const updatedForm = { ...lessonForm };
@@ -320,6 +357,9 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         updatedForm.has_atividade = !!parsedData.has_atividade;
         if (parsedData.atividade_enunciado) updatedForm.atividade_enunciado = parsedData.atividade_enunciado;
         if (parsedData.atividade_tipo_entrega) updatedForm.atividade_tipo_entrega = parsedData.atividade_tipo_entrega;
+        if (parsedData.atividade_quiz_proprio !== undefined) {
+          updatedForm.atividade_quiz_proprio = !!parsedData.atividade_quiz_proprio;
+        }
       }
 
       if (parsedData.tipo) {
@@ -328,7 +368,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         setActiveTypes({
           video: parsedData.tipo === 'video' || !!parsedData.video_url,
           texto: parsedData.tipo === 'texto' || !!parsedData.conteudo,
-          quiz: parsedData.tipo === 'quiz' || (parsedData.questoes && parsedData.questoes.length > 0),
+          quiz: parsedData.tipo === 'quiz' || (parsedData.questoes && parsedData.questoes.length > 0 && !parsedData.questoes.every((q: any) => q.pertence_a_atividade)),
           arquivo: parsedData.tipo === 'arquivo' || !!parsedData.arquivo_url
         });
       }
@@ -341,7 +381,8 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
           opcoes: Array.isArray(q.opcoes) ? q.opcoes : [],
           resposta_correta: q.resposta_correta || '',
           ordem: index + 1,
-          tipo: q.tipo || 'multipla_escolha'
+          tipo: q.tipo || 'multipla_escolha',
+          atividade_id: q.pertence_a_atividade ? 'temp_activity_questions_id' : null
         }));
         setQuestoes(formattedQuestions);
       }
@@ -597,6 +638,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
   const handleOpenNewLesson = (modulo: Modulo) => {
     setSelectedModule(modulo);
     setSelectedLesson(null);
+    setQuizSubTab('standard');
     setLessonForm({
       titulo: '',
       descricao: '',
@@ -608,11 +650,15 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       nota_aprovacao: 70,
       obrigatorio: true,
       embaralhar_questoes: true,
+      permite_arena: true,
       tempo_limite_enabled: false,
       tempo_limite: 15,
       has_atividade: false,
       atividade_enunciado: '',
-      atividade_tipo_entrega: 'texto'
+      atividade_tipo_entrega: 'texto',
+      atividade_pontua: true,
+      atividade_permite_refazer: true,
+      atividade_quiz_proprio: false
     });
     setQuestoes([
       { enunciado: 'Qual é a principal função do espaço em branco (whitespace) no design de interfaces?', opcoes: ['Preencher espaços vazios', 'Reduzir a carga cognitiva agrupando elementos logicamente', 'Aumentar o tamanho do arquivo'], resposta_correta: 'Reduzir a carga cognitiva agrupando elementos logicamente', ordem: 1 }
@@ -629,6 +675,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
   const handleOpenEditLesson = async (modulo: Modulo, lesson: Aula) => {
     setSelectedModule(modulo);
     setSelectedLesson(lesson);
+    setQuizSubTab('standard');
     setLoading(true);
     try {
       // Load questions if they exist
@@ -662,12 +709,23 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         nota_aprovacao: lesson.nota_aprovacao,
         obrigatorio: lesson.obrigatorio,
         embaralhar_questoes: lesson.embaralhar_questoes,
+        permite_arena: lesson.permite_arena ?? true,
         tempo_limite_enabled: lesson.tempo_limite !== null,
         tempo_limite: lesson.tempo_limite || 15,
         has_atividade: !!activeAtividade,
         atividade_enunciado: activeAtividade ? activeAtividade.enunciado : '',
-        atividade_tipo_entrega: activeAtividade ? activeAtividade.tipo_entrega : 'texto'
+        atividade_tipo_entrega: activeAtividade ? activeAtividade.tipo_entrega as any : 'texto',
+        atividade_pontua: activeAtividade ? (activeAtividade.pontua ?? true) : true,
+        atividade_permite_refazer: activeAtividade ? (activeAtividade.permite_refazer ?? true) : true,
+        atividade_quiz_proprio: activeAtividade ? loadedQuestions.some(q => q.atividade_id === activeAtividade.id) : false
       });
+
+      const hasProprioQuiz = activeAtividade ? loadedQuestions.some(q => q.atividade_id === activeAtividade.id) : false;
+      if (hasProprioQuiz) {
+        setQuizSubTab('atividade');
+      } else {
+        setQuizSubTab('standard');
+      }
 
       setActiveTypes({
         video: !!lesson.video_url,
@@ -709,19 +767,33 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
 
   // QUIZ BUILDER FUNCTIONS
   const handleAddQuestion = () => {
+    const isArena = quizSubTab === 'arena';
+    const isAtividade = quizSubTab === 'atividade';
+    const categoryCount = questoes.filter(q => {
+      if (isArena) return !!q.para_arena;
+      if (isAtividade) return !!q.atividade_id;
+      return !q.para_arena && !q.atividade_id;
+    }).length;
+
     setQuestoes([
       ...questoes,
       {
-        enunciado: 'Qual é o conceito de...',
-        opcoes: ['Opção 1', 'Opção 2'],
-        resposta_correta: 'Opção 1',
-        ordem: questoes.length + 1,
-        tipo: 'multipla_escolha'
+        enunciado: isArena 
+          ? 'Pergunta da Arena...' 
+          : isAtividade 
+            ? 'Pergunta do Questionário...' 
+            : 'Qual é o conceito de...',
+        opcoes: ['Opção A', 'Opção B'],
+        resposta_correta: 'Opção A',
+        ordem: categoryCount + 1,
+        tipo: 'multipla_escolha',
+        para_arena: isArena,
+        atividade_id: isAtividade ? 'pending' : null
       }
     ]);
   };
 
-  const handleSetQuestionType = (qIndex: number, tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta') => {
+  const handleSetQuestionType = (qIndex: number, tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta' | 'multipla_selecao') => {
     const newQuestions = [...questoes];
     newQuestions[qIndex].tipo = tipo;
     
@@ -731,6 +803,9 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     } else if (tipo === 'aberta') {
       newQuestions[qIndex].opcoes = ['Escreva aqui o gabarito ou explicação da resposta correta.', 'palavra1, palavra2'];
       newQuestions[qIndex].resposta_correta = '';
+    } else if (tipo === 'multipla_selecao') {
+      newQuestions[qIndex].opcoes = ['Opção 1', 'Opção 2', 'Opção 3', 'Opção 4'];
+      newQuestions[qIndex].resposta_correta = 'Opção 1';
     } else {
       newQuestions[qIndex].opcoes = ['Opção 1', 'Opção 2'];
       newQuestions[qIndex].resposta_correta = 'Opção 1';
@@ -756,8 +831,16 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     newQuestions[qIndex].opcoes[optIndex] = text;
     
     // If correct answer was this option, update the correct answer string too
-    if (newQuestions[qIndex].resposta_correta === oldVal) {
-      newQuestions[qIndex].resposta_correta = text;
+    if (newQuestions[qIndex].tipo === 'multipla_selecao') {
+      const currentCorrect = newQuestions[qIndex].resposta_correta
+        ? newQuestions[qIndex].resposta_correta.split(';').map(o => o.trim())
+        : [];
+      const updatedCorrect = currentCorrect.map(o => o === oldVal ? text : o);
+      newQuestions[qIndex].resposta_correta = updatedCorrect.join(';');
+    } else {
+      if (newQuestions[qIndex].resposta_correta === oldVal) {
+        newQuestions[qIndex].resposta_correta = text;
+      }
     }
     setQuestoes(newQuestions);
   };
@@ -772,8 +855,16 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     newQuestions[qIndex].opcoes.splice(optIndex, 1);
     
     // Fallback correct option if deleted one was correct
-    if (newQuestions[qIndex].resposta_correta === removedVal) {
-      newQuestions[qIndex].resposta_correta = newQuestions[qIndex].opcoes[0];
+    if (newQuestions[qIndex].tipo === 'multipla_selecao') {
+      const currentCorrect = newQuestions[qIndex].resposta_correta
+        ? newQuestions[qIndex].resposta_correta.split(';').map(o => o.trim())
+        : [];
+      const updatedCorrect = currentCorrect.filter(o => o !== removedVal);
+      newQuestions[qIndex].resposta_correta = updatedCorrect.join(';');
+    } else {
+      if (newQuestions[qIndex].resposta_correta === removedVal) {
+        newQuestions[qIndex].resposta_correta = newQuestions[qIndex].opcoes[0];
+      }
     }
     setQuestoes(newQuestions);
   };
@@ -784,10 +875,37 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     setQuestoes(newQuestions);
   };
 
+  const handleToggleCorrectOptionMulti = (qIndex: number, option: string) => {
+    const newQuestions = [...questoes];
+    const currentCorrect = newQuestions[qIndex].resposta_correta 
+      ? newQuestions[qIndex].resposta_correta.split(';').map(o => o.trim()).filter(o => o.length > 0)
+      : [];
+
+    let updatedCorrect: string[];
+    if (currentCorrect.includes(option)) {
+      updatedCorrect = currentCorrect.filter(o => o !== option);
+    } else {
+      updatedCorrect = [...currentCorrect, option];
+    }
+
+    newQuestions[qIndex].resposta_correta = updatedCorrect.join(';');
+    setQuestoes(newQuestions);
+  };
+
   const handleRemoveQuestion = (index: number) => {
-    const newQuestions = questoes.filter((_, idx) => idx !== index);
-    // Recalculate order
-    const updated = newQuestions.map((q, idx) => ({ ...q, ordem: idx + 1 }));
+    const filtered = questoes.filter((_, idx) => idx !== index);
+    let stdIdx = 1;
+    let arenaIdx = 1;
+    let actIdx = 1;
+    const updated = filtered.map(q => {
+      if (q.para_arena) {
+        return { ...q, ordem: arenaIdx++ };
+      } else if (q.atividade_id) {
+        return { ...q, ordem: actIdx++ };
+      } else {
+        return { ...q, ordem: stdIdx++ };
+      }
+    });
     setQuestoes(updated);
   };
 
@@ -796,13 +914,118 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
     const newQuestions = [...questoes];
     newQuestions.splice(index + 1, 0, {
       ...source,
-      id: undefined, // Clear ID so it creates new
+      id: undefined,
       enunciado: `${source.enunciado} (Cópia)`,
-      ordem: index + 2
+      ordem: source.ordem + 1
     });
-    // Recalculate order
-    const updated = newQuestions.map((q, idx) => ({ ...q, ordem: idx + 1 }));
+    let stdIdx = 1;
+    let arenaIdx = 1;
+    let actIdx = 1;
+    const updated = newQuestions.map(q => {
+      if (q.para_arena) {
+        return { ...q, ordem: arenaIdx++ };
+      } else if (q.atividade_id) {
+        return { ...q, ordem: actIdx++ };
+      } else {
+        return { ...q, ordem: stdIdx++ };
+      }
+    });
     setQuestoes(updated);
+  };
+
+  const handleGenerateArenaQuestionsWithAI = async () => {
+    if (!aiMaterial.trim()) {
+      alert('Por favor, forneça algum material de apoio ou descrição para a IA.');
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      alert('Chave de API do Gemini (VITE_GEMINI_API_KEY) não configurada no arquivo .env.');
+      return;
+    }
+
+    setAiGeneratingArena(true);
+    try {
+      const prompt = `Você é o mestre da Arena Estudea, um quiz multiplayer em tempo real similar ao Kahoot.
+Seu objetivo é ler o material fornecido pelo professor e criar de 5 a 8 questões de múltipla escolha para a Arena competitiva.
+
+O material fornecido é o seguinte:
+"""
+${aiMaterial}
+"""
+
+Regras importantes:
+1. As perguntas devem ser diretas, desafiadoras e rápidas (máximo de 120 caracteres).
+2. As opções de resposta devem ser curtas e objetivas (máximo de 50 caracteres) para que os alunos possam ler e responder rapidamente em dispositivos móveis.
+3. Forneça exatamente entre 2 e 4 opções de resposta por questão.
+4. Garanta que a "resposta_correta" corresponda exatamente a um dos itens da lista "opcoes".
+5. Retorne a resposta estruturada estritamente em formato JSON de acordo com o modelo abaixo, sem qualquer tipo de markdown ou comentários adicionais.
+
+Modelo JSON de saída:
+[
+  {
+    "enunciado": "Pergunta para a arena?",
+    "opcoes": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
+    "resposta_correta": "Opção 1"
+  }
+]`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              maxOutputTokens: 4096
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error?.message || 'Erro ao conectar à API do Gemini.');
+      }
+
+      const resJson = await response.json();
+      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Nenhuma resposta retornada do Gemini.');
+
+      const parsed = JSON.parse(rawText.trim());
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const currentStandardQuestions = questoes.filter(q => !q.para_arena);
+        const newArenaQuestions = parsed.map((item: any, index: number) => ({
+          enunciado: item.enunciado,
+          opcoes: item.opcoes,
+          resposta_correta: item.resposta_correta,
+          ordem: index + 1,
+          tipo: 'multipla_escolha' as const,
+          para_arena: true
+        }));
+
+        setQuestoes([...currentStandardQuestions, ...newArenaQuestions]);
+        setAiMaterial('');
+        alert('Questões da Arena geradas com sucesso!');
+      } else {
+        throw new Error('Formato inválido retornado pela IA.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao gerar com IA: ' + err.message);
+    } finally {
+      setAiGeneratingArena(false);
+    }
   };
 
   // SAVE LESSON / QUIZ FLOW
@@ -812,7 +1035,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       return;
     }
 
-    if (!activeTypes.video && !activeTypes.texto && !activeTypes.quiz && !activeTypes.arquivo) {
+    if (!activeTypes.video && !activeTypes.texto && !activeTypes.quiz && !activeTypes.arquivo && !(lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) {
       setError('Por favor, selecione pelo menos um tipo de conteúdo.');
       return;
     }
@@ -828,7 +1051,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       let primaryTipo: 'video' | 'texto' | 'quiz' | 'arquivo' = 'texto';
       if (activeTypes.video) {
         primaryTipo = 'video';
-      } else if (activeTypes.quiz) {
+      } else if (activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) {
         primaryTipo = 'quiz';
       } else if (activeTypes.arquivo) {
         primaryTipo = 'arquivo';
@@ -839,7 +1062,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       // Compute durations or description labels:
       const typesList: string[] = [];
       if (activeTypes.video) typesList.push('Vídeo');
-      if (activeTypes.quiz) typesList.push(`${questoes.length} Questões`);
+      if (activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) typesList.push(`${questoes.length} Questões`);
       if (activeTypes.arquivo) typesList.push('Material');
       if (activeTypes.texto && typesList.length === 0) typesList.push('Leitura');
       const duracaoLabel = typesList.join(' + ') || 'Leitura';
@@ -859,6 +1082,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         nota_aprovacao: lessonForm.nota_aprovacao,
         obrigatorio: lessonForm.obrigatorio,
         embaralhar_questoes: lessonForm.embaralhar_questoes,
+        permite_arena: lessonForm.permite_arena,
         tempo_limite: lessonForm.tempo_limite_enabled ? lessonForm.tempo_limite : null,
         duracao: duracaoLabel
       };
@@ -885,6 +1109,8 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         aulaId = insertData.id;
       }
 
+      let activityId: string | null = null;
+
       // Handle Linked Activity Practice
       if (lessonForm.has_atividade) {
         const { data: extAtividade, error: checkError } = await supabase
@@ -898,7 +1124,9 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         const activityPayload = {
           aula_id: aulaId,
           enunciado: lessonForm.atividade_enunciado.trim(),
-          tipo_entrega: lessonForm.atividade_tipo_entrega
+          tipo_entrega: lessonForm.atividade_tipo_entrega,
+          pontua: lessonForm.atividade_tipo_entrega === 'quiz' ? lessonForm.atividade_pontua : true,
+          permite_refazer: lessonForm.atividade_permite_refazer
         };
 
         if (extAtividade && extAtividade.length > 0) {
@@ -908,12 +1136,18 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
             .update(activityPayload)
             .eq('id', extAtividade[0].id);
           if (actUpdateError) throw actUpdateError;
+          activityId = extAtividade[0].id;
         } else {
           // Insert new activity
-          const { error: actInsertError } = await supabase
+          const { data: actInsertData, error: actInsertError } = await supabase
             .from('atividades')
-            .insert(activityPayload);
+            .insert(activityPayload)
+            .select('id')
+            .single();
           if (actInsertError) throw actInsertError;
+          if (actInsertData) {
+            activityId = actInsertData.id;
+          }
         }
       } else {
         // Delete activity if teacher disabled it
@@ -924,8 +1158,12 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
         if (actDeleteError) throw actDeleteError;
       }
 
-      // If Quiz, handle Quiz Questions
-      if (activeTypes.quiz) {
+      // If Quiz, Arena or Activity Questionnaire, handle Questions
+      const hasQuestions = activeTypes.quiz || 
+        (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio) ||
+        questoes.some(q => q.para_arena);
+
+      if (hasQuestions) {
         // Delete old questions if updating
         if (selectedLesson) {
           const { error: deleteError } = await supabase
@@ -935,22 +1173,40 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
           if (deleteError) throw deleteError;
         }
 
-        // Insert new questions
-        const questionsPayload = questoes.map(q => ({
-          aula_id: aulaId,
-          enunciado: q.enunciado.trim(),
-          opcoes: q.opcoes,
-          resposta_correta: q.resposta_correta,
-          ordem: q.ordem,
-          tipo: q.tipo || 'multipla_escolha'
-        }));
+        // Insert new questions (only include the ones that are relevant based on configurations)
+        const activeQuestions = questoes.filter(q => {
+          // 1. If it's an arena question, keep it
+          if (q.para_arena) return true;
+          // 2. If it's an activity question: keep it only if the activity is a quiz and it's set to has independent quiz
+          if (q.atividade_id) {
+            return lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio;
+          }
+          // 3. If it's a standard lesson quiz question: keep it only if standard quiz is enabled
+          return activeTypes.quiz;
+        });
 
-        const { error: questionsError } = await supabase
-          .from('questoes')
-          .insert(questionsPayload);
-        if (questionsError) throw questionsError;
+        if (activeQuestions.length > 0) {
+          const questionsPayload = activeQuestions.map(q => {
+            const isActivityQuestion = !!q.atividade_id;
+            return {
+              aula_id: aulaId,
+              enunciado: q.enunciado.trim(),
+              opcoes: q.opcoes,
+              resposta_correta: q.resposta_correta,
+              ordem: q.ordem,
+              tipo: q.tipo || 'multipla_escolha',
+              para_arena: q.para_arena || false,
+              atividade_id: isActivityQuestion ? activityId : null
+            };
+          });
+
+          const { error: questionsError } = await supabase
+            .from('questoes')
+            .insert(questionsPayload);
+          if (questionsError) throw questionsError;
+        }
       } else {
-        // Delete old questions if quiz was deselected
+        // Delete old questions if none are configured
         if (selectedLesson) {
           await supabase
             .from('questoes')
@@ -1759,7 +2015,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-label-sm font-bold text-slate-600">Formato de Entrega Exigido</label>
-                      <div className="flex gap-6 mt-1">
+                      <div className="flex flex-wrap gap-6 mt-1">
                         <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
                           <input
                             type="radio"
@@ -1782,219 +2038,516 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
                           />
                           <span>Link de Imagem (Upload de Screenshot/Design)</span>
                         </label>
+                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="entrega_tipo"
+                            value="quiz"
+                            checked={lessonForm.atividade_tipo_entrega === 'quiz'}
+                            onChange={() => {
+                              setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'quiz' });
+                              setActiveTypes(prev => ({ ...prev, quiz: true }));
+                            }}
+                            className="text-primary focus:ring-primary/20 border-slate-300"
+                          />
+                          <span>Quiz (Questionário)</span>
+                        </label>
+                        <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="entrega_tipo"
+                            value="multipla"
+                            checked={lessonForm.atividade_tipo_entrega === 'multipla'}
+                            onChange={() => setLessonForm({ ...lessonForm, atividade_tipo_entrega: 'multipla' })}
+                            className="text-primary focus:ring-primary/20 border-slate-300"
+                          />
+                          <span>Múltipla Entrega (Texto + Imagem)</span>
+                        </label>
                       </div>
+                    </div>
+
+                    {lessonForm.atividade_tipo_entrega === 'quiz' && (
+                      <div className="p-4 bg-indigo-50/50 border border-indigo-150 rounded-2xl space-y-3 animate-in slide-in-from-top duration-200">
+                        <label className="flex items-center justify-between cursor-pointer group gap-4">
+                          <div className="flex flex-col text-left">
+                            <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Atividade Pontuada (Vale nota)</span>
+                            <span className="text-label-sm text-slate-400 mt-0.5">Se desmarcado, a atividade servirá apenas como exercício formativo (sem nota/pontos)</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={lessonForm.atividade_pontua}
+                            onChange={(e) => setLessonForm({ ...lessonForm, atividade_pontua: e.target.checked })}
+                            className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                          />
+                        </label>
+
+                        <label className="flex items-center justify-between cursor-pointer group gap-4 pt-2 border-t border-indigo-100/50">
+                          <div className="flex flex-col text-left">
+                            <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Questionário Exclusivo</span>
+                            <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o questionário terá perguntas específicas para esta atividade (em vez de compartilhar as do quiz principal da aula)</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={lessonForm.atividade_quiz_proprio}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setLessonForm(prev => ({ ...prev, atividade_quiz_proprio: checked }));
+                              if (checked) {
+                                setQuizSubTab('atividade');
+                                const hasActivityQ = questoes.some(q => !!q.atividade_id);
+                                if (!hasActivityQ) {
+                                  setQuestoes(prev => [
+                                    ...prev,
+                                    {
+                                      enunciado: 'Pergunta do Questionário...',
+                                      opcoes: ['Opção A', 'Opção B'],
+                                      resposta_correta: 'Opção A',
+                                      ordem: 1,
+                                      tipo: 'multipla_escolha',
+                                      atividade_id: 'pending'
+                                    }
+                                  ]);
+                                }
+                              } else {
+                                setQuizSubTab('standard');
+                              }
+                            }}
+                            className="w-10 h-6 bg-slate-200 checked:bg-indigo-500 rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                          />
+                        </label>
+
+                        <p className="text-[11px] text-indigo-650 italic font-medium leading-relaxed bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100">
+                          {lessonForm.atividade_quiz_proprio 
+                            ? 'ℹ As questões cadastradas na aba "Questões da Atividade" abaixo serão utilizadas exclusivamente para esta atividade.'
+                            : 'ℹ As questões cadastradas na aba "Questões do Quiz" abaixo serão utilizadas para esta atividade.'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Permite Refazer Option */}
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                      <label className="flex items-center justify-between cursor-pointer group gap-4">
+                        <div className="flex flex-col text-left">
+                          <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Permitir refazer a atividade</span>
+                          <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o aluno poderá reiniciar a atividade e enviar uma nova resposta antes de ser avaliado.</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={lessonForm.atividade_permite_refazer}
+                          onChange={(e) => setLessonForm({ ...lessonForm, atividade_permite_refazer: e.target.checked })}
+                          className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                        />
+                      </label>
                     </div>
                   </div>
                 )}
               </section>
 
               {/* QUIZ BUILDER AREA */}
-              {activeTypes.quiz && (
+              {(activeTypes.quiz || (lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz')) && (
                 <section className="app-card-padded relative overflow-hidden space-y-6">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                    <div>
-                      <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Questões do Quiz</h3>
-                      <p className="text-label-sm text-slate-400 mt-1">Defina perguntas e respostas corretas para testar o progresso.</p>
-                    </div>
-                    <button
-                      onClick={handleAddQuestion}
-                      className="px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
-                    >
-                      <HugeiconsIcon icon={AddCircleIcon} size={18} />
-                      Nova Questão
-                    </button>
+                  {/* Quiz tabs */}
+                  <div className="flex border-b border-slate-100">
+                    {activeTypes.quiz && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setQuizSubTab('standard')}
+                          className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] ${
+                            quizSubTab === 'standard'
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          📝 Questões do Quiz
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQuizSubTab('arena')}
+                          className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] flex items-center gap-1.5 ${
+                            quizSubTab === 'arena'
+                              ? 'border-indigo-500 text-indigo-500'
+                              : 'border-transparent text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          🎮 Arena Estudea Live
+                        </button>
+                      </>
+                    )}
+                    {lessonForm.has_atividade && lessonForm.atividade_tipo_entrega === 'quiz' && lessonForm.atividade_quiz_proprio && (
+                      <button
+                        type="button"
+                        onClick={() => setQuizSubTab('atividade')}
+                        className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] flex items-center gap-1.5 ${
+                          quizSubTab === 'atividade'
+                            ? 'border-pink-500 text-pink-500'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        📋 Questões da Atividade
+                      </button>
+                    )}
                   </div>
 
-                  <div className="space-y-6">
-                    {questoes.map((q, qIndex) => (
-                      <div
-                        key={qIndex}
-                        className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative group"
+                  {quizSubTab === 'standard' ? (
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Questões do Quiz</h3>
+                        <p className="text-label-sm text-slate-400 mt-1">Defina perguntas e respostas corretas para o progresso do aluno no estudo individual.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddQuestion}
+                        className="px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
                       >
-                        {/* Lefthand active indicator */}
-                        <div className="absolute -left-[1px] top-4 bottom-4 w-[4px] bg-primary rounded-r-md"></div>
-                        
-                        {/* Question Header */}
-                        <div className="flex justify-between items-start gap-4 mb-4">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                              <span className="text-slate-500 font-heading font-extrabold text-[12px] uppercase">Questão {qIndex + 1}</span>
-                              <div className="flex gap-1 bg-slate-200/60 p-1 rounded-xl w-fit border border-slate-200">
-                                {[
-                                  { id: 'multipla_escolha', label: 'Múltipla Escolha' },
-                                  { id: 'verdadeiro_falso', label: 'V / F' },
-                                  { id: 'aberta', label: 'Aberta' }
-                                ].map((t) => {
-                                  const isSelected = (q.tipo || 'multipla_escolha') === t.id;
-                                  return (
-                                    <button
-                                      key={t.id}
-                                      type="button"
-                                      onClick={() => handleSetQuestionType(qIndex, t.id as any)}
-                                      className={`px-3 py-1 rounded-lg text-[10px] font-heading font-extrabold uppercase tracking-wider transition-all ${
-                                        isSelected
-                                          ? 'bg-primary text-white shadow shadow-primary/10'
-                                          : 'text-slate-600 hover:text-slate-900 bg-transparent hover:bg-slate-200/50'
-                                      }`}
-                                    >
-                                      {t.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <input
-                              type="text"
-                              value={q.enunciado}
-                              onChange={(e) => handleUpdateQuestionText(qIndex, e.target.value)}
-                              placeholder="Digite o enunciado da pergunta..."
-                              className="w-full bg-transparent border-b border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-0 p-0 py-1 font-heading font-bold text-body-md text-on-surface focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleDuplicateQuestion(qIndex)}
-                              className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-200/65"
-                              title="Duplicar Questão"
-                            >
-                              <HugeiconsIcon icon={SparklesIcon} size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleRemoveQuestion(qIndex)}
-                              className="p-1.5 text-slate-400 hover:text-error rounded-lg hover:bg-error-container/20"
-                              title="Excluir Questão"
-                            >
-                              <HugeiconsIcon icon={Delete02Icon} size={16} />
-                            </button>
-                          </div>
+                        <HugeiconsIcon icon={AddCircleIcon} size={18} />
+                        Nova Questão
+                      </button>
+                    </div>
+                  ) : quizSubTab === 'arena' ? (
+                    <div className="space-y-4 pb-2 border-b border-slate-100">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div>
+                          <h3 className="font-heading font-extrabold text-body-lg text-indigo-500 flex items-center gap-1.5">
+                            Questões da Arena Estudea
+                          </h3>
+                          <p className="text-label-sm text-slate-400 mt-1">
+                            Perguntas rápidas elaboradas especialmente para a competição multiplayer ao vivo.
+                          </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={handleAddQuestion}
+                          className="px-4 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
+                        >
+                          <HugeiconsIcon icon={AddCircleIcon} size={18} />
+                          Nova Questão Arena
+                        </button>
+                      </div>
+                      
+                      {/* AI material generator block */}
+                      <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">✨</span>
+                          <span className="font-heading font-bold text-label-md text-indigo-650">Gerar com Inteligência Artificial</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                          Cole materiais de leitura, conceitos-chave, resumos da aula ou slides abaixo e a IA criará as questões rápidas da Arena automaticamente.
+                        </p>
+                        <textarea
+                          value={aiMaterial}
+                          onChange={(e) => setAiMaterial(e.target.value)}
+                          placeholder="Cole aqui o material de leitura, notas de aula, slides ou referências teóricas..."
+                          className="w-full h-24 p-3 bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 rounded-xl text-body-md outline-none transition-all resize-y text-slate-800"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={handleGenerateArenaQuestionsWithAI}
+                            disabled={aiGeneratingArena}
+                            className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-350 text-white font-heading font-bold text-label-sm rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                          >
+                            {aiGeneratingArena ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                                Gerando Questões...
+                              </>
+                            ) : (
+                              'Gerar Questões da Arena'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-heading font-extrabold text-body-lg text-pink-600">Questões da Atividade</h3>
+                        <p className="text-label-sm text-slate-400 mt-1">Defina perguntas exclusivas para o questionário de entrega desta atividade prática.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddQuestion}
+                        className="px-4 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
+                      >
+                        <HugeiconsIcon icon={AddCircleIcon} size={18} />
+                        Nova Questão Atividade
+                      </button>
+                    </div>
+                  )}
 
-                        {/* Options Render based on Question Type */}
-                        {(!q.tipo || q.tipo === 'multipla_escolha') && (
-                          <div className="space-y-3">
-                            {q.opcoes.map((opt, optIndex) => {
-                              const isCorrect = q.resposta_correta === opt;
-                              return (
-                                <div
-                                  key={optIndex}
-                                  className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${
-                                    isCorrect 
-                                      ? 'bg-primary/5 border-primary/20' 
-                                      : 'bg-white border-slate-200 hover:border-slate-300'
-                                  }`}
-                                >
-                                  {/* Correct check label */}
-                                  <label className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-slate-300 cursor-pointer peer-checked:border-primary">
-                                    <input
-                                      type="radio"
-                                      name={`q_${qIndex}_correct`}
-                                      checked={isCorrect}
-                                      onChange={() => handleSetCorrectOption(qIndex, opt)}
-                                      className="sr-only"
-                                    />
-                                    <div className={`w-3 h-3 rounded-full bg-primary transition-all ${isCorrect ? 'scale-100' : 'scale-0'}`}></div>
-                                  </label>
+                  <div className="space-y-6 font-sans">
+                    {questoes.map((q, qIndex) => {
+                      const belongsToTab = (() => {
+                        if (quizSubTab === 'arena') return !!q.para_arena;
+                        if (quizSubTab === 'atividade') return !!q.atividade_id;
+                        return !q.para_arena && !q.atividade_id;
+                      })();
+                      if (!belongsToTab) return null;
 
-                                  <input
-                                    type="text"
-                                    value={opt}
-                                    onChange={(e) => handleUpdateOptionText(qIndex, optIndex, e.target.value)}
-                                    className="flex-1 bg-transparent border-none p-0 focus:ring-0 text-label-md text-on-surface focus:outline-none"
-                                  />
-
-                                  {isCorrect && (
-                                    <span className="text-[10px] font-extrabold uppercase bg-primary/10 text-primary px-2 py-0.5 rounded">Correta</span>
-                                  )}
-
-                                  <button
-                                    onClick={() => handleRemoveOption(qIndex, optIndex)}
-                                    className="text-slate-300 hover:text-slate-500 p-1 rounded-lg"
-                                  >
-                                    <HugeiconsIcon icon={Cancel01Icon} size={14} />
-                                  </button>
+                      return (
+                        <div
+                          key={qIndex}
+                          className="bg-slate-50 border border-slate-200 rounded-2xl p-5 relative group"
+                        >
+                          {/* Lefthand active indicator */}
+                          <div className={`absolute -left-[1px] top-4 bottom-4 w-[4px] rounded-r-md ${
+                            quizSubTab === 'arena' 
+                              ? 'bg-indigo-500' 
+                              : quizSubTab === 'atividade'
+                                ? 'bg-pink-500'
+                                : 'bg-primary'
+                          }`}></div>
+                          
+                          {/* Question Header */}
+                          <div className="flex justify-between items-start gap-4 mb-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <span className="text-slate-500 font-heading font-extrabold text-[12px] uppercase">Questão {q.ordem}</span>
+                                <div className="flex gap-1 bg-slate-200/60 p-1 rounded-xl w-fit border border-slate-200">
+                                  {[
+                                    { id: 'multipla_escolha', label: 'Múltipla Escolha' },
+                                    { id: 'multipla_selecao', label: 'Múltiplas Respostas' },
+                                    { id: 'verdadeiro_falso', label: 'V / F' },
+                                    { id: 'aberta', label: 'Aberta' }
+                                  ].map((t) => {
+                                    const isSelected = (q.tipo || 'multipla_escolha') === t.id;
+                                    return (
+                                      <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => handleSetQuestionType(qIndex, t.id as any)}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-heading font-extrabold uppercase tracking-wider transition-all ${
+                                          isSelected
+                                            ? 'bg-primary text-white shadow shadow-primary/10'
+                                            : 'text-slate-600 hover:text-slate-900 bg-transparent hover:bg-slate-200/50'
+                                        }`}
+                                      >
+                                        {t.label}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
-                              );
-                            })}
-
-                            <button
-                              onClick={() => handleAddOption(qIndex)}
-                              className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline pl-2 mt-2"
-                            >
-                              <HugeiconsIcon icon={AddCircleIcon} size={16} />
-                              Adicionar Opção
-                            </button>
-                          </div>
-                        )}
-
-                        {q.tipo === 'verdadeiro_falso' && (
-                          <div className="flex gap-4">
-                            {['Verdadeiro', 'Falso'].map((val) => {
-                              const isCorrect = q.resposta_correta === val;
-                              return (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  onClick={() => handleSetCorrectOption(qIndex, val)}
-                                  className={`flex-1 py-3 px-4 rounded-xl border-2 font-heading font-bold text-label-md flex items-center justify-center gap-2 transition-all ${
-                                    isCorrect
-                                      ? 'bg-primary/5 border-primary text-primary'
-                                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600'
-                                  }`}
-                                >
-                                  {isCorrect && <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />}
-                                  {val}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {q.tipo === 'aberta' && (
-                          <div className="space-y-4">
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">Gabarito Sugerido / Critério de Aceitação</label>
-                              <textarea
-                                rows={3}
-                                value={q.opcoes[0] || ''}
-                                onChange={(e) => {
-                                  const newQuestions = [...questoes];
-                                  newQuestions[qIndex].opcoes[0] = e.target.value;
-                                  newQuestions[qIndex].resposta_correta = e.target.value;
-                                  setQuestoes(newQuestions);
-                                }}
-                                placeholder="Descreva a resposta ideal esperada do aluno..."
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">Palavras-chave de Validação Automática (Separadas por vírgula)</label>
+                              </div>
                               <input
                                 type="text"
-                                value={q.opcoes[1] || ''}
-                                onChange={(e) => {
-                                  const newQuestions = [...questoes];
-                                  newQuestions[qIndex].opcoes[1] = e.target.value;
-                                  setQuestoes(newQuestions);
-                                }}
-                                placeholder="ex: vetor, caneta, traçado (se o aluno digitar todas, a questão é considerada correta)"
-                                className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-mono"
+                                value={q.enunciado}
+                                onChange={(e) => handleUpdateQuestionText(qIndex, e.target.value)}
+                                placeholder="Digite o enunciado da pergunta..."
+                                className="w-full bg-transparent border-b border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-0 p-0 py-1 font-heading font-bold text-body-md text-on-surface focus:outline-none"
                               />
-                              <p className="text-[10px] text-slate-400">
-                                * Se deixado em branco, qualquer resposta do aluno que não esteja vazia será validada como correta.
-                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => handleDuplicateQuestion(qIndex)}
+                                className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-200/65"
+                                title="Duplicar Questão"
+                              >
+                                <HugeiconsIcon icon={SparklesIcon} size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveQuestion(qIndex)}
+                                className="p-1.5 text-slate-400 hover:text-error rounded-lg hover:bg-error-container/20"
+                                title="Excluir Questão"
+                              >
+                                <HugeiconsIcon icon={Delete02Icon} size={16} />
+                              </button>
                             </div>
                           </div>
-                        )}
+
+                          {/* Options Render based on Question Type */}
+                          {(!q.tipo || q.tipo === 'multipla_escolha') && (
+                            <div className="space-y-3">
+                              {q.opcoes.map((opt, optIndex) => {
+                                const isCorrect = q.resposta_correta === opt;
+                                return (
+                                  <div
+                                    key={optIndex}
+                                    className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${
+                                      isCorrect 
+                                        ? 'bg-primary/5 border-primary/20' 
+                                        : 'bg-white border-slate-200 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    {/* Correct check label */}
+                                    <label className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-slate-300 cursor-pointer peer-checked:border-primary">
+                                      <input
+                                        type="radio"
+                                        name={`q_${qIndex}_correct`}
+                                        checked={isCorrect}
+                                        onChange={() => handleSetCorrectOption(qIndex, opt)}
+                                        className="sr-only"
+                                      />
+                                      <div className={`w-3 h-3 rounded-full bg-primary transition-all ${isCorrect ? 'scale-100' : 'scale-0'}`}></div>
+                                    </label>
+
+                                    <input
+                                      type="text"
+                                      value={opt}
+                                      onChange={(e) => handleUpdateOptionText(qIndex, optIndex, e.target.value)}
+                                      className="flex-1 bg-transparent border-none p-0 focus:ring-0 text-label-md text-on-surface focus:outline-none"
+                                    />
+
+                                    {isCorrect && (
+                                      <span className="text-[10px] font-extrabold uppercase bg-primary/10 text-primary px-2 py-0.5 rounded">Correta</span>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveOption(qIndex, optIndex)}
+                                      className="text-slate-300 hover:text-slate-500 p-1 rounded-lg"
+                                    >
+                                      <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                onClick={() => handleAddOption(qIndex)}
+                                className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline pl-2 mt-2"
+                              >
+                                <HugeiconsIcon icon={AddCircleIcon} size={14} />
+                                Adicionar Opção
+                              </button>
+                            </div>
+                          )}
+
+                          {q.tipo === 'multipla_selecao' && (
+                            <div className="space-y-3">
+                              <p className="text-[11px] font-bold text-slate-500 font-mono uppercase tracking-wider block pl-2 mb-1">
+                                Selecione uma ou mais opções corretas:
+                              </p>
+                              {q.opcoes.map((opt, optIndex) => {
+                                const correctOptions = q.resposta_correta ? q.resposta_correta.split(';').map(o => o.trim()) : [];
+                                const isCorrect = correctOptions.includes(opt);
+                                return (
+                                  <div
+                                    key={optIndex}
+                                    className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${
+                                      isCorrect 
+                                        ? 'bg-primary/5 border-primary/20' 
+                                        : 'bg-white border-slate-200 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    {/* Correct checkbox */}
+                                    <label className="flex items-center justify-center w-6 h-6 rounded border-2 border-slate-300 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={isCorrect}
+                                        onChange={() => handleToggleCorrectOptionMulti(qIndex, opt)}
+                                        className="sr-only"
+                                      />
+                                      <span className={`text-[12px] font-extrabold text-primary transition-all ${isCorrect ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>✓</span>
+                                    </label>
+
+                                    <input
+                                      type="text"
+                                      value={opt}
+                                      onChange={(e) => handleUpdateOptionText(qIndex, optIndex, e.target.value)}
+                                      className="flex-1 bg-transparent border-none p-0 focus:ring-0 text-label-md text-on-surface focus:outline-none"
+                                    />
+
+                                    {isCorrect && (
+                                      <span className="text-[10px] font-extrabold uppercase bg-primary/10 text-primary px-2 py-0.5 rounded">Correta</span>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveOption(qIndex, optIndex)}
+                                      className="text-slate-300 hover:text-slate-500 p-1 rounded-lg"
+                                    >
+                                      <HugeiconsIcon icon={Cancel01Icon} size={14} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                onClick={() => handleAddOption(qIndex)}
+                                className="flex items-center gap-1 text-primary font-heading font-bold text-label-sm hover:underline pl-2 mt-2"
+                              >
+                                <HugeiconsIcon icon={AddCircleIcon} size={14} />
+                                Adicionar Opção
+                              </button>
+                            </div>
+                          )}
+
+                          {q.tipo === 'verdadeiro_falso' && (
+                            <div className="flex gap-4">
+                              {['Verdadeiro', 'Falso'].map((val) => {
+                                const isCorrect = q.resposta_correta === val;
+                                return (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() => handleSetCorrectOption(qIndex, val)}
+                                    className={`flex-1 py-3 px-4 rounded-xl border font-heading font-bold text-label-md transition-all ${
+                                      isCorrect
+                                        ? 'bg-primary text-white border-primary shadow'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {val}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {q.tipo === 'aberta' && (
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-label-sm font-bold text-slate-550 block mb-1">Palavras-chave aceitas (separadas por vírgula):</label>
+                                <input
+                                  type="text"
+                                  value={q.opcoes[1] || ''}
+                                  onChange={(e) => {
+                                    const newQuestions = [...questoes];
+                                    newQuestions[qIndex].opcoes[1] = e.target.value;
+                                    setQuestoes(newQuestions);
+                                  }}
+                                  placeholder="ex: vetor, caneta, traçado (se o aluno digitar todas, a questão é considerada correta)"
+                                  className="w-full px-4 py-3 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-mono"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                  * Se deixado em branco, qualquer resposta do aluno que não esteja vazia será validada como correta.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {questoes.filter(q => {
+                      if (quizSubTab === 'arena') return !!q.para_arena;
+                      if (quizSubTab === 'atividade') return !!q.atividade_id;
+                      return !q.para_arena && !q.atividade_id;
+                    }).length === 0 && (
+                      <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center">
+                        <p className="text-slate-400 text-sm italic">
+                          {quizSubTab === 'arena' 
+                            ? 'Nenhuma questão criada para a Arena ainda. Use o gerador de IA acima ou clique em "Nova Questão Arena" para começar!'
+                            : quizSubTab === 'atividade'
+                              ? 'Nenhuma questão cadastrada para o questionário exclusivo da atividade ainda. Clique em "Nova Questão Atividade" para começar!'
+                              : 'Nenhuma questão cadastrada para este quiz.'}
+                        </p>
                       </div>
-                    ))}
+                    )}
 
                     <button
+                      type="button"
                       onClick={handleAddQuestion}
                       className="w-full py-3 border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-primary/5 text-slate-500 hover:text-primary rounded-2xl font-heading font-bold text-label-md transition-all flex items-center justify-center gap-2"
                     >
                       <HugeiconsIcon icon={AddCircleIcon} size={20} />
-                      Nova Questão
+                      {quizSubTab === 'arena' ? 'Nova Questão Arena' : quizSubTab === 'atividade' ? 'Nova Questão Atividade' : 'Nova Questão'}
                     </button>
                   </div>
                 </section>
@@ -2065,6 +2618,18 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
                         className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
                       />
                     </label>
+
+                    {activeTypes.quiz && (
+                      <label className="flex items-center justify-between cursor-pointer group gap-4">
+                        <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors">Permitir na Arena Estudea</span>
+                        <input
+                          type="checkbox"
+                          checked={lessonForm.permite_arena}
+                          onChange={(e) => setLessonForm({ ...lessonForm, permite_arena: e.target.checked })}
+                          className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                        />
+                      </label>
+                    )}
 
                     {/* Time limit */}
                     <div className="space-y-2">
