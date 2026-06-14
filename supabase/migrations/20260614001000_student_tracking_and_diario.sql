@@ -61,13 +61,13 @@ $$;
 -- 4. Create public.observacoes_autonomia table
 CREATE TABLE IF NOT EXISTS public.observacoes_autonomia (
   aluno_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  usa_computador TEXT CHECK (usa_computador IN ('S', 'P', 'N')) DEFAULT 'S',
-  navega_internet TEXT CHECK (navega_internet IN ('S', 'P', 'N')) DEFAULT 'S',
-  cria_salva_arquivos TEXT CHECK (cria_salva_arquivos IN ('S', 'P', 'N')) DEFAULT 'S',
-  organiza_pastas TEXT CHECK (organiza_pastas IN ('S', 'P', 'N')) DEFAULT 'S',
-  copia_cola_links TEXT CHECK (copia_cola_links IN ('S', 'P', 'N')) DEFAULT 'S',
-  conhece_redes_sociais TEXT CHECK (conhece_redes_sociais IN ('S', 'P', 'N')) DEFAULT 'S',
-  conhece_ferramentas TEXT CHECK (conhece_ferramentas IN ('S', 'P', 'N')) DEFAULT 'S',
+  usa_computador TEXT CHECK (usa_computador IN ('S', 'P', 'N')) DEFAULT 'N',
+  navega_internet TEXT CHECK (navega_internet IN ('S', 'P', 'N')) DEFAULT 'N',
+  cria_salva_arquivos TEXT CHECK (cria_salva_arquivos IN ('S', 'P', 'N')) DEFAULT 'N',
+  organiza_pastas TEXT CHECK (organiza_pastas IN ('S', 'P', 'N')) DEFAULT 'N',
+  copia_cola_links TEXT CHECK (copia_cola_links IN ('S', 'P', 'N')) DEFAULT 'N',
+  conhece_redes_sociais TEXT CHECK (conhece_redes_sociais IN ('S', 'P', 'N')) DEFAULT 'N',
+  conhece_ferramentas TEXT CHECK (conhece_ferramentas IN ('S', 'P', 'N')) DEFAULT 'N',
   precisa_apoio TEXT CHECK (precisa_apoio IN ('S', 'N')) DEFAULT 'N',
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

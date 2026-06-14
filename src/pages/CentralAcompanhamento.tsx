@@ -99,14 +99,14 @@ interface EntregaRecord {
 }
 
 const DEFAULT_AUTONOMIA: AutonomiaData = {
-  usa_computador: 'S',
-  navega_internet: 'S',
+  usa_computador: 'N',
+  navega_internet: 'N',
   cria_salva_arquivos: 'N',
   organiza_pastas: 'N',
-  copia_cola_links: 'S',
-  conhece_redes_sociais: 'S',
-  conhece_ferramentas: 'P',
-  precisa_apoio: 'S'
+  copia_cola_links: 'N',
+  conhece_redes_sociais: 'N',
+  conhece_ferramentas: 'N',
+  precisa_apoio: 'N'
 };
 
 const generateAIReport = (
@@ -353,13 +353,13 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
 
       if (autoData) {
         setAutonomia({
-          usa_computador: autoData.usa_computador || 'S',
-          navega_internet: autoData.navega_internet || 'S',
-          cria_salva_arquivos: autoData.cria_salva_arquivos || 'S',
-          organiza_pastas: autoData.organiza_pastas || 'S',
-          copia_cola_links: autoData.copia_cola_links || 'S',
-          conhece_redes_sociais: autoData.conhece_redes_sociais || 'S',
-          conhece_ferramentas: autoData.conhece_ferramentas || 'S',
+          usa_computador: autoData.usa_computador || 'N',
+          navega_internet: autoData.navega_internet || 'N',
+          cria_salva_arquivos: autoData.cria_salva_arquivos || 'N',
+          organiza_pastas: autoData.organiza_pastas || 'N',
+          copia_cola_links: autoData.copia_cola_links || 'N',
+          conhece_redes_sociais: autoData.conhece_redes_sociais || 'N',
+          conhece_ferramentas: autoData.conhece_ferramentas || 'N',
           precisa_apoio: autoData.precisa_apoio || 'N'
         });
       } else {
