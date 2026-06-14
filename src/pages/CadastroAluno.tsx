@@ -112,33 +112,13 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
     setLoading(true);
 
     try {
-      // 1. Pre-validate if the class (turma) exists in Supabase
-      const { data: turma, error: turmaError } = await supabase
-        .from('turmas')
-        .select('id, nome')
-        .eq('codigo_acesso', accessCode.trim())
-        .maybeSingle();
-
-      if (turmaError) {
-        console.error('Erro ao validar código da turma:', turmaError);
-      }
-
-      if (!turma) {
-        setErrorMessage('Código de acesso da turma inválido. Verifique com seu professor.');
-        setIsAccessCodeValid(false);
-        setLoading(false);
-        return;
-      }
-
-      // 2. SignUp user in Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: {
             nome: fullName.trim(),
-            codigo_acesso: accessCode.trim(),
-            role: 'student'
+            codigo_acesso: accessCode.trim()
           }
         }
       });
@@ -147,6 +127,12 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
         // Translate common errors
         if (signUpError.message.includes('User already registered') || signUpError.status === 422) {
           setErrorMessage('Este e-mail já está em uso por outra conta.');
+        } else if (
+          signUpError.message.includes('invalid_class_code') ||
+          signUpError.message.includes('Database error saving new user')
+        ) {
+          setErrorMessage('Código de acesso da turma inválido. Verifique com seu professor.');
+          setIsAccessCodeValid(false);
         } else {
           setErrorMessage(signUpError.message);
         }

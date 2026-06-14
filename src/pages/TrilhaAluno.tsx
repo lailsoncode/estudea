@@ -314,8 +314,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           .from('aulas')
           .select(`
             *,
-            atividades(*),
-            questoes(*)
+            atividades(*)
           `)
           .in('modulo_id', moduloIds);
 
@@ -330,7 +329,27 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           return (a.ordem ?? 0) - (b.ordem ?? 0);
         });
 
-        setAulas(sortedAulas);
+        const aulaIds = sortedAulas.map(aula => aula.id);
+        let questionsByLesson = new Map<string, Questao[]>();
+
+        if (aulaIds.length > 0) {
+          const { data: questionsData, error: questionsError } = await supabase
+            .rpc('get_accessible_questions', { p_aula_ids: aulaIds });
+
+          if (questionsError) throw questionsError;
+
+          questionsByLesson = (questionsData || []).reduce((map: Map<string, Questao[]>, question: Questao) => {
+            const current = map.get(question.aula_id) || [];
+            current.push(question);
+            map.set(question.aula_id, current);
+            return map;
+          }, new Map<string, Questao[]>());
+        }
+
+        setAulas(sortedAulas.map(aula => ({
+          ...aula,
+          questoes: questionsByLesson.get(aula.id) || []
+        })));
       }
 
       // 6. Fetch user progress
@@ -369,26 +388,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       if (agendaError) throw agendaError;
       setSchedule(agendaData || []);
 
-      // 10. Fetch all profiles (students) in the same class (turma) to calculate ranking
+      // 10. Fetch a safe same-class ranking projection without exposing full profiles/submissions
       const { data: studentsData, error: studentsError } = await supabase
-        .from('profiles')
-        .select('id, nome, avatar_url, ofensiva_atual, maior_ofensiva')
-        .eq('turma_id', profileData.turma_id)
-        .eq('role', 'student');
+        .rpc('get_classmates_progress');
 
       if (studentsError) throw studentsError;
       setClassStudents(studentsData || []);
-
-      if (studentsData && studentsData.length > 0) {
-        const studentIds = studentsData.map(s => s.id);
-        const { data: progressListData, error: progressListError } = await supabase
-          .from('progresso_alunos')
-          .select('aluno_id, aula_id')
-          .in('aluno_id', studentIds);
-
-        if (progressListError) throw progressListError;
-        setClassProgress(progressListData || []);
-      }
+      setClassProgress([]);
 
     } catch (err: any) {
       console.error('Erro ao buscar dados da trilha:', err);
@@ -408,7 +414,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     let list = classStudents.map(student => {
       const isSelf = student.id === userId;
       // If it's the current user, use the live 'progresso' state length
-      const completedCount = isSelf ? progresso.length : (progressCountMap.get(student.id) || 0);
+      const completedCount = isSelf
+        ? progresso.length
+        : (student.aulas_concluidas ?? progressCountMap.get(student.id) ?? 0);
       const xp = (completedCount * 50) + ((student.maior_ofensiva || 0) * 20);
       return {
         id: student.id,
@@ -636,24 +644,58 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     });
   };
 
+  const applyQuizCorrectionResults = (aulaId: string, results: any[]) => {
+    if (!Array.isArray(results) || results.length === 0) return;
+
+    const resultMap = new Map(results.map(result => [result.question_id, result]));
+    const hydrateQuestions = (questions: Questao[] = []) =>
+      questions.map(question => {
+        const correction = resultMap.get(question.id);
+        if (!correction) return question;
+
+        return {
+          ...question,
+          resposta_correta: correction.resposta_correta || question.resposta_correta || '',
+          opcoes: Array.isArray(correction.opcoes) ? correction.opcoes : question.opcoes
+        };
+      });
+
+    setAulas(prev =>
+      prev.map(aula =>
+        aula.id === aulaId
+          ? { ...aula, questoes: hydrateQuestions(aula.questoes || []) }
+          : aula
+      )
+    );
+
+    setSelectedAula(prev =>
+      prev && prev.id === aulaId
+        ? { ...prev, questoes: hydrateQuestions(prev.questoes || []) }
+        : prev
+    );
+  };
+
   // Submit quiz responses
   const handleSubmitQuiz = async () => {
     if (!selectedAula || !selectedAula.questoes || selectedAula.questoes.length === 0) return;
 
-    const questions = selectedAula.questoes;
-    const hasDefinedAnswers = questions.some(q => q.resposta_correta && q.resposta_correta.trim() !== '');
-    
-    let correctCount = 0;
-    if (hasDefinedAnswers) {
-      questions.forEach(q => {
-        if (isQuestionCorrect(q, quizAnswers[q.id] || '')) {
-          correctCount++;
-        }
+    const { data: gradeData, error: gradeError } = await supabase
+      .rpc('grade_quiz_answers', {
+        p_aula_id: selectedAula.id,
+        p_respostas: quizAnswers,
+        p_atividade_id: null
       });
+
+    if (gradeError) {
+      console.error('Erro ao corrigir quiz:', gradeError);
+      setActivityErrorMsg('Não foi possível corrigir o quiz. Tente novamente.');
+      return;
     }
 
-    const score = hasDefinedAnswers ? Math.round((correctCount / questions.length) * 100) : null;
-    const passed = hasDefinedAnswers ? (score !== null && score >= selectedAula.nota_aprovacao) : true;
+    applyQuizCorrectionResults(selectedAula.id, gradeData?.results || []);
+
+    const score = typeof gradeData?.score === 'number' ? gradeData.score : null;
+    const passed = !!gradeData?.passed;
 
     setQuizScore(score);
     setQuizPassed(passed);
@@ -686,28 +728,32 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         : (selectedAula?.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
 
       const isGraded = activityRecord ? (activityRecord.pontua ?? true) : true;
-      const hasDefinedAnswers = questions.some(q => q.resposta_correta && q.resposta_correta.trim() !== '');
-      const shouldGrade = isGraded && hasDefinedAnswers;
+      const shouldGrade = isGraded && questions.length > 0;
 
       let payload: any = {};
 
       if (shouldGrade) {
-        let correctCount = 0;
-        questions.forEach(q => {
-          if (isQuestionCorrect(q, quizAnswers[q.id] || '')) {
-            correctCount++;
-          }
-        });
+        const { data: gradeData, error: gradeError } = await supabase
+          .rpc('grade_quiz_answers', {
+            p_aula_id: selectedAula?.id,
+            p_respostas: quizAnswers,
+            p_atividade_id: atividadeId
+          });
 
-        const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
-        const passed = score >= (selectedAula?.nota_aprovacao || 70);
+        if (gradeError) {
+          throw gradeError;
+        }
+
+        if (selectedAula) {
+          applyQuizCorrectionResults(selectedAula.id, gradeData?.results || []);
+        }
 
         payload = {
           respostas: quizAnswers,
-          score,
-          correctCount,
-          totalQuestions: questions.length,
-          passed
+          score: gradeData?.score ?? 0,
+          correctCount: gradeData?.correctCount ?? 0,
+          totalQuestions: gradeData?.totalQuestions ?? questions.length,
+          passed: !!gradeData?.passed
         };
       } else {
         payload = {

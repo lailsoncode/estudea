@@ -32,7 +32,6 @@ interface Player {
 }
 
 export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose }) => {
-  const alunoId = session?.user?.id;
   const studentName = session?.user?.user_metadata?.nome || '';
 
   // Step 1: Pin & Nickname entry
@@ -54,7 +53,6 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
   const [hasAnswered, setHasAnswered] = useState<boolean>(false);
   const [pointsEarned, setPointsEarned] = useState<number>(0);
   const [isLastAnswerCorrect, setIsLastAnswerCorrect] = useState<boolean>(false);
-  const [questionStartedAt, setQuestionStartedAt] = useState<number>(0);
   const [ranking, setRanking] = useState<number>(1);
   const [optionsCount, setOptionsCount] = useState<number>(4);
   const [exibirPerguntas, setExibirPerguntas] = useState<boolean>(true);
@@ -81,13 +79,8 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
     setLoading(true);
 
     try {
-      // 1. Fetch active session with this PIN
       const { data: sData, error: sError } = await supabase
-        .from('kahoot_sessions')
-        .select('*')
-        .eq('pin', cleanPin)
-        .neq('status', 'finished')
-        .single();
+        .rpc('get_kahoot_session_by_pin', { p_pin: cleanPin });
 
       if (sError || !sData) {
         console.error('Erro ao buscar Arena:', sError);
@@ -101,18 +94,9 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
         setExibirPerguntas(sData.exibir_perguntas);
       }
 
-      // 2. Fetch the quiz questions to check correctness client-side
-      let activeQuestions: Question[] = [];
-      if (sData.questoes_customizadas && Array.isArray(sData.questoes_customizadas) && sData.questoes_customizadas.length > 0) {
-        activeQuestions = sData.questoes_customizadas;
-      } else {
-        const { data: questionsData } = await supabase
-          .from('questoes')
-          .select('*')
-          .eq('aula_id', sData.aula_id)
-          .order('ordem', { ascending: true });
-        activeQuestions = questionsData || [];
-      }
+      const activeQuestions: Question[] = Array.isArray(sData.questoes_customizadas)
+        ? sData.questoes_customizadas
+        : [];
 
       if (activeQuestions && activeQuestions.length > 0) {
         setTotalQuestions(activeQuestions.length);
@@ -122,18 +106,11 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
         setOptionsCount(activeQuestions[activeIdx].opcoes.length);
       }
 
-      // 3. Create or get player row in DB
       const { data: pData, error: pError } = await supabase
-        .from('kahoot_players')
-        .upsert({
-          session_id: sData.id,
-          aluno_id: alunoId,
-          nickname: nickname,
-          total_score: 0,
-          streak: 0
-        }, { onConflict: 'session_id, aluno_id' })
-        .select()
-        .single();
+        .rpc('join_kahoot_session', {
+          p_session_id: sData.id,
+          p_nickname: nickname
+        });
 
       if (pError) throw pError;
 
@@ -155,7 +132,6 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
             setHasAnswered(false);
             setChosenOption(null);
             setPointsEarned(0);
-            setQuestionStartedAt(Date.now());
             setOptionsCount(payload.optionsCount || 4);
 
             if (activeQuestions && activeQuestions[index]) {
@@ -199,59 +175,26 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
     const optionText = currentQuestion.opcoes[optionIndex];
     setChosenOption(optionText);
 
-    const isCorrect = optionText === currentQuestion.resposta_correta;
-    setIsLastAnswerCorrect(isCorrect);
-
-    // Calculate score based on response speed
-    const responseTime = Date.now() - questionStartedAt;
-    const timeLimit = 20000; // 20s
-    let points = 0;
-
-    if (isCorrect) {
-      // Points scale from 500 to 1000 based on speed
-      const speedRatio = Math.min(1, responseTime / timeLimit);
-      points = Math.max(500, Math.round(1000 * (1 - speedRatio * 0.5)));
-      
-      // Streak bonus: add 50 points per streak level up to 250
-      const currentStreak = (playerInfo.streak || 0) + 1;
-      points += Math.min(250, currentStreak * 50);
-    }
-
-    setPointsEarned(points);
-
     try {
-      // 1. Save response in DB
-      await supabase
-        .from('kahoot_responses')
-        .insert({
-          session_id: gameSession.id,
-          player_id: playerInfo.id,
-          question_index: currentQuestionIdx,
-          chosen_option: optionText,
-          is_correct: isCorrect,
-          points_awarded: points,
-          response_time_ms: responseTime
+      const { data: answerResult, error: answerError } = await supabase
+        .rpc('submit_kahoot_answer', {
+          p_session_id: gameSession.id,
+          p_player_id: playerInfo.id,
+          p_question_index: currentQuestionIdx,
+          p_chosen_option: optionText
         });
 
-      // 2. Update player streak and score
-      const newScore = (playerInfo.total_score || 0) + points;
-      const newStreak = isCorrect ? (playerInfo.streak || 0) + 1 : 0;
+      if (answerError) throw answerError;
 
-      const { data: updatedPlayer } = await supabase
-        .from('kahoot_players')
-        .update({
-          total_score: newScore,
-          streak: newStreak
-        })
-        .eq('id', playerInfo.id)
-        .select()
-        .single();
+      setIsLastAnswerCorrect(!!answerResult?.is_correct);
+      setPointsEarned(answerResult?.points_awarded || 0);
 
-      if (updatedPlayer) {
-        setPlayerInfo(updatedPlayer);
+      if (answerResult?.player) {
+        setPlayerInfo(answerResult.player);
       }
     } catch (err: any) {
       console.error('Erro ao registrar resposta:', err.message);
+      setHasAnswered(false);
     }
   };
 

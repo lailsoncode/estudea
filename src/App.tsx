@@ -74,6 +74,8 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileStatus, setProfileStatus] = useState<string>('ativo');
+  const [profileRole, setProfileRole] = useState<'student' | 'teacher' | 'admin' | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Arena states
   const [arenaActive, setArenaActive] = useState(false);
@@ -155,7 +157,7 @@ function App() {
   }, [session, activeTeacherTab]);
 
 
-  const isAdmin = session?.user?.user_metadata?.role === 'admin';
+  const isAdmin = profileRole === 'admin' || profileRole === 'teacher';
   const shellStyle = {
     '--sidebar-width': arenaActive ? '0px' : (sidebarCollapsed ? '80px' : '280px'),
   } as CSSProperties;
@@ -164,18 +166,23 @@ function App() {
   const { count: pendingCorrectionsCount } = usePendingCorrections(!!session && isAdmin);
 
   const fetchUserProfile = async (userId: string) => {
+    setProfileLoaded(false);
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('status')
+        .select('status, role')
         .eq('id', userId)
         .single();
       if (error) throw error;
       if (data) {
         setProfileStatus(data.status || 'ativo');
+        setProfileRole((data.role as 'student' | 'teacher' | 'admin' | null) || 'student');
       }
     } catch (err) {
       console.error('Erro ao buscar status do perfil:', err);
+      setProfileRole('student');
+    } finally {
+      setProfileLoaded(true);
     }
   };
 
@@ -185,6 +192,8 @@ function App() {
       setSession(session);
       if (session) {
         fetchUserProfile(session.user.id);
+      } else {
+        setProfileLoaded(true);
       }
     });
 
@@ -196,6 +205,8 @@ function App() {
         fetchUserProfile(session.user.id);
       } else {
         setProfileStatus('ativo');
+        setProfileRole(null);
+        setProfileLoaded(true);
       }
     });
 
@@ -240,6 +251,8 @@ function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setProfileStatus('ativo');
+    setProfileRole(null);
+    setProfileLoaded(true);
   };
 
   const teacherSidebarNav = (
@@ -501,6 +514,17 @@ function App() {
       </div>
     </nav>
   );
+
+  if (session && !profileLoaded) {
+    return (
+      <div className="min-h-screen w-full bg-background text-on-background flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3 text-on-surface-variant">
+          <div className="w-9 h-9 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <p className="text-label-md font-bold">Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If teacher is logged in and viewing content dashboard, show full-screen admin layout with sidebar
   if (session && isAdmin && teacherView === 'content') {

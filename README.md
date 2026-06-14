@@ -135,7 +135,12 @@ cp .env.example .env
 ```env
 VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
 VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANONIMA
-VITE_GEMINI_API_KEY=SUA_CHAVE_GEMINI  # Opcional — para funcionalidades de IA
+```
+
+As funcionalidades de IA usam uma Edge Function do Supabase. Configure a chave do Gemini como secret, não como variável `VITE_*`:
+
+```bash
+supabase secrets set GEMINI_API_KEY=SUA_CHAVE_GEMINI
 ```
 
 ### 4. Execute o servidor de desenvolvimento

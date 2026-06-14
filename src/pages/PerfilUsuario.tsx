@@ -118,7 +118,6 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
     }
   };
   const [turmaNome, setTurmaNome] = useState('');
-  const [turmaCodigo, setTurmaCodigo] = useState('');
   const [roleLabel, setRoleLabel] = useState('');
 
   // Password state
@@ -140,7 +139,7 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
         // Fetch raw profile
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*, turmas(nome, codigo_acesso)')
+          .select('*, turmas(nome)')
           .eq('id', userId)
           .single();
 
@@ -152,7 +151,6 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
           
           if (profile.turmas) {
             setTurmaNome(profile.turmas.nome || '');
-            setTurmaCodigo(profile.turmas.codigo_acesso || '');
           }
 
           const roleMap: Record<string, string> = {
@@ -453,7 +451,6 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
                   <div className="flex items-center bg-surface-container-low border border-outline-variant/40 rounded-xl p-3 text-on-surface-variant">
                     <HugeiconsIcon icon={SchoolIcon} className="w-5 h-5 mr-3 text-outline" />
                     <span className="font-sans text-body-md font-bold text-on-surface">{turmaNome}</span>
-                    <span className="ml-auto text-label-sm bg-outline-variant/20 px-2.5 py-1 rounded">Cód: {turmaCodigo}</span>
                   </div>
                 </div>
               )}

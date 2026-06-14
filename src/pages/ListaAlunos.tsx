@@ -351,59 +351,27 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
           prev.map((s) => (s.id === editingStudent.id ? { ...s, ...updateData } : s))
         );
       } else {
-        // CREATE student profile linking to selected class
-        let newUserId;
-        try {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: formEmail,
-            password: 'StudentPassword123!',
-            options: {
-              data: {
-                nome: formNome,
-                role: 'student',
-                codigo_acesso: selectedTurma.codigo_acesso
-              }
-            }
-          });
-
-          if (signUpError) throw signUpError;
-          newUserId = signUpData.user?.id;
-        } catch (authErr) {
-          console.warn('Auth signup bypassed or failed, using client UUID insertion:', authErr);
-        }
-
-        if (!newUserId) {
-          newUserId = crypto.randomUUID();
-        }
-
-        const newProfile = {
-          id: newUserId,
-          role: 'student',
-          turma_id: selectedTurma.id,
-          ...formData,
-          status: 'ativo'
-        };
-
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .upsert(newProfile);
-
-        if (insertError) throw insertError;
-
-        // Seed default criteria
-        await supabase.from('observacoes_autonomia').upsert({
-          aluno_id: newUserId,
-          usa_computador: formAutonomia,
-          navega_internet: formAutonomia,
-          cria_salva_arquivos: formAutonomia,
-          organiza_pastas: formAutonomia,
-          copia_cola_links: formAutonomia,
-          conhece_redes_sociais: formAutonomia,
-          conhece_ferramentas: formAutonomia,
-          precisa_apoio: formRisco === 'Em Risco' ? 'S' : 'N'
+        const { data, error: createError } = await supabase.functions.invoke('admin-create-student', {
+          body: {
+            ...formData,
+            email: formEmail.trim(),
+            nome: formNome.trim(),
+            turma_id: selectedTurma.id,
+            codigo_acesso: selectedTurma.codigo_acesso
+          }
         });
 
+        if (createError) throw createError;
+        if (data?.error) throw new Error(data.error);
+
+        const newProfile = data?.profile;
+        if (!newProfile) throw new Error('A função não retornou o perfil criado.');
+
         setStudents((prev) => [...prev, newProfile as Student]);
+
+        if (data?.temporaryPassword) {
+          alert(`Aluno criado com sucesso.\n\nSenha temporária: ${data.temporaryPassword}\n\nOriente o aluno a trocar a senha no primeiro acesso.`);
+        }
       }
 
       setIsFormModalOpen(false);
