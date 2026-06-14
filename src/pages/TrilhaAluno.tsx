@@ -2799,7 +2799,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                       if (trimmed.startsWith('##')) {
                                         return <h4 key={pIdx} className="app-section-title pt-6 pb-2 border-b border-outline-variant/20">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
                                       }
-                                      if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                                      if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
                                         return (
                                           <ul key={pIdx} className="list-disc pl-6 space-y-1 my-2">
                                             <li className="text-body-md">{renderFormattedText(trimmed.substring(1).trim())}</li>
@@ -3190,9 +3190,31 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                               <div key={atividade.id} className="space-y-4">
                                 <div className="p-4 bg-surface rounded-xl border border-outline-variant/40 space-y-2">
                                   <p className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider">Instruções</p>
-                                  <p className="text-body-md text-on-surface font-medium leading-relaxed whitespace-pre-wrap">
-                                    {atividade.enunciado}
-                                  </p>
+                                  <div className="prose prose-slate max-w-none text-body-md text-on-surface leading-relaxed font-sans space-y-3">
+                                    {atividade.enunciado ? (
+                                      atividade.enunciado.split('\n').map((para, pIdx) => {
+                                        const trimmed = para.trim();
+                                        if (!trimmed) return <div key={pIdx} className="h-2" />;
+
+                                        if (trimmed.startsWith('###')) {
+                                          return <h5 key={pIdx} className="font-heading font-extrabold text-body-md text-on-surface pt-2">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
+                                        }
+                                        if (trimmed.startsWith('##')) {
+                                          return <h4 key={pIdx} className="font-heading font-extrabold text-body-lg text-on-surface pt-4 pb-1 border-b border-outline-variant/10">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
+                                        }
+                                        if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
+                                          return (
+                                            <ul key={pIdx} className="list-disc pl-5 space-y-1 my-1">
+                                              <li className="text-body-md font-medium">{renderFormattedText(trimmed.substring(1).trim())}</li>
+                                            </ul>
+                                          );
+                                        }
+                                        return <p key={pIdx} className="my-2 leading-relaxed text-justify font-medium">{renderFormattedText(trimmed)}</p>;
+                                      })
+                                    ) : (
+                                      <p className="italic text-on-surface-variant/70">Nenhuma instrução disponível para esta atividade.</p>
+                                    )}
+                                  </div>
                                   <div className="flex gap-4 pt-1 text-[11px] text-on-surface-variant font-mono">
                                     <span>Formato de entrega: <span className="font-bold text-secondary uppercase">{atividade.tipo_entrega}</span></span>
                                   </div>

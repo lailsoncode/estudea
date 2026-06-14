@@ -242,6 +242,47 @@ export const CourseBuilder: React.FC = () => {
     }, 0);
   };
 
+  const insertMarkdownToActivity = (type: 'bold' | 'h2' | 'h3' | 'list' | 'code', tempId: string) => {
+    const textarea = document.getElementById(`activity_enunciado_${tempId}`) as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+
+    let replacement = '';
+    switch (type) {
+      case 'bold':
+        replacement = `**${selectedText || 'texto em negrito'}**`;
+        break;
+      case 'h2':
+        replacement = `\n## ${selectedText || 'Título Secundário'}\n`;
+        break;
+      case 'h3':
+        replacement = `\n### ${selectedText || 'Subtítulo'}\n`;
+        break;
+      case 'list':
+        replacement = `\n- ${selectedText || 'Item da lista'}`;
+        break;
+      case 'code':
+        replacement = `\`${selectedText || 'código'}\``;
+        break;
+    }
+
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    const updated = atividadesList.map(a => a.tempId === tempId ? { ...a, enunciado: newValue } : a);
+    setAtividadesList(updated);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start,
+        start + replacement.length
+      );
+    }, 0);
+  };
+
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -2382,7 +2423,7 @@ Modelo JSON de saída:
                                 </h4>
                               );
                             }
-                            if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                            if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
                               return (
                                 <ul key={pIdx} className="list-disc pl-6 space-y-1 my-1">
                                   <li className="text-body-md text-slate-700">
@@ -2447,8 +2488,58 @@ Modelo JSON de saída:
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-label-sm font-bold text-slate-600">Instruções / Enunciado da Atividade</label>
+                              <div className="flex items-center justify-between">
+                                <label className="text-label-sm font-bold text-slate-600">Instruções / Enunciado da Atividade</label>
+                                
+                                {/* Activity Toolbar */}
+                                <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+                                  <button
+                                    type="button"
+                                    onClick={() => insertMarkdownToActivity('bold', act.tempId)}
+                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
+                                    title="Negrito (**texto**)"
+                                  >
+                                    B
+                                  </button>
+                                  <div className="w-[1px] h-3 bg-slate-200" />
+                                  <button
+                                    type="button"
+                                    onClick={() => insertMarkdownToActivity('h2', act.tempId)}
+                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
+                                    title="Título (## Título)"
+                                  >
+                                    H2
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => insertMarkdownToActivity('h3', act.tempId)}
+                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
+                                    title="Subtítulo (### Subtítulo)"
+                                  >
+                                    H3
+                                  </button>
+                                  <div className="w-[1px] h-3 bg-slate-200" />
+                                  <button
+                                    type="button"
+                                    onClick={() => insertMarkdownToActivity('list', act.tempId)}
+                                    className="p-1 px-2 rounded text-[10px] font-bold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
+                                    title="Lista (- item)"
+                                  >
+                                    • Lista
+                                  </button>
+                                  <div className="w-[1px] h-3 bg-slate-200" />
+                                  <button
+                                    type="button"
+                                    onClick={() => insertMarkdownToActivity('code', act.tempId)}
+                                    className="p-1 px-2 rounded text-[10px] font-mono font-bold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
+                                    title="Código (`código`)"
+                                  >
+                                    &lt;/&gt;
+                                  </button>
+                                </div>
+                              </div>
                               <textarea
+                                id={`activity_enunciado_${act.tempId}`}
                                 rows={3}
                                 placeholder="Descreva detalhadamente o que o aluno deve executar para esta atividade..."
                                 value={act.enunciado}
@@ -2458,6 +2549,34 @@ Modelo JSON de saída:
                                 }}
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans"
                               />
+
+                              {/* Live preview */}
+                              {act.enunciado && (
+                                <div className="mt-2 p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                                  <p className="text-[10px] font-bold text-slate-450 uppercase font-mono tracking-wider">Visualização Prévia</p>
+                                  <div className="prose prose-slate max-w-none text-body-sm text-slate-650 leading-relaxed font-sans space-y-3">
+                                    {act.enunciado.split('\n').map((para, pIdx) => {
+                                      const trimmed = para.trim();
+                                      if (!trimmed) return <div key={pIdx} className="h-1" />;
+
+                                      if (trimmed.startsWith('###')) {
+                                        return <h5 key={pIdx} className="font-heading font-extrabold text-body-sm text-slate-800 pt-1">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
+                                      }
+                                      if (trimmed.startsWith('##')) {
+                                        return <h4 key={pIdx} className="font-heading font-extrabold text-body-md text-slate-800 pt-2 pb-0.5 border-b border-slate-100">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
+                                      }
+                                      if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
+                                        return (
+                                          <ul key={pIdx} className="list-disc pl-5 space-y-0.5 my-0.5">
+                                            <li className="text-body-sm">{renderFormattedText(trimmed.substring(1).trim())}</li>
+                                          </ul>
+                                        );
+                                      }
+                                      return <p key={pIdx} className="my-1.5 text-justify">{renderFormattedText(trimmed)}</p>;
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex flex-col gap-1.5">

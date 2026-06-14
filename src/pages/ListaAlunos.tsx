@@ -114,8 +114,18 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       if (data && data.length > 0) {
         setTurmas(data);
         const storedTurmaId = localStorage.getItem('selectedTurmaId');
-        const defaultTurma = data.find((t) => t.id === storedTurmaId) || data[0];
-        setSelectedTurma(defaultTurma);
+        if (storedTurmaId === 'sem_turma') {
+          setSelectedTurma({
+            id: 'sem_turma',
+            nome: 'Alunos Sem Turma',
+            codigo_acesso: '',
+            curso_id: null,
+            cursos: { titulo: 'Sem Curso' }
+          });
+        } else {
+          const defaultTurma = data.find((t) => t.id === storedTurmaId) || data[0];
+          setSelectedTurma(defaultTurma);
+        }
       }
     } catch (err) {
       console.error('Error fetching classes list:', err);
@@ -172,12 +182,18 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       setAulas(sortedAulas);
 
       // 2. Fetch student profiles in this class
-      const { data: profilesData, error: profilesError } = await supabase
+      let query = supabase
         .from('profiles')
         .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual, turma_id')
-        .eq('role', 'student')
-        .eq('turma_id', turmaId)
-        .order('nome', { ascending: true });
+        .eq('role', 'student');
+
+      if (turmaId === 'sem_turma') {
+        query = query.is('turma_id', null);
+      } else {
+        query = query.eq('turma_id', turmaId);
+      }
+
+      const { data: profilesData, error: profilesError } = await query.order('nome', { ascending: true });
 
       if (profilesError) throw profilesError;
 

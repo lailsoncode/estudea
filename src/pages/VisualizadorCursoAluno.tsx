@@ -587,7 +587,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                       </h4>
                                     );
                                   }
-                                  if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+                                  if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
                                     return (
                                       <ul key={pIdx} className="list-disc pl-6 space-y-1 my-1">
                                         <li className="text-body-md text-slate-700">
