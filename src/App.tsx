@@ -247,7 +247,7 @@ function App() {
       <div className="overflow-y-auto flex-1">
         <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-sm" />
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 rounded-xl object-contain shrink-0 shadow-sm" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
               <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
               <p className="text-[11px] text-on-surface-variant mt-0.5">Painel do Professor</p>
@@ -411,7 +411,7 @@ function App() {
       <div>
         <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-9 h-9 rounded-xl object-contain shrink-0 shadow-sm" />
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 rounded-xl object-contain shrink-0 shadow-sm" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
               <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
               <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
@@ -586,8 +586,8 @@ function App() {
           </header>
 
           {/* Main workspace scrollable area */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-[1280px] mx-auto w-full">
+          <main className={`flex-1 ${activeTeacherTab === 'chat' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'} p-4 sm:p-6 lg:p-8`}>
+            <div className={`max-w-[1280px] mx-auto w-full ${activeTeacherTab === 'chat' ? 'flex-1 flex flex-col min-h-0' : ''}`}>
               {activeTeacherTab === 'progress' && (
                 selectedStudentId ? (
                   <CentralAcompanhamento
