@@ -1,17 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   ArrowLeft01Icon,
-  Chat01Icon,
   EyeIcon,
-  SentIcon,
-  Attachment01Icon,
   KeyboardIcon,
   Alert01Icon,
   FireIcon,
   Edit01Icon,
-  Delete02Icon,
   SchoolIcon
 } from '@hugeicons/core-free-icons';
 
@@ -51,13 +47,7 @@ interface AutonomiaData {
   precisa_apoio: 'S' | 'N' | null;
 }
 
-interface ChatMessage {
-  id: string;
-  aluno_id: string;
-  remetente_id: string | null;
-  texto: string;
-  created_at: string;
-}
+
 
 interface DiarioRecord {
   id: string;
@@ -187,16 +177,13 @@ const generateAIReport = (
 export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   alunoId,
   onBack,
-  initialTab = 'ficha',
+  initialTab: _initialTab = 'ficha',
   onChangeStudent
 }) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [autonomia, setAutonomia] = useState<AutonomiaData>(DEFAULT_AUTONOMIA);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentTeacherId, setCurrentTeacherId] = useState<string | null>(null);
   const [classStudents, setClassStudents] = useState<{ id: string; nome: string }[]>([]);
 
   // Sub Tab States
@@ -211,84 +198,9 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   // AI Report Widget States
   const [generatingReport, setGeneratingReport] = useState(false);
 
-  // Chat CRUD state
-  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
-
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     fetchInitialData();
-    getCurrentUser();
   }, [alunoId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Real-time chat listener for the teacher
-  useEffect(() => {
-    if (!alunoId) return;
-
-    const channel = supabase
-      .channel(`teacher-chat:${alunoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `aluno_id=eq.${alunoId}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newMsg = payload.new as ChatMessage;
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === newMsg.id)) return prev;
-              return [...prev, newMsg];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedMsg = payload.new as ChatMessage;
-            setMessages((prev) =>
-              prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id;
-            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [alunoId]);
-
-  useEffect(() => {
-    if (messages.length > 0 && currentTeacherId && alunoId) {
-      localStorage.setItem(`chat_last_opened:${currentTeacherId}:${alunoId}`, new Date().toISOString());
-    }
-  }, [messages, currentTeacherId, alunoId]);
-
-  const getCurrentUser = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setCurrentTeacherId(session.user.id);
-      }
-    } catch (err) {
-      console.error('Error fetching current user:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (initialTab === 'chat') {
-      setActiveSubTab('ficha');
-      setTimeout(() => {
-        scrollToBottom();
-      }, 300);
-    }
-  }, [initialTab]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -411,18 +323,7 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         setAutonomia(DEFAULT_AUTONOMIA);
       }
 
-      // 3. Fetch Chat Messages
-      const { data: chatData, error: chatError } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('aluno_id', alunoId)
-        .order('created_at', { ascending: true });
 
-      if (chatError) throw chatError;
-
-      if (chatData) {
-        setMessages(chatData);
-      }
 
       // 4. Fetch Class Diary Logs
       setLoadingDiario(true);
@@ -526,112 +427,6 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
     }
   };
 
-  // Start editing a chat message
-  const handleStartEditMessage = (msg: ChatMessage) => {
-    setEditingMessage(msg);
-    setNewMessage(msg.texto);
-  };
-
-  // Cancel editing chat message
-  const handleCancelEditMessage = () => {
-    setEditingMessage(null);
-    setNewMessage('');
-  };
-
-  // Delete chat message
-  const handleDeleteMessage = async (msgId: string) => {
-    if (!window.confirm('Deseja excluir esta mensagem permanentemente?')) return;
-
-    // Optimistic UI
-    const previousMessages = [...messages];
-    setMessages((prev) => prev.filter((m) => m.id !== msgId));
-
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('id', msgId);
-
-      if (error) throw error;
-    } catch (err) {
-      console.error('Error deleting message:', err);
-      // Revert in case of error
-      setMessages(previousMessages);
-    }
-  };
-
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const msgText = newMessage.trim();
-    setNewMessage('');
-
-    if (editingMessage) {
-      // UPDATE operation on chat message
-      const msgId = editingMessage.id;
-      const originalText = editingMessage.texto;
-
-      // Optimistic UI
-      setMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, texto: msgText } : m))
-      );
-      setEditingMessage(null);
-
-      try {
-        const { error } = await supabase
-          .from('chat_messages')
-          .update({ texto: msgText })
-          .eq('id', msgId);
-
-        if (error) throw error;
-      } catch (err) {
-        console.error('Error updating message:', err);
-        // Revert
-        setMessages((prev) =>
-          prev.map((m) => (m.id === msgId ? { ...m, texto: originalText } : m))
-        );
-      }
-    } else {
-      // CREATE operation on chat message
-      const tempId = Math.random().toString();
-      const tempMsg: ChatMessage = {
-        id: tempId,
-        aluno_id: alunoId,
-        remetente_id: currentTeacherId,
-        texto: msgText,
-        created_at: new Date().toISOString()
-      };
-
-      setMessages((prev) => [...prev, tempMsg]);
-
-      try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .insert({
-            aluno_id: alunoId,
-            remetente_id: currentTeacherId,
-            texto: msgText
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Replace optimistic message with actual db message
-        setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
-      } catch (err) {
-        console.error('Error sending message:', err);
-        // Remove the message on error
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        setNewMessage(msgText); // Restore input value
-      }
-    }
-  };
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -642,150 +437,13 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
       .toUpperCase();
   };
 
-  const formatTime = (isoString: string) => {
-    try {
-      const d = new Date(isoString);
-      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
-  };
-
   // Generate IA Report dynamically
   const report = useMemo(() => {
     if (!profile) return null;
     return generateAIReport(profile, autonomia, diarioRecords);
   }, [profile, autonomia, diarioRecords]);
 
-  // Chat panel component builder to keep layout clean
-  const renderChatCard = () => (
-    <div className="bg-white border border-outline-variant/30 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden border-t-4 border-t-secondary">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-        <h4 className="font-heading font-bold text-sm text-on-surface flex items-center gap-2">
-          <HugeiconsIcon icon={Chat01Icon} size={18} strokeWidth={2} className="text-secondary" />
-          <span>Comunicação Direta</span>
-        </h4>
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Online"></span>
-      </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
-        {messages.length > 0 ? (
-          messages.map((msg) => {
-            const isProfessor = msg.remetente_id === currentTeacherId || (msg.remetente_id !== null && msg.remetente_id !== alunoId);
-            return (
-              <div key={msg.id} className={`flex ${isProfessor ? 'justify-end' : 'justify-start'} group`}>
-                <div className={`flex gap-2 max-w-[85%] ${isProfessor ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {!isProfessor && (
-                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center font-bold text-on-surface-variant text-[10px] self-end shrink-0 border border-outline-variant/20 select-none">
-                      {profile ? getInitials(profile.nome) : 'AL'}
-                    </div>
-                  )}
-                  <div
-                    className={`rounded-2xl px-3.5 py-2.5 shadow-sm border transition-all relative ${
-                      isProfessor
-                        ? 'bg-secondary text-white border-secondary-container rounded-tr-sm'
-                        : 'bg-white text-on-surface border-slate-100 rounded-tl-sm'
-                    }`}
-                  >
-                    <p className="text-xs leading-relaxed font-semibold break-words whitespace-pre-wrap">
-                      {msg.texto}
-                    </p>
-                    <span
-                      className={`block text-[9px] mt-1 text-right font-medium ${
-                        isProfessor ? 'text-white/70' : 'text-on-surface-variant/50'
-                      }`}
-                    >
-                      {formatTime(msg.created_at)}
-                    </span>
-                  </div>
-
-                  {/* Edit and Delete actions for teacher messages */}
-                  {isProfessor && (
-                    <div className="flex gap-1 items-center self-center opacity-0 group-hover:opacity-100 transition-opacity mr-2">
-                      <button
-                        onClick={() => handleStartEditMessage(msg)}
-                        className="p-1 text-on-surface-variant/40 hover:text-primary transition-colors"
-                        title="Editar mensagem"
-                      >
-                        <HugeiconsIcon icon={Edit01Icon} size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        className="p-1 text-on-surface-variant/40 hover:text-error transition-colors"
-                        title="Excluir mensagem"
-                      >
-                        <HugeiconsIcon icon={Delete02Icon} size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-on-surface-variant/40 space-y-2 py-12">
-            <HugeiconsIcon icon={Chat01Icon} size={28} strokeWidth={1.5} />
-            <p className="text-xs font-bold">Nenhuma mensagem trocada ainda.</p>
-            <p className="text-[10px]">Envie uma mensagem abaixo para iniciar a conversa.</p>
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* Editing Message Header Bar */}
-      {editingMessage && (
-        <div className="px-4 py-1.5 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-on-surface-variant/80">
-          <span>Editando mensagem...</span>
-          <button
-            onClick={handleCancelEditMessage}
-            className="text-error hover:underline"
-          >
-            Cancelar
-          </button>
-        </div>
-      )}
-
-      {/* Input Bar */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-100 bg-white">
-        <div className="flex items-end gap-2 bg-slate-50 border border-outline-variant/50 rounded-xl p-2 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all">
-          <button
-            type="button"
-            className="p-2 text-on-surface-variant/50 hover:text-secondary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
-            title="Anexar arquivo"
-          >
-            <HugeiconsIcon icon={Attachment01Icon} size={18} strokeWidth={2} />
-          </button>
-          <textarea
-            className="w-full bg-transparent border-0 focus:ring-0 resize-none text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 py-1.5"
-            placeholder={
-              editingMessage
-                ? 'Edite sua mensagem...'
-                : `Digite sua mensagem para ${profile ? profile.nome.split(' ')[0] : 'o aluno'}...`
-            }
-            rows={2}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="w-9 h-9 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0 hover:bg-secondary/90 disabled:opacity-40 disabled:hover:bg-secondary transition-all shadow-sm"
-            title={editingMessage ? 'Atualizar mensagem' : 'Enviar mensagem'}
-          >
-            <HugeiconsIcon icon={SentIcon} size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </form>
-    </div>
-  );
 
   if (loading && !profile) {
     return (
