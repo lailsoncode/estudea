@@ -196,7 +196,7 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
       {!isOpen && (
         <button
           onClick={handleOpenChat}
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-secondary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 group"
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 group"
           title="Falar com o Professor"
         >
           <HugeiconsIcon
@@ -217,7 +217,7 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[550px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-4rem)] bg-white border border-outline-variant/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
           {/* Header */}
-          <div className="p-4 bg-secondary text-white flex items-center justify-between shadow-sm select-none">
+          <div className="p-4 bg-primary text-white flex items-center justify-between shadow-sm select-none">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
                 <HugeiconsIcon icon={Chat01Icon} size={20} strokeWidth={2} className="text-white" />
@@ -251,14 +251,14 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
                   <div key={msg.id} className={`flex ${isStudent ? 'justify-end' : 'justify-start'}`}>
                     <div className={`flex gap-2 max-w-[85%] ${isStudent ? 'flex-row-reverse' : 'flex-row'}`}>
                       {!isStudent && (
-                        <div className="w-7 h-7 rounded-full bg-secondary/15 flex items-center justify-center font-bold text-secondary text-[10px] self-end shrink-0 border border-secondary/10 select-none">
+                        <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center font-bold text-primary text-[10px] self-end shrink-0 border border-primary/10 select-none">
                           PR
                         </div>
                       )}
                       <div
                         className={`rounded-2xl px-3.5 py-2.5 shadow-sm border transition-all relative ${
                           isStudent
-                            ? 'bg-secondary text-white border-secondary-container rounded-tr-sm'
+                            ? 'bg-primary text-white border-primary-container rounded-tr-sm'
                             : 'bg-white text-on-surface border-slate-100 rounded-tl-sm'
                         }`}
                       >
@@ -279,7 +279,7 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
               })
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-on-surface-variant/40 space-y-3 py-12">
-                <HugeiconsIcon icon={Chat01Icon} size={32} strokeWidth={1.5} className="text-secondary/50" />
+                <HugeiconsIcon icon={Chat01Icon} size={32} strokeWidth={1.5} className="text-primary/50" />
                 <div>
                   <p className="text-xs font-bold text-on-surface/80">Tem alguma dúvida?</p>
                   <p className="text-[10px] max-w-[200px] mx-auto mt-1 leading-normal">
@@ -293,10 +293,10 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
 
           {/* Input Bar */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 bg-white">
-            <div className="flex items-end gap-2 bg-slate-50 border border-outline-variant/30 rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all">
+            <div className="flex items-end gap-2 bg-slate-50 border border-outline-variant/30 rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
               <button
                 type="button"
-                className="p-2 text-on-surface-variant/40 hover:text-secondary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
+                className="p-2 text-on-surface-variant/40 hover:text-primary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
                 title="Anexar arquivo"
               >
                 <HugeiconsIcon icon={Attachment01Icon} size={18} strokeWidth={2} />
@@ -317,7 +317,7 @@ export const StudentChatWidget: React.FC<StudentChatWidgetProps> = ({
               <button
                 type="submit"
                 disabled={!newMessage.trim()}
-                className="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center shrink-0 hover:bg-secondary/90 disabled:opacity-40 disabled:hover:bg-secondary transition-all shadow-sm"
+                className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:hover:bg-primary transition-all shadow-sm"
                 title="Enviar mensagem"
               >
                 <HugeiconsIcon icon={SentIcon} size={16} strokeWidth={2} />

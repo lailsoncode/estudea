@@ -7,7 +7,8 @@ import {
   Attachment01Icon,
   Edit01Icon,
   Delete02Icon,
-  UserGroupIcon
+  UserGroupIcon,
+  ArrowLeft01Icon
 } from '@hugeicons/core-free-icons';
 
 interface StudentProfile {
@@ -37,8 +38,15 @@ interface ChatListItem {
   lastMessage: ChatMessage | null;
   unreadCount: number;
 }
+interface ChatProfessorProps {
+  initialStudentId?: string | null;
+  onClearInitialStudent?: () => void;
+}
 
-export const ChatProfessor: React.FC = () => {
+export const ChatProfessor: React.FC<ChatProfessorProps> = ({
+  initialStudentId,
+  onClearInitialStudent
+}) => {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -57,6 +65,13 @@ export const ChatProfessor: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialStudentId) {
+      setSelectedStudentId(initialStudentId);
+      onClearInitialStudent?.();
+    }
+  }, [initialStudentId]);
 
   useEffect(() => {
     getCurrentTeacher();
@@ -229,7 +244,10 @@ export const ChatProfessor: React.FC = () => {
 
   // Filter and sort items
   const filteredChatList = useMemo(() => {
-    let result = chatListItems;
+    // Only show chats that have messages, or the currently selected student (to allow starting a new chat)
+    let result = chatListItems.filter(
+      (item) => item.lastMessage !== null || item.student.id === selectedStudentId
+    );
 
     // Search term
     if (searchTerm.trim()) {
@@ -255,7 +273,7 @@ export const ChatProfessor: React.FC = () => {
       if (b.lastMessage) return 1;
       return a.student.nome.localeCompare(b.student.nome);
     });
-  }, [chatListItems, searchTerm, selectedTurmaId]);
+  }, [chatListItems, searchTerm, selectedTurmaId, selectedStudentId]);
 
   const selectedItem = useMemo(() => {
     return chatListItems.find((item) => item.student.id === selectedStudentId) || null;
@@ -424,11 +442,11 @@ export const ChatProfessor: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         
         {/* Left Sidebar: Students List */}
-        <aside className="w-80 md:w-96 border-r border-outline-variant/30 flex flex-col bg-white">
+        <aside className={`w-full md:w-80 border-r border-outline-variant/30 flex flex-col bg-white ${selectedStudentId ? 'hidden md:flex' : 'flex'}`}>
           {/* Header Controls */}
           <div className="p-4 border-b border-slate-100/80 space-y-3">
             <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
-              <HugeiconsIcon icon={Chat01Icon} size={20} className="text-secondary" />
+              <HugeiconsIcon icon={Chat01Icon} size={20} className="text-primary" />
               <span>Mensagens dos Alunos</span>
             </h3>
             
@@ -439,7 +457,7 @@ export const ChatProfessor: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Pesquisar aluno..."
-                className="w-full bg-slate-50 border border-outline-variant/55 rounded-xl py-2 px-3 pl-9 text-xs font-semibold placeholder:text-on-surface-variant/35 focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all"
+                className="w-full bg-slate-50 border border-outline-variant/55 rounded-xl py-2 px-3 pl-9 text-xs font-semibold placeholder:text-on-surface-variant/35 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               <svg className="w-4 h-4 text-on-surface-variant/40 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8" />
@@ -467,7 +485,7 @@ export const ChatProfessor: React.FC = () => {
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="p-8 text-center space-y-3">
-                <div className="w-8 h-8 rounded-full border-4 border-secondary/20 border-t-secondary animate-spin mx-auto" />
+                <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
                 <p className="text-xs font-bold text-on-surface-variant">Carregando conversas...</p>
               </div>
             ) : filteredChatList.length === 0 ? (
@@ -485,7 +503,7 @@ export const ChatProfessor: React.FC = () => {
                     onClick={() => setSelectedStudentId(item.student.id)}
                     className={`w-full text-left p-3.5 flex items-start gap-3 transition-all ${
                       active 
-                        ? 'bg-secondary/5 border-l-4 border-l-secondary' 
+                        ? 'bg-primary/5 border-l-4 border-l-primary' 
                         : 'hover:bg-slate-50/70 border-l-4 border-l-transparent'
                     }`}
                   >
@@ -497,7 +515,7 @@ export const ChatProfessor: React.FC = () => {
                         className="w-10 h-10 rounded-full object-cover border border-slate-100 shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary border border-secondary/15 flex items-center justify-center font-bold text-xs shrink-0 select-none">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/15 flex items-center justify-center font-bold text-xs shrink-0 select-none">
                         {getInitials(item.student.nome)}
                       </div>
                     )}
@@ -515,14 +533,14 @@ export const ChatProfessor: React.FC = () => {
                         )}
                       </div>
                       
-                      <p className="text-[10px] text-secondary font-bold truncate mt-0.5">
+                      <p className="text-[10px] text-primary font-bold truncate mt-0.5">
                         {item.turmaNome}
                       </p>
 
                       <p className="text-[11px] font-semibold text-on-surface-variant/70 truncate mt-1">
                         {item.lastMessage ? (
                           item.lastMessage.remetente_id === currentTeacherId ? (
-                            <span className="text-secondary/80 font-bold mr-1">Você:</span>
+                            <span className="text-primary/80 font-bold mr-1">Você:</span>
                           ) : null
                         ) : null}
                         {item.lastMessage ? item.lastMessage.texto : 'Nenhuma mensagem trocada.'}
@@ -543,12 +561,19 @@ export const ChatProfessor: React.FC = () => {
         </aside>
 
         {/* Right Pane: Active Chat Window */}
-        <section className="flex-1 flex flex-col bg-slate-50/30">
+        <section className={`flex-1 flex flex-col bg-slate-50/30 ${selectedStudentId ? 'flex' : 'hidden md:flex'}`}>
           {selectedItem ? (
             <>
               {/* Header */}
-              <div className="px-6 py-4 bg-white border-b border-outline-variant/30 flex items-center justify-between shadow-xs select-none">
+              <div className="px-4 sm:px-6 py-4 bg-white border-b border-outline-variant/30 flex items-center justify-between shadow-xs select-none">
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSelectedStudentId(null)}
+                    className="md:hidden p-2 -ml-2 text-on-surface-variant/70 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    title="Voltar para a lista"
+                  >
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={20} strokeWidth={2.5} />
+                  </button>
                   {selectedItem.student.avatar_url ? (
                     <img
                       src={selectedItem.student.avatar_url}
@@ -556,7 +581,7 @@ export const ChatProfessor: React.FC = () => {
                       className="w-10 h-10 rounded-full object-cover border border-slate-100"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary border border-secondary/15 flex items-center justify-center font-bold text-sm select-none">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/15 flex items-center justify-center font-bold text-sm select-none">
                       {getInitials(selectedItem.student.nome)}
                     </div>
                   )}
@@ -564,7 +589,7 @@ export const ChatProfessor: React.FC = () => {
                     <h3 className="font-heading font-extrabold text-sm text-on-surface">
                       {selectedItem.student.nome}
                     </h3>
-                    <p className="text-[10px] font-bold text-secondary flex items-center gap-1.5 mt-0.5">
+                    <p className="text-[10px] font-bold text-primary flex items-center gap-1.5 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       <span>{selectedItem.turmaNome}</span>
                       <span className="text-on-surface-variant/40 font-normal">•</span>
@@ -606,7 +631,7 @@ export const ChatProfessor: React.FC = () => {
                             <div
                               className={`rounded-2xl px-4 py-3 shadow-sm border transition-all relative ${
                                 isProfessor
-                                  ? 'bg-secondary text-white border-secondary-container rounded-tr-sm'
+                                  ? 'bg-primary text-white border-primary-container rounded-tr-sm'
                                   : 'bg-white text-on-surface border-slate-100 rounded-tl-sm'
                               }`}
                             >
@@ -671,11 +696,11 @@ export const ChatProfessor: React.FC = () => {
               <div className="p-4 bg-white border-t border-outline-variant/30">
                 <form
                   onSubmit={editingMessage ? handleSaveEditMessage : handleSendMessage}
-                  className="flex items-end gap-3 bg-slate-50 border border-outline-variant/55 rounded-xl p-2 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all"
+                  className="flex items-end gap-3 bg-slate-50 border border-outline-variant/55 rounded-xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all"
                 >
                   <button
                     type="button"
-                    className="p-2 text-on-surface-variant/40 hover:text-secondary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
+                    className="p-2 text-on-surface-variant/40 hover:text-primary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
                     title="Anexar arquivo"
                   >
                     <HugeiconsIcon icon={Attachment01Icon} size={18} strokeWidth={2} />
@@ -712,7 +737,7 @@ export const ChatProfessor: React.FC = () => {
                   <button
                     type="submit"
                     disabled={editingMessage ? !editMessageText.trim() : !newMessage.trim()}
-                    className="w-9 h-9 rounded-lg bg-secondary text-white flex items-center justify-center shrink-0 hover:bg-secondary/90 disabled:opacity-40 disabled:hover:bg-secondary transition-all shadow-sm"
+                    className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:hover:bg-primary transition-all shadow-sm"
                     title={editingMessage ? 'Salvar alterações' : 'Enviar mensagem'}
                   >
                     <HugeiconsIcon icon={editingMessage ? Edit01Icon : SentIcon} size={16} strokeWidth={2} />
@@ -723,7 +748,7 @@ export const ChatProfessor: React.FC = () => {
           ) : (
             /* Empty State */
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-on-surface-variant/40 space-y-4 select-none">
-              <div className="w-16 h-16 rounded-full bg-secondary/5 text-secondary flex items-center justify-center shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-primary/5 text-primary flex items-center justify-center shadow-xs">
                 <HugeiconsIcon icon={Chat01Icon} size={32} strokeWidth={1.5} />
               </div>
               <div className="space-y-1">

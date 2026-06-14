@@ -81,6 +81,7 @@ function App() {
 
   // Student list & tracking center states
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedChatStudentId, setSelectedChatStudentId] = useState<string | null>(null);
   const [initialTrackingSection, setInitialTrackingSection] = useState<'chat' | 'ficha'>('ficha');
 
   const [totalUnreadChatCount, setTotalUnreadChatCount] = useState<number>(0);
@@ -523,21 +524,18 @@ function App() {
               </button>
               <div>
                 <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
-                  Olá, {session.user.user_metadata?.nome || 'Professor'}!
+                  {activeTeacherTab === 'overview' && 'Visão Geral'}
+                  {activeTeacherTab === 'progress' && 'Alunos'}
+                  {activeTeacherTab === 'diario' && 'Diário de Classe'}
+                  {activeTeacherTab === 'chat' && 'Chat com Alunos'}
+                  {activeTeacherTab === 'lessons' && 'Liberação de Aulas'}
+                  {activeTeacherTab === 'assignments' && 'Criador de Cursos'}
+                  {activeTeacherTab === 'turmas' && 'Gerenciar Turmas'}
+                  {activeTeacherTab === 'corrections' && 'Central de Correções'}
+                  {activeTeacherTab === 'settings' && 'Minha Conta / Perfil'}
+                  {activeTeacherTab === 'materials' && 'Materiais de Apoio (IA)'}
+                  {activeTeacherTab === 'arena_ranking' && 'Ranking da Arena'}
                 </h3>
-                <p className="text-on-surface-variant text-label-sm">
-                  {activeTeacherTab === 'overview' && 'Visão geral das estatísticas.'}
-                  {activeTeacherTab === 'progress' && 'Acompanhe a lista de alunos e a central de monitoramento de risco.'}
-                  {activeTeacherTab === 'diario' && 'Registre a frequência diária e observações da aula.'}
-                  {activeTeacherTab === 'chat' && 'Comunicação integrada e em tempo real com todos os estudantes.'}
-                  {activeTeacherTab === 'lessons' && 'Libere ou bloqueie lições por turma.'}
-                  {activeTeacherTab === 'assignments' && 'Crie Cursos, gerencie módulos e organize lições.'}
-                  {activeTeacherTab === 'turmas' && 'Gerencie turmas, códigos de acesso e enturmação de alunos.'}
-                  {activeTeacherTab === 'corrections' && 'Avalie e dê feedbacks nas entregas dos alunos.'}
-                  {activeTeacherTab === 'settings' && 'Configurações do painel administrativo.'}
-                  {activeTeacherTab === 'materials' && 'Acesse prompts e materiais de apoio para acelerar a criação com IA.'}
-                  {activeTeacherTab === 'arena_ranking' && 'Veja o ranking histórico das partidas da Arena Live.'}
-                </p>
               </div>
             </div>
 
@@ -599,8 +597,13 @@ function App() {
                 ) : (
                   <ListaAlunos
                     onSelectStudent={(id, section) => {
-                      setSelectedStudentId(id);
-                      setInitialTrackingSection(section || 'ficha');
+                      if (section === 'chat') {
+                        setSelectedChatStudentId(id);
+                        setActiveTeacherTab('chat');
+                      } else {
+                        setSelectedStudentId(id);
+                        setInitialTrackingSection('ficha');
+                      }
                     }}
                   />
                 )
@@ -609,14 +612,24 @@ function App() {
               {activeTeacherTab === 'turmas' && (
                 <GerenciadorTurmas
                   onSelectStudent={(id, section) => {
-                    setSelectedStudentId(id);
-                    setInitialTrackingSection(section || 'ficha');
-                    setActiveTeacherTab('progress');
+                    if (section === 'chat') {
+                      setSelectedChatStudentId(id);
+                      setActiveTeacherTab('chat');
+                    } else {
+                      setSelectedStudentId(id);
+                      setInitialTrackingSection('ficha');
+                      setActiveTeacherTab('progress');
+                    }
                   }}
                 />
               )}
               {activeTeacherTab === 'diario' && <DiarioClasse />}
-              {activeTeacherTab === 'chat' && <ChatProfessor />}
+              {activeTeacherTab === 'chat' && (
+                <ChatProfessor
+                  initialStudentId={selectedChatStudentId}
+                  onClearInitialStudent={() => setSelectedChatStudentId(null)}
+                />
+              )}
               {activeTeacherTab === 'lessons' && <DashboardProfessor />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
@@ -662,7 +675,7 @@ function App() {
         {/* Main Canvas do Aluno */}
         <div className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
           {/* Top Navbar do Aluno */}
-          <header className="hidden lg:flex px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest justify-between items-center z-10 shadow-sm flex-shrink-0">
+          <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest flex justify-between items-center z-10 shadow-sm flex-shrink-0">
             <div className="flex items-center gap-3">
               <button className="lg:hidden p-2 rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={() => setMobileMenuOpen(true)}>
                 <HugeiconsIcon icon={Menu01Icon} size={20} />
