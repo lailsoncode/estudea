@@ -164,7 +164,7 @@ Acreditamos em código aberto, em educação de qualidade e em fazer mais com me
 
 <div align="center">
 
-Feito com muito ☕ e 🧡 pela **Oxente Code**
+Feito com muito ☕ e 🧡 pela **Oxente Code** 🧡
 
 ⭐ Se o Estudea te ajudou, deixa uma estrela no repositório!
 
