@@ -41,6 +41,7 @@ interface Aula {
     id: string;
     enunciado: string;
     tipo_entrega: 'texto' | 'imagem';
+    pontua?: boolean;
   }[];
 }
 
@@ -394,14 +395,14 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                       if (hasCompleted) {
                         if (activities.length > 0) {
-                          const deliveries = activities.map(act => entregas.find(e => e.atividade_id === act.id)).filter(Boolean);
+                          const deliveries = activities.map(act => entregas.find(e => e.atividade_id === act.id)).filter((e): e is Entrega => e !== undefined);
                           const allDelivered = deliveries.length === activities.length;
                           
                           if (allDelivered) {
                             // Filter activities that count for grades
                             const gradedActivities = activities.filter(act => act.pontua !== false);
                             if (gradedActivities.length > 0) {
-                              const gradedDeliveries = gradedActivities.map(act => entregas.find(e => e.atividade_id === act.id)).filter(Boolean);
+                              const gradedDeliveries = gradedActivities.map(act => entregas.find(e => e.atividade_id === act.id)).filter((e): e is Entrega => e !== undefined);
                               const anyPending = gradedDeliveries.some(d => d.nota === null);
                               if (anyPending) {
                                 statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente</span>;

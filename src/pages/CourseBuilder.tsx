@@ -680,6 +680,8 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
       atividade_enunciado: '',
       atividade_tipo_entrega: 'texto',
       atividade_pontua: true,
+      atividade_permite_refazer: true,
+      atividade_quiz_proprio: false
     });
     setAtividadesList([]);
     setQuestoes([
