@@ -3438,6 +3438,32 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                               </h4>
 
                               <div className="space-y-4">
+                                {/* Support material download link */}
+                                {atividade.material_url && (
+                                  <div className="p-4 bg-indigo-50/15 dark:bg-indigo-950/15 border border-indigo-150/50 dark:border-indigo-900/35 rounded-xl flex items-center justify-between gap-3 text-body-md animate-in slide-in-from-top-1">
+                                    <div className="flex items-center gap-2.5 text-indigo-700 dark:text-indigo-300 min-w-0">
+                                      <HugeiconsIcon icon={Attachment01Icon} size={20} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                      <div className="min-w-0">
+                                        <p className="font-heading font-bold text-indigo-900 dark:text-indigo-200 leading-tight">
+                                          Material de Apoio da Atividade
+                                        </p>
+                                        <p className="text-[11px] text-indigo-700/80 dark:text-indigo-400/80 truncate mt-0.5 max-w-md">
+                                          {atividade.material_url}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <a
+                                      href={atividade.material_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white font-heading font-bold text-[11px] rounded-lg shadow-sm transition-all hover:-translate-y-0.5 shrink-0 flex items-center gap-1.5"
+                                    >
+                                      <HugeiconsIcon icon={Download01Icon} size={14} />
+                                      Acessar / Baixar
+                                    </a>
+                                  </div>
+                                )}
+
                                 <div className="p-4 bg-surface rounded-xl border border-outline-variant/40 space-y-2">
                                   <p className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider">Instruções</p>
                                   <div className="prose prose-slate max-w-none text-body-md text-on-surface leading-relaxed font-sans space-y-3">
@@ -3470,30 +3496,6 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                   </div>
                                 </div>
 
-                                {/* Support material download link */}
-                                {atividade.material_url && (
-                                  <div className="p-4 bg-indigo-50/15 dark:bg-indigo-950/15 border border-indigo-150/50 dark:border-indigo-900/35 rounded-xl flex items-center justify-between gap-3 text-body-md animate-in slide-in-from-top-1">
-                                    <div className="flex items-center gap-2.5 text-indigo-700 dark:text-indigo-300 min-w-0">
-                                      <HugeiconsIcon icon={Attachment01Icon} size={20} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-                                      <div className="min-w-0">
-                                        <p className="font-heading font-bold text-indigo-900 dark:text-indigo-200 leading-tight">
-                                          Material de Apoio da Atividade
-                                        </p>
-                                        <p className="text-[11px] text-indigo-700/80 dark:text-indigo-400/80 truncate mt-0.5 max-w-md">
-                                          {atividade.material_url}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <a
-                                      href={atividade.material_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white font-heading font-bold text-[11px] rounded-lg shadow-sm transition-all hover:-translate-y-0.5 shrink-0 flex items-center gap-1.5"
-                                    >
-                                      <HugeiconsIcon icon={Download01Icon} size={14} />
-                                      Acessar / Baixar
-                                    </a>
-                                  </div>
                                 )}
 
                                 {/* Submitted feedback */}
