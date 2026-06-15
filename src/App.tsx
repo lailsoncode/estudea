@@ -228,6 +228,10 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && !currentProfileUserIdRef.current) {
+        // Already signed out, ignore redundant background checks
+        return;
+      }
       setSession(session);
       if (session) {
         if (currentProfileUserIdRef.current !== session.user.id) {
