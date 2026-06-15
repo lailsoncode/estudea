@@ -1,4 +1,4 @@
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -64,6 +64,7 @@ const sidebarActionClass =
 const getSidebarLabelClass = (collapsed: boolean) => collapsed ? 'lg:hidden' : '';
 
 function App() {
+  const currentProfileUserIdRef = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [teacherView, setTeacherView] = useState<'content' | 'preview'>('content');
@@ -165,8 +166,11 @@ function App() {
   // Hook centralizado — elimina query duplicada que existia em 3 lugares
   const { count: pendingCorrectionsCount } = usePendingCorrections(!!session && isAdmin);
 
-  const fetchUserProfile = async (userId: string, isNewLogin = false) => {
-    setProfileLoaded(false);
+  const fetchUserProfile = async (userId: string) => {
+    currentProfileUserIdRef.current = userId;
+    if (!profileRole) {
+      setProfileLoaded(false);
+    }
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -179,7 +183,9 @@ function App() {
         const role = (data.role as 'student' | 'teacher' | 'admin' | null) || 'student';
         setProfileRole(role);
         
-        if (isNewLogin) {
+        const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
+        if (justLoggedIn) {
+          sessionStorage.removeItem('just_logged_in');
           // Reset view states on new login to avoid stale tabs
           setSelectedStudentId(null);
           setSelectedChatStudentId(null);
@@ -198,7 +204,9 @@ function App() {
       }
     } catch (err) {
       console.error('Erro ao buscar status do perfil:', err);
-      setProfileRole('student');
+      if (!profileRole) {
+        setProfileRole('student');
+      }
     } finally {
       setProfileLoaded(true);
     }
@@ -209,7 +217,9 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        fetchUserProfile(session.user.id, false);
+        if (currentProfileUserIdRef.current !== session.user.id) {
+          fetchUserProfile(session.user.id);
+        }
       } else {
         setProfileLoaded(true);
       }
@@ -217,11 +227,14 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        fetchUserProfile(session.user.id, event === 'SIGNED_IN');
+        if (currentProfileUserIdRef.current !== session.user.id) {
+          fetchUserProfile(session.user.id);
+        }
       } else {
+        currentProfileUserIdRef.current = null;
         setProfileStatus('ativo');
         setProfileRole(null);
         setProfileLoaded(true);
@@ -846,7 +859,9 @@ function App() {
         {authView === 'login' ? (
           <LoginAluno
             onNavigateToSignup={() => setAuthView('signup')}
-            onAuthSuccess={() => { }}
+            onAuthSuccess={() => {
+              sessionStorage.setItem('just_logged_in', 'true');
+            }}
           />
         ) : (
           <CadastroAluno
