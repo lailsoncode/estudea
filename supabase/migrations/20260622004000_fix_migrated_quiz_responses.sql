@@ -1,0 +1,84 @@
+-- Migration: Fix migrated past quiz responses to show correct answers
+-- Date: 2026-06-22
+
+DO $$
+DECLARE
+    r RECORD;
+    q_rec RECORD;
+    v_count INT;
+    v_existing INT;
+    v_respostas JSONB;
+    v_payload TEXT;
+BEGIN
+    -- Delete the dummy submissions from the previous migration (where responses object was empty)
+    DELETE FROM public.entregas_atividades
+    WHERE atividade_id IS NULL 
+      AND (resposta::jsonb->'respostas') = '{}'::jsonb;
+
+    -- Loop through all student progress entries
+    FOR r IN 
+        SELECT aluno_id, aula_id, concluido_em 
+        FROM public.progresso_alunos
+    LOOP
+        -- Check if this lesson has standard quiz questions
+        SELECT count(*) INTO v_count 
+        FROM public.questoes 
+        WHERE aula_id = r.aula_id AND para_arena = false AND atividade_id IS NULL;
+        
+        IF v_count > 0 THEN
+            -- Check if an entrega already exists for this student/lesson/quiz
+            SELECT count(*) INTO v_existing 
+            FROM public.entregas_atividades 
+            WHERE aluno_id = r.aluno_id AND aula_id = r.aula_id AND atividade_id IS NULL;
+            
+            IF v_existing = 0 THEN
+                -- Build correct answers payload
+                v_respostas := '{}'::jsonb;
+                FOR q_rec IN 
+                    SELECT id, resposta_correta, tipo, opcoes
+                    FROM public.questoes 
+                    WHERE aula_id = r.aula_id AND para_arena = false AND atividade_id IS NULL
+                LOOP
+                    IF q_rec.tipo = 'aberta' THEN
+                        IF COALESCE(q_rec.opcoes[2], '') <> '' THEN
+                            -- Use the first keyword required by the database
+                            v_respostas := jsonb_set(v_respostas, ARRAY[q_rec.id::text], to_jsonb(split_part(q_rec.opcoes[2], ',', 1)));
+                        ELSE
+                            v_respostas := jsonb_set(v_respostas, ARRAY[q_rec.id::text], to_jsonb(COALESCE(q_rec.resposta_correta, 'Sim')));
+                        END IF;
+                    ELSE
+                        v_respostas := jsonb_set(v_respostas, ARRAY[q_rec.id::text], to_jsonb(COALESCE(q_rec.resposta_correta, '')));
+                    END IF;
+                END LOOP;
+
+                -- Build payload
+                v_payload := json_build_object(
+                    'respostas', v_respostas,
+                    'score', 100,
+                    'correctCount', v_count,
+                    'totalQuestions', v_count,
+                    'passed', true
+                )::text;
+                
+                -- Insert the simulated quiz delivery
+                INSERT INTO public.entregas_atividades (
+                    aluno_id,
+                    aula_id,
+                    atividade_id,
+                    resposta,
+                    nota,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    r.aluno_id,
+                    r.aula_id,
+                    NULL,
+                    v_payload,
+                    NULL,
+                    r.concluido_em,
+                    r.concluido_em
+                );
+            END IF;
+        END IF;
+    END LOOP;
+END $$;

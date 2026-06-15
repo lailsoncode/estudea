@@ -585,7 +585,7 @@ export const CentralCorrecoes: React.FC = () => {
       </header>
 
       {/* Main Split-View Workspace */}
-      <div className="flex flex-col lg:flex-row gap-6 h-[80vh] lg:h-[78vh] items-stretch">
+      <div className="flex flex-col lg:flex-row gap-6 h-[88vh] lg:h-[84vh] items-stretch">
         
         {/* Left Column: List of Submissions */}
         <div className="w-full lg:w-1/3 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col overflow-hidden h-full">
@@ -734,8 +734,8 @@ export const CentralCorrecoes: React.FC = () => {
               </div>
 
               {/* Scrollable Work Preview Area */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-5 bg-slate-50/50">
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-sm max-w-3xl mx-auto space-y-4 md:space-y-6">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-slate-50/50">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 md:p-4 shadow-sm max-w-3xl mx-auto space-y-4 md:space-y-5">
                   {/* Task Instructions */}
                   <div className="border-b border-slate-100 pb-4">
                     <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider mb-1">Enunciado da Atividade</p>
@@ -1002,19 +1002,19 @@ export const CentralCorrecoes: React.FC = () => {
               </div>
 
               {/* Grading & Feedback Sticky Panel */}
-              <footer className="border-t border-slate-200 bg-white p-4 md:p-5 shrink-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
-                <div className="flex flex-col xl:flex-row gap-5 max-w-5xl mx-auto">
+              <footer className="border-t border-slate-200 bg-white p-3 md:p-4 shrink-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
+                <div className="flex flex-col lg:flex-row gap-4 max-w-5xl mx-auto">
                   {(() => {
                     const isGradedActivity = selectedEntrega.atividade_pontua ?? true;
                     return (
                       <>
                         {/* Slider Control */}
                         {isGradedActivity && (
-                          <div className="xl:w-1/3 flex flex-col justify-center border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0 xl:pr-5">
-                            <div className="flex justify-between items-end mb-2">
-                              <label className="font-heading font-extrabold text-label-md text-on-surface uppercase tracking-wide">Nota Final</label>
-                              <span className="font-heading font-extrabold text-headline-md text-primary">
-                                {gradeInput}<span className="text-slate-400 text-lg font-normal">/100</span>
+                          <div className="lg:w-1/4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-100 pb-3 lg:pb-0 lg:pr-4 shrink-0">
+                            <div className="flex justify-between items-end mb-1">
+                              <label className="font-heading font-extrabold text-[11px] text-on-surface uppercase tracking-wide">Nota Final</label>
+                              <span className="font-heading font-extrabold text-headline-sm text-primary">
+                                {gradeInput}<span className="text-slate-400 text-sm font-normal">/100</span>
                               </span>
                             </div>
                             <input
@@ -1023,9 +1023,9 @@ export const CentralCorrecoes: React.FC = () => {
                               max="100"
                               value={gradeInput}
                               onChange={(e) => setGradeInput(Number(e.target.value))}
-                              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                              className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
                             />
-                            <div className="flex justify-between mt-1.5 text-[10px] text-slate-400 font-bold font-mono">
+                            <div className="flex justify-between mt-1 text-[9px] text-slate-400 font-bold font-mono">
                               <span>0</span>
                               <span>50</span>
                               <span>100</span>
@@ -1034,36 +1034,36 @@ export const CentralCorrecoes: React.FC = () => {
                         )}
 
                         {/* Feedback Form */}
-                        <div className="flex-1 flex flex-col gap-3">
+                        <div className="flex-1 flex flex-col gap-2">
                           <textarea
                             value={feedbackInput}
                             onChange={(e) => setFeedbackInput(e.target.value)}
                             placeholder={isGradedActivity ? "Escreva comentários sobre o envio, correções de passos ou elogios pedagógicos..." : "Escreva comentários pedagógicos ou feedback sobre as respostas do aluno..."}
                             disabled={saving}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-20 leading-relaxed font-sans"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-16 leading-relaxed font-sans"
                           />
-                          <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
                             {/* Quick Templates */}
-                            <div className="flex gap-1.5 flex-wrap">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Retornos rápidos:</span>
+                            <div className="flex gap-1 flex-wrap items-center">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Retornos:</span>
                               <button
                                 type="button"
                                 onClick={() => handleQuickTemplate("Excelente trabalho!")}
-                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                                className="bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] border border-slate-200 hover:bg-slate-100 transition-colors"
                               >
-                                Excelente Trabalho
+                                Excelente
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleQuickTemplate("Falta detalhar melhor a resposta.")}
-                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                                className="bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] border border-slate-200 hover:bg-slate-100 transition-colors"
                               >
                                 Faltou Detalhe
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleQuickTemplate("Revise o passo a passo da aula.")}
-                                className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-label-sm text-[12px] border border-slate-200 hover:bg-slate-100 transition-colors"
+                                className="bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] border border-slate-200 hover:bg-slate-100 transition-colors"
                               >
                                 Revisar Passo
                               </button>
@@ -1073,7 +1073,7 @@ export const CentralCorrecoes: React.FC = () => {
                             <button
                               onClick={handleSaveCorrection}
                               disabled={saving}
-                              className="px-6 py-2.5 rounded-xl font-heading font-bold text-label-md bg-gradient-to-b from-primary to-primary-container text-on-primary hover:opacity-95 transition-opacity shadow-sm flex items-center gap-2 ml-auto"
+                              className="px-5 py-2 rounded-xl font-heading font-bold text-label-md bg-gradient-to-b from-primary to-primary-container text-on-primary hover:opacity-95 transition-opacity shadow-sm flex items-center gap-2 ml-auto"
                             >
                               {saving ? (
                                 <>
