@@ -264,7 +264,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       : null;
 
     if (entrega) {
-      if (entrega.nota === null || entrega.feedback_professor === null) {
+      if (entrega.nota === null) {
         return {
           status: 'pendente' as const,
           label: `${aula.titulo} (Pendente de Correção)`,

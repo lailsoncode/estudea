@@ -921,8 +921,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       let finalResposta = actResponse;
 
       if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${userId}/${atividadeId}-${Date.now()}.${fileExt}`;
+        const sanitizedOriginalName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+        const fileName = `${userId}/${atividadeId}-${Date.now()}-${sanitizedOriginalName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('atividades')

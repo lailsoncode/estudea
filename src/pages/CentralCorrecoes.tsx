@@ -260,6 +260,22 @@ export const CentralCorrecoes: React.FC = () => {
     }
   };
 
+  const getCleanFilename = (url: string) => {
+    if (!url) return '';
+    try {
+      const decoded = decodeURIComponent(url);
+      const parts = decoded.split('/');
+      const lastPart = parts[parts.length - 1];
+      const match = lastPart.match(/^[0-9a-fA-F-]{36}-\d+-(.+)$/);
+      if (match && match[1]) {
+        return match[1];
+      }
+      return lastPart;
+    } catch (e) {
+      return url;
+    }
+  };
+
   const isQuestionCorrect = (q: any, answer: string) => {
     if (!answer || !answer.trim()) return false;
     
@@ -924,7 +940,7 @@ export const CentralCorrecoes: React.FC = () => {
                             </div>
                             <div className="text-left overflow-hidden">
                               <span className="text-label-md font-bold text-slate-800 block">Arquivo Enviado pelo Aluno</span>
-                              <span className="text-[11px] text-slate-450 font-mono truncate max-w-xs sm:max-w-sm block" title={selectedEntrega.resposta}>{selectedEntrega.resposta}</span>
+                              <span className="text-[11px] text-slate-450 font-mono truncate max-w-xs sm:max-w-sm block" title={selectedEntrega.resposta}>{getCleanFilename(selectedEntrega.resposta)}</span>
                             </div>
                           </div>
                           <a
@@ -958,7 +974,7 @@ export const CentralCorrecoes: React.FC = () => {
                                 <div className="space-y-3 text-left">
                                   <p className="text-[11px] font-bold text-slate-450 uppercase font-mono tracking-wider">Anexo Enviado</p>
                                   <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <span className="text-[12px] text-slate-500 font-semibold truncate max-w-xs">{payload.imagem}</span>
+                                    <span className="text-[12px] text-slate-500 font-semibold truncate max-w-xs" title={payload.imagem}>{getCleanFilename(payload.imagem)}</span>
                                     <a
                                       href={payload.imagem}
                                       target="_blank"
@@ -1006,6 +1022,16 @@ export const CentralCorrecoes: React.FC = () => {
                 <div className="flex flex-col lg:flex-row gap-4 max-w-5xl mx-auto">
                   {(() => {
                     const isGradedActivity = selectedEntrega.atividade_pontua ?? true;
+                    let calculatedScore: number | null = null;
+                    if (selectedEntrega.atividade_tipo_entrega === 'quiz') {
+                      try {
+                        const payload = JSON.parse(selectedEntrega.resposta);
+                        if (payload && typeof payload.score === 'number') {
+                          calculatedScore = payload.score;
+                        }
+                      } catch (e) {}
+                    }
+
                     return (
                       <>
                         {/* Slider Control */}
@@ -1030,6 +1056,15 @@ export const CentralCorrecoes: React.FC = () => {
                               <span>50</span>
                               <span>100</span>
                             </div>
+                            {calculatedScore !== null && gradeInput !== calculatedScore && (
+                              <button
+                                type="button"
+                                onClick={() => setGradeInput(calculatedScore!)}
+                                className="text-[10px] text-primary hover:underline font-bold text-left mt-1.5"
+                              >
+                                Usar nota do quiz: {calculatedScore}/100
+                              </button>
+                            )}
                           </div>
                         )}
 

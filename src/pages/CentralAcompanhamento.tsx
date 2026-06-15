@@ -200,6 +200,22 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
     fetchInitialData();
   }, [alunoId]);
 
+  const getCleanFilename = (url: string) => {
+    if (!url) return '';
+    try {
+      const decoded = decodeURIComponent(url);
+      const parts = decoded.split('/');
+      const lastPart = parts[parts.length - 1];
+      const match = lastPart.match(/^[0-9a-fA-F-]{36}-\d+-(.+)$/);
+      if (match && match[1]) {
+        return match[1];
+      }
+      return lastPart;
+    } catch (e) {
+      return url;
+    }
+  };
+
   const fetchInitialData = async () => {
     setLoading(true);
     setError(null);
@@ -1018,13 +1034,34 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
 
                       <div>
                         <p className="text-[9px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest leading-none mb-1.5">Resposta do Aluno</p>
-                        {atividade?.tipo_entrega === 'imagem' ? (
+                         {atividade?.tipo_entrega === 'imagem' ? (
                           <div className="max-w-md rounded-xl overflow-hidden border border-slate-100 shadow-inner bg-slate-50 p-2">
                             <img 
                               src={entrega.resposta} 
                               alt="Resposta enviada pelo aluno" 
                               className="max-h-64 object-contain rounded-lg mx-auto" 
                             />
+                          </div>
+                        ) : atividade?.tipo_entrega === 'arquivo' ? (
+                          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 max-w-lg">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-bold text-slate-800 block truncate" title={getCleanFilename(entrega.resposta)}>
+                                {getCleanFilename(entrega.resposta)}
+                              </span>
+                            </div>
+                            <a
+                              href={entrega.resposta}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1.5 bg-primary text-white font-bold text-[11px] rounded-lg shadow-sm hover:bg-primary/95 transition-all shrink-0"
+                            >
+                              Abrir
+                            </a>
                           </div>
                         ) : (
                           <p className="font-mono text-[10.5px] font-semibold text-on-surface-variant bg-slate-50/50 p-3.5 rounded-xl border border-slate-100/60 leading-relaxed whitespace-pre-wrap">
