@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
+  AddTeamIcon,
+  Copy01Icon,
   FilterIcon,
   Download01Icon,
   Chat01Icon,
@@ -70,6 +72,12 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   // CRUD modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [createdStudentCredentials, setCreatedStudentCredentials] = useState<{
+    nome: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   // Form input states
   const [formNome, setFormNome] = useState('');
@@ -297,6 +305,29 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
 
 
 
+  const handleAddStudentClick = () => {
+    setEditingStudent(null);
+    setFormNome('');
+    setFormEmail('');
+    setFormProgresso(0);
+    setFormFrequencia(100);
+    setFormAutonomia('P');
+    setFormRisco('No Caminho');
+    setFormDigitacao(0);
+    setFormOfensiva(0);
+    setFormAvatarUrl('');
+    setFormTurmaId(selectedTurma?.id === 'sem_turma' ? '' : selectedTurma?.id || '');
+    setIsFormModalOpen(true);
+  };
+
+  const handleCopyTemporaryPassword = async () => {
+    if (!createdStudentCredentials?.password) return;
+
+    await navigator.clipboard.writeText(createdStudentCredentials.password);
+    setPasswordCopied(true);
+    window.setTimeout(() => setPasswordCopied(false), 2000);
+  };
+
   // Open modal for editing existing student
   const handleEditStudentClick = (student: Student) => {
     setEditingStudent(student);
@@ -316,7 +347,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
   // Submit create or edit form
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formNome.trim() || !formEmail.trim() || !selectedTurma) return;
+    if (!formNome.trim() || !formEmail.trim()) return;
 
     try {
       const formData = {
@@ -351,13 +382,18 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
           prev.map((s) => (s.id === editingStudent.id ? { ...s, ...updateData } : s))
         );
       } else {
+        const targetTurma = turmas.find((turma) => turma.id === formTurmaId);
+        if (!targetTurma) {
+          throw new Error('Selecione uma turma válida para criar o aluno.');
+        }
+
         const { data, error: createError } = await supabase.functions.invoke('admin-create-student', {
           body: {
             ...formData,
             email: formEmail.trim(),
             nome: formNome.trim(),
-            turma_id: selectedTurma.id,
-            codigo_acesso: selectedTurma.codigo_acesso
+            turma_id: targetTurma.id,
+            codigo_acesso: targetTurma.codigo_acesso
           }
         });
 
@@ -367,10 +403,19 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
         const newProfile = data?.profile;
         if (!newProfile) throw new Error('A função não retornou o perfil criado.');
 
-        setStudents((prev) => [...prev, newProfile as Student]);
+        if (selectedTurma?.id === targetTurma.id) {
+          setStudents((prev) => [...prev, newProfile as Student]);
+        } else {
+          setSelectedTurma(targetTurma);
+        }
 
         if (data?.temporaryPassword) {
-          alert(`Aluno criado com sucesso.\n\nSenha temporária: ${data.temporaryPassword}\n\nOriente o aluno a trocar a senha no primeiro acesso.`);
+          setCreatedStudentCredentials({
+            nome: newProfile.nome || formNome.trim(),
+            email: newProfile.email || formEmail.trim(),
+            password: data.temporaryPassword,
+          });
+          setPasswordCopied(false);
         }
       }
 
@@ -688,14 +733,20 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
             )}
           </div>
           <button
+            onClick={handleAddStudentClick}
+            className="w-full sm:w-auto px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 shadow-sm shadow-primary/20 transition-all"
+          >
+            <HugeiconsIcon icon={AddTeamIcon} size={18} strokeWidth={1.5} />
+            <span>Adicionar aluno</span>
+          </button>
+
+          <button
             onClick={handleExportCSV}
             className="w-full sm:w-auto px-4 py-2.5 bg-white border border-outline-variant/50 rounded-xl text-sm font-bold text-on-surface-variant flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
           >
             <HugeiconsIcon icon={Download01Icon} size={18} strokeWidth={1.5} />
             <span>Exportar CSV</span>
           </button>
-
-          {/* O botão de adicionar aluno manual foi removido, pois os alunos são carregados dinamicamente das matrículas das turmas */}
         </div>
       </div>
 
@@ -1039,11 +1090,16 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                 <div>
                   <label className="block text-[11px] font-bold text-on-surface-variant/70 mb-1">Turma Vinculada</label>
                   <select
+                    required={!editingStudent}
                     className="w-full bg-slate-50 border border-outline-variant/60 focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-on-surface outline-none transition-all cursor-pointer"
                     value={formTurmaId}
                     onChange={(e) => setFormTurmaId(e.target.value)}
                   >
-                    <option value="">Sem Turma (Pendente)</option>
+                    {editingStudent ? (
+                      <option value="">Sem Turma (Pendente)</option>
+                    ) : (
+                      <option value="" disabled>Selecione uma turma</option>
+                    )}
                     {turmas.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.nome}
@@ -1127,10 +1183,63 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                   type="submit"
                   className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:opacity-90 shadow-sm shadow-primary/20 transition-all"
                 >
-                  Salvar Alterações
+                  {editingStudent ? 'Salvar Alterações' : 'Criar Aluno'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {createdStudentCredentials && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-outline-variant/40 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up">
+            <div className="px-5 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-outline-variant/20 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={19} strokeWidth={2.3} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-on-surface font-heading leading-tight">Aluno criado com sucesso</h3>
+                <p className="text-[11px] text-on-surface-variant/70 font-medium leading-tight mt-0.5">
+                  {createdStudentCredentials.nome} • {createdStudentCredentials.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-on-surface-variant/70">Senha temporária</label>
+                <input
+                  readOnly
+                  value={createdStudentCredentials.password}
+                  onFocus={(event) => event.currentTarget.select()}
+                  onClick={(event) => event.currentTarget.select()}
+                  className="w-full bg-slate-50 border border-outline-variant/60 rounded-xl py-3 px-3 text-sm font-mono font-bold text-on-surface outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200/70 rounded-xl p-3 text-xs font-semibold text-amber-800 leading-relaxed">
+                Guarde ou envie esta senha agora. Ela aparece somente neste momento e o aluno deve trocar no primeiro acesso.
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setCreatedStudentCredentials(null)}
+                  className="px-4 py-2.5 border border-outline-variant/50 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-slate-50 transition-colors"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyTemporaryPassword}
+                  className="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:opacity-90 shadow-sm shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <HugeiconsIcon icon={passwordCopied ? CheckmarkCircle02Icon : Copy01Icon} size={16} strokeWidth={2} />
+                  <span>{passwordCopied ? 'Senha copiada' : 'Copiar senha'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
