@@ -28,7 +28,12 @@ import {
   Medal03Icon,
   DiamondIcon,
   CrownIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  Attachment01Icon,
+  ImageAdd01Icon,
+  Delete02Icon,
+  Download01Icon,
+  File01Icon
 } from '@hugeicons/core-free-icons';
 
 const renderFormattedText = (text: string) => {
@@ -149,7 +154,7 @@ interface Atividade {
   id: string;
   aula_id: string;
   enunciado: string;
-  tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+  tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
   pontua?: boolean;
   permite_refazer?: boolean;
 }
@@ -228,6 +233,46 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
   // Lesson view specific UI states
   const [lessonSidebarOpen, setLessonSidebarOpen] = useState(true);
   const [activeLessonTab, setActiveLessonTab] = useState<'conteudo' | 'arquivos' | 'quiz' | 'atividade'>('conteudo');
+
+  // File upload state for student activities
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
+  const [selectedFilePreviews, setSelectedFilePreviews] = useState<Record<string, string>>({});
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, atividadeId: string) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFiles(prev => ({ ...prev, [atividadeId]: file }));
+      
+      // If it is an image, generate a preview URL
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setSelectedFilePreviews(prev => ({ ...prev, [atividadeId]: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Clear preview for non-image files
+        setSelectedFilePreviews(prev => {
+          const updated = { ...prev };
+          delete updated[atividadeId];
+          return updated;
+        });
+      }
+    }
+  };
+
+  const handleRemoveFile = (atividadeId: string) => {
+    setSelectedFiles(prev => {
+      const updated = { ...prev };
+      delete updated[atividadeId];
+      return updated;
+    });
+    setSelectedFilePreviews(prev => {
+      const updated = { ...prev };
+      delete updated[atividadeId];
+      return updated;
+    });
+  };
 
   // Module expansion states
   const [expandedModulos, setExpandedModulos] = useState<Record<string, boolean>>({});
@@ -743,10 +788,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     }
   };
 
-  const handleSubmitActivity = async (atividadeId: string, tipo: 'texto' | 'imagem' | 'quiz' | 'multipla') => {
+  const handleSubmitActivity = async (atividadeId: string, tipo: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo') => {
     let answer = '';
     const actResponse = activityResponse[atividadeId] || '';
     const actImage = activityImage[atividadeId] || '';
+    const file = selectedFiles[atividadeId];
 
     if (tipo === 'quiz') {
       const activityRecord = selectedAula?.atividades?.find(a => a.id === atividadeId);
@@ -794,21 +840,20 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       }
       answer = JSON.stringify(payload);
     } else if (tipo === 'multipla') {
-      if (!actResponse.trim() && !actImage.trim()) {
-        setActivityErrorMsg('Por favor, insira um texto ou o link de uma imagem para enviar.');
+      if (!actResponse.trim() && !file && !actImage.trim()) {
+        setActivityErrorMsg('Por favor, insira um texto ou anexe uma imagem para enviar.');
         return;
       }
-      answer = JSON.stringify({
-        texto: actResponse.trim(),
-        imagem: actImage.trim()
-      });
+    } else if (tipo === 'imagem' || tipo === 'arquivo') {
+      if (!file && !actResponse.trim() && !actImage.trim()) {
+        setActivityErrorMsg('Por favor, selecione um arquivo ou insira uma resposta.');
+        return;
+      }
     } else {
-      answer = tipo === 'texto' ? actResponse : actImage;
-    }
-
-    if (!answer.trim()) {
-      setActivityErrorMsg('Por favor, insira uma resposta antes de enviar.');
-      return;
+      if (!actResponse.trim()) {
+        setActivityErrorMsg('Por favor, insira uma resposta antes de enviar.');
+        return;
+      }
     }
 
     setSubmittingActivity(true);
@@ -816,11 +861,49 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     setActivitySuccessMsg(null);
 
     try {
-      const existingEntrega = entregas.find(e => e.atividade_id === atividadeId);
+      let finalResposta = actResponse;
 
-      // Automatically fill the grade if the quiz is graded (pontua === true)
-      // We will set nota to null initially so it arrives in the Corrections Center as pending review,
-      // but we can still store it. Wait, if we keep nota null, it's marked as pending. Let's do that!
+      if (file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}/${atividadeId}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('atividades')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('atividades')
+          .getPublicUrl(fileName);
+
+        finalResposta = publicUrlData.publicUrl;
+      }
+
+      if (tipo === 'multipla') {
+        const payload = {
+          texto: actResponse.trim(),
+          imagem: file ? finalResposta : (actImage.trim() || null)
+        };
+        answer = JSON.stringify(payload);
+      } else if (tipo === 'imagem') {
+        answer = file ? finalResposta : (actImage.trim() || actResponse.trim());
+      } else if (tipo === 'arquivo') {
+        answer = file ? finalResposta : (actResponse.trim() || actImage.trim());
+      } else if (tipo !== 'quiz') {
+        answer = actResponse;
+      }
+
+      if (!answer.trim()) {
+        setActivityErrorMsg('Por favor, insira uma resposta antes de enviar.');
+        setSubmittingActivity(false);
+        return;
+      }
+
+      const existingEntrega = entregas.find(e => e.atividade_id === atividadeId);
       const gradeValue = null; // Instructor reviews and confirms score
 
       if (existingEntrega) {
@@ -855,6 +938,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         }
         setActivitySuccessMsg('Atividade enviada com sucesso!');
       }
+
+      // Clear the selected file on success
+      handleRemoveFile(atividadeId);
 
       // Refresh entregas
       const { data: freshEntregas } = await supabase
@@ -3317,9 +3403,27 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                           <p className="text-label-sm font-mono truncate bg-surface p-2 rounded border border-outline-variant/30">{exactEntrega.resposta}</p>
                                           {exactEntrega.resposta.startsWith('http') && (
                                             <div className="max-w-xs border border-outline-variant/40 rounded overflow-hidden">
-                                              <img src={exactEntrega.resposta} alt="Envio do aluno" className="max-h-40 object-cover" />
+                                              {exactEntrega.resposta.match(/\.(jpeg|jpg|gif|png|webp)/i) || exactEntrega.resposta.includes('atividades') ? (
+                                                <img src={exactEntrega.resposta} alt="Envio do aluno" className="max-h-40 object-cover" />
+                                              ) : (
+                                                <a href={exactEntrega.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs flex items-center gap-1 mt-1">
+                                                  <HugeiconsIcon icon={Download01Icon} size={14} />
+                                                  Baixar arquivo
+                                                </a>
+                                              )}
                                             </div>
                                           )}
+                                        </div>
+                                      ) : atividade.tipo_entrega === 'arquivo' ? (
+                                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-surface p-3 rounded-xl border border-outline-variant/30 text-left">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <HugeiconsIcon icon={File01Icon} size={20} className="text-primary shrink-0" />
+                                            <span className="text-xs text-on-surface-variant font-mono truncate">{exactEntrega.resposta}</span>
+                                          </div>
+                                          <a href={exactEntrega.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0 flex items-center gap-1">
+                                            <HugeiconsIcon icon={Download01Icon} size={14} />
+                                            Baixar arquivo
+                                          </a>
                                         </div>
                                       ) : atividade.tipo_entrega === 'multipla' ? (
                                         (() => {
@@ -3337,12 +3441,19 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                 )}
                                                 {payload.imagem && (
                                                   <div className="space-y-1">
-                                                    <p className="text-[10px] text-on-surface-variant font-mono font-bold uppercase">Imagem Anexada:</p>
+                                                    <p className="text-[10px] text-on-surface-variant font-mono font-bold uppercase">Anexo Enviado:</p>
                                                     <div className="space-y-2">
                                                       <p className="text-label-sm font-mono truncate bg-surface p-2 rounded border border-outline-variant/30">{payload.imagem}</p>
                                                       {payload.imagem.startsWith('http') && (
                                                         <div className="max-w-xs border border-outline-variant/40 rounded overflow-hidden mt-1">
-                                                          <img src={payload.imagem} alt="Envio do aluno" className="max-h-40 object-cover" />
+                                                          {payload.imagem.match(/\.(jpeg|jpg|gif|png|webp)/i) || payload.imagem.includes('atividades') ? (
+                                                            <img src={payload.imagem} alt="Envio do aluno" className="max-h-40 object-cover" />
+                                                          ) : (
+                                                            <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs flex items-center gap-1 p-2 bg-surface border border-outline-variant/35 rounded-lg mt-1">
+                                                              <HugeiconsIcon icon={Download01Icon} size={14} />
+                                                              Baixar arquivo
+                                                            </a>
+                                                          )}
                                                         </div>
                                                       )}
                                                     </div>
@@ -3505,15 +3616,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                     }}
                                     className="space-y-4"
                                   >
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-1.5 text-left">
                                       <label className="text-label-sm font-semibold text-on-surface">
                                         {atividade.tipo_entrega === 'texto' 
-                                          ? 'Escreva sua resposta para a atividade' 
+                                          ? 'Escreva sua resposta para a atividade:' 
                                           : atividade.tipo_entrega === 'quiz'
                                             ? 'Responda as questões do quiz abaixo:'
                                             : atividade.tipo_entrega === 'multipla'
-                                              ? 'Preencha os campos abaixo (texto e/ou imagem) para entrega:'
-                                              : 'Cole o link/URL da sua imagem para entrega'}
+                                              ? 'Preencha os campos abaixo (texto e anexo) para entrega:'
+                                              : atividade.tipo_entrega === 'imagem'
+                                                ? 'Selecione uma imagem ou insira o link para entrega:'
+                                                : 'Selecione o arquivo ou insira o link para entrega:'}
                                       </label>
 
                                       {atividade.tipo_entrega === 'texto' ? (
@@ -3538,19 +3651,69 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                               className="w-full p-4 text-body-md leading-relaxed font-sans min-h-[150px] rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                                             />
                                           </div>
-                                          <div className="space-y-1.5 text-left">
-                                            <span className="text-[11px] font-bold text-slate-500 tracking-wider font-mono uppercase">2. Link/URL de Imagem (Opcional se preencheu texto)</span>
-                                            <input
-                                              type="url"
-                                              value={activityImage[atividade.id] || ''}
-                                              onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
-                                              placeholder="https://exemplo.com/sua-imagem.png"
-                                              disabled={submittingActivity}
-                                              className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
-                                            />
-                                            {(activityImage[atividade.id] || '').trim().startsWith('http') && (
-                                              <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
-                                                <img src={activityImage[atividade.id] || ''} alt="Preview do envio" className="max-h-36 object-cover" />
+                                          <div className="space-y-3 text-left">
+                                            <span className="text-[11px] font-bold text-slate-500 tracking-wider font-mono uppercase">2. Anexar Arquivo ou Imagem</span>
+                                            
+                                            {/* Drag & Drop File Zone */}
+                                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/65 rounded-xl p-6 bg-surface-container-lowest hover:bg-surface-container-low/30 transition-all relative">
+                                              <input
+                                                type="file"
+                                                onChange={(e) => handleFileChange(e, atividade.id)}
+                                                disabled={submittingActivity}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                              />
+                                              <HugeiconsIcon icon={Attachment01Icon} size={28} className="text-secondary mb-2" />
+                                              <p className="text-label-md font-semibold text-on-surface">Arraste ou clique para selecionar uma imagem ou arquivo</p>
+                                              <p className="text-[11px] text-on-surface-variant/75 mt-1">Imagens ou documentos (máx. 15MB)</p>
+                                            </div>
+
+                                            {/* Selected File Card */}
+                                            {selectedFiles[atividade.id] && (
+                                              <div className="flex items-center justify-between p-3.5 bg-secondary/5 rounded-xl border border-secondary/20 animate-fade-in">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                  {selectedFilePreviews[atividade.id] ? (
+                                                    <img src={selectedFilePreviews[atividade.id]} alt="Preview" className="w-10 h-10 object-cover rounded border border-secondary/20" />
+                                                  ) : (
+                                                    <HugeiconsIcon icon={File01Icon} size={20} className="text-secondary shrink-0" />
+                                                  )}
+                                                  <div className="min-w-0">
+                                                    <p className="text-label-sm font-bold text-on-surface truncate">{selectedFiles[atividade.id].name}</p>
+                                                    <p className="text-[10px] text-on-surface-variant font-mono font-bold mt-0.5">{(selectedFiles[atividade.id].size / 1024).toFixed(1)} KB</p>
+                                                  </div>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleRemoveFile(atividade.id)}
+                                                  disabled={submittingActivity}
+                                                  className="p-1.5 hover:bg-error-container/20 rounded-lg text-error transition-colors"
+                                                  title="Remover arquivo"
+                                                >
+                                                  <HugeiconsIcon icon={Delete02Icon} size={18} />
+                                                </button>
+                                              </div>
+                                            )}
+
+                                            {/* Fallback Input URL */}
+                                            {!selectedFiles[atividade.id] && (
+                                              <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-mono font-bold text-on-surface-variant">Ou cole um link direto da imagem/arquivo:</label>
+                                                <input
+                                                  type="url"
+                                                  value={activityImage[atividade.id] || ''}
+                                                  onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                                  placeholder="https://exemplo.com/sua-imagem.png"
+                                                  disabled={submittingActivity}
+                                                  className="w-full p-3.5 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-sans"
+                                                />
+                                                {(activityImage[atividade.id] || '').trim().startsWith('http') && (
+                                                  <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
+                                                    {activityImage[atividade.id].match(/\.(jpeg|jpg|gif|png|webp)/i) ? (
+                                                      <img src={activityImage[atividade.id] || ''} alt="Preview do link" className="max-h-36 object-cover" />
+                                                    ) : (
+                                                      <p className="text-xs font-mono p-2 truncate">{activityImage[atividade.id]}</p>
+                                                    )}
+                                                  </div>
+                                                )}
                                               </div>
                                             )}
                                           </div>
@@ -3687,19 +3850,117 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                             <p className="text-label-md text-on-surface-variant font-mono">Esta atividade não possui questões de quiz configuradas.</p>
                                           )}
                                         </div>
+                                      ) : atividade.tipo_entrega === 'imagem' ? (
+                                        <div className="space-y-3">
+                                          {/* Drag & Drop File Zone */}
+                                          <div className="flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/65 rounded-xl p-6 bg-surface-container-lowest hover:bg-surface-container-low/30 transition-all relative">
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              onChange={(e) => handleFileChange(e, atividade.id)}
+                                              disabled={submittingActivity}
+                                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <HugeiconsIcon icon={ImageAdd01Icon} size={28} className="text-secondary mb-2" />
+                                            <p className="text-label-md font-semibold text-on-surface">Arraste ou clique para selecionar uma imagem</p>
+                                            <p className="text-[11px] text-on-surface-variant/75 mt-1">PNG, JPG, WEBP ou GIF (máx. 10MB)</p>
+                                          </div>
+
+                                          {/* Selected File Card */}
+                                          {selectedFiles[atividade.id] && (
+                                            <div className="flex items-center justify-between p-3.5 bg-secondary/5 rounded-xl border border-secondary/20 animate-fade-in">
+                                              <div className="flex items-center gap-2 min-w-0">
+                                                {selectedFilePreviews[atividade.id] ? (
+                                                  <img src={selectedFilePreviews[atividade.id]} alt="Preview" className="w-10 h-10 object-cover rounded border border-secondary/20" />
+                                                ) : (
+                                                  <HugeiconsIcon icon={File01Icon} size={20} className="text-secondary shrink-0" />
+                                                )}
+                                                <div className="min-w-0">
+                                                  <p className="text-label-sm font-bold text-on-surface truncate">{selectedFiles[atividade.id].name}</p>
+                                                  <p className="text-[10px] text-on-surface-variant font-mono font-bold mt-0.5">{(selectedFiles[atividade.id].size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveFile(atividade.id)}
+                                                disabled={submittingActivity}
+                                                className="p-1.5 hover:bg-error-container/20 rounded-lg text-error transition-colors"
+                                                title="Remover arquivo"
+                                              >
+                                                <HugeiconsIcon icon={Delete02Icon} size={18} />
+                                              </button>
+                                            </div>
+                                          )}
+
+                                          {/* Fallback Input URL */}
+                                          {!selectedFiles[atividade.id] && (
+                                            <div className="space-y-1">
+                                              <label className="text-[10px] uppercase font-mono font-bold text-on-surface-variant">Ou cole um link direto da imagem:</label>
+                                              <input
+                                                type="url"
+                                                value={activityImage[atividade.id] || ''}
+                                                onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                                placeholder="https://exemplo.com/sua-imagem.png"
+                                                disabled={submittingActivity}
+                                                className="w-full p-3.5 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-sans"
+                                              />
+                                              {(activityImage[atividade.id] || '').trim().startsWith('http') && (
+                                                <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
+                                                  <img src={activityImage[atividade.id] || ''} alt="Preview do link" className="max-h-36 object-cover" />
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
                                       ) : (
-                                        <div className="space-y-2">
-                                          <input
-                                            type="url"
-                                            value={activityImage[atividade.id] || ''}
-                                            onChange={(e) => setActivityImage(prev => ({ ...prev, [atividade.id]: e.target.value }))}
-                                            placeholder="https://exemplo.com/sua-imagem.png"
-                                            disabled={submittingActivity}
-                                            className="w-full p-4 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
-                                          />
-                                          {(activityImage[atividade.id] || '').trim().startsWith('http') && (
-                                            <div className="max-w-xs border border-outline-variant/50 rounded overflow-hidden p-1 bg-surface mt-2">
-                                              <img src={activityImage[atividade.id] || ''} alt="Preview do envio" className="max-h-36 object-cover" />
+                                        <div className="space-y-3">
+                                          {/* Drag & Drop File Zone */}
+                                          <div className="flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/65 rounded-xl p-6 bg-surface-container-lowest hover:bg-surface-container-low/30 transition-all relative">
+                                            <input
+                                              type="file"
+                                              onChange={(e) => handleFileChange(e, atividade.id)}
+                                              disabled={submittingActivity}
+                                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <HugeiconsIcon icon={Attachment01Icon} size={28} className="text-primary mb-2" />
+                                            <p className="text-label-md font-semibold text-on-surface">Arraste ou clique para selecionar um arquivo</p>
+                                            <p className="text-[11px] text-on-surface-variant/75 mt-1">PDF, ZIP, DOCX, XLSX ou qualquer documento (máx. 25MB)</p>
+                                          </div>
+
+                                          {/* Selected File Card */}
+                                          {selectedFiles[atividade.id] && (
+                                            <div className="flex items-center justify-between p-3.5 bg-primary/5 rounded-xl border border-primary/20 animate-fade-in">
+                                              <div className="flex items-center gap-2 min-w-0">
+                                                <HugeiconsIcon icon={File01Icon} size={20} className="text-primary shrink-0" />
+                                                <div className="min-w-0">
+                                                  <p className="text-label-sm font-bold text-on-surface truncate">{selectedFiles[atividade.id].name}</p>
+                                                  <p className="text-[10px] text-on-surface-variant font-mono font-bold mt-0.5">{(selectedFiles[atividade.id].size / 1024 / 1024).toFixed(2)} MB</p>
+                                                </div>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveFile(atividade.id)}
+                                                disabled={submittingActivity}
+                                                className="p-1.5 hover:bg-error-container/20 rounded-lg text-error transition-colors"
+                                                title="Remover arquivo"
+                                              >
+                                                <HugeiconsIcon icon={Delete02Icon} size={18} />
+                                              </button>
+                                            </div>
+                                          )}
+
+                                          {/* Fallback Input URL */}
+                                          {!selectedFiles[atividade.id] && (
+                                            <div className="space-y-1">
+                                              <label className="text-[10px] uppercase font-mono font-bold text-on-surface-variant">Ou cole um link direto do arquivo:</label>
+                                              <input
+                                                type="url"
+                                                value={activityResponse[atividade.id] || ''}
+                                                onChange={(e) => setActivityResponse(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                                placeholder="https://exemplo.com/seu-documento.pdf"
+                                                disabled={submittingActivity}
+                                                className="w-full p-3.5 text-body-md rounded-xl border border-outline-variant/50 bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-sans"
+                                              />
                                             </div>
                                           )}
                                         </div>
@@ -3767,8 +4028,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                   return activeQuestions.length === 0 || activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
-                                                ? (!(activityResponse[atividade.id] || '').trim() && !(activityImage[atividade.id] || '').trim())
-                                                : !(activityImage[atividade.id] || '').trim())
+                                                ? (!(activityResponse[atividade.id] || '').trim() && !selectedFiles[atividade.id] && !(activityImage[atividade.id] || '').trim())
+                                                : (!selectedFiles[atividade.id] && !(atividade.tipo_entrega === 'imagem' ? activityImage[atividade.id] : activityResponse[atividade.id] || '').trim()))
                                         }
                                         className={`px-5 py-2.5 rounded-lg font-heading font-bold text-label-md flex items-center gap-2 transition-all ${
                                           (atividade.tipo_entrega === 'texto' 
@@ -3782,8 +4043,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                                   return activeQuestions.length > 0 && !activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
-                                                ? ((activityResponse[atividade.id] || '').trim() || (activityImage[atividade.id] || '').trim())
-                                                : (activityImage[atividade.id] || '').trim()) && !submittingActivity
+                                                ? ((activityResponse[atividade.id] || '').trim() || selectedFiles[atividade.id] || (activityImage[atividade.id] || '').trim())
+                                                : (selectedFiles[atividade.id] || (atividade.tipo_entrega === 'imagem' ? activityImage[atividade.id] : activityResponse[atividade.id] || '').trim())) && !submittingActivity
                                             ? 'bg-primary text-on-primary shadow shadow-primary/15 hover:shadow-md hover:bg-primary-container hover:-translate-y-0.5'
                                             : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
                                         }`}

@@ -758,17 +758,30 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                   {/* User submission preview */}
                                   <div className="bg-white/80 p-3 rounded-lg border border-emerald-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
                                     {(() => {
+                                      const isImage = (url: string) => {
+                                        return url.match(/\.(jpeg|jpg|gif|png|webp)/i) || url.includes('atividades');
+                                      };
+
                                       if (atividade.tipo_entrega === 'imagem' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
                                           <div className="space-y-2 text-left">
-                                            <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                            {isImage(studentDelivery.resposta) ? (
+                                              <>
+                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                              </>
+                                            ) : (
+                                              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
+                                                <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                              </div>
+                                            )}
                                           </div>
                                         );
                                       }
                                       if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
-                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left">
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
                                             <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                             <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
                                           </div>
@@ -782,8 +795,17 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                               {payload.texto && <p className="whitespace-pre-wrap">{payload.texto}</p>}
                                               {payload.imagem && (
                                                 <div className="space-y-1">
-                                                  <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                  <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                  {isImage(payload.imagem) ? (
+                                                    <>
+                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                    </>
+                                                  ) : (
+                                                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
+                                                      <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                    </div>
+                                                  )}
                                                 </div>
                                               )}
                                             </div>
@@ -814,17 +836,30 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                   </div>
                                   <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
                                     {(() => {
+                                      const isImage = (url: string) => {
+                                        return url.match(/\.(jpeg|jpg|gif|png|webp)/i) || url.includes('atividades');
+                                      };
+
                                       if (atividade.tipo_entrega === 'imagem' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
                                           <div className="space-y-2 text-left">
-                                            <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                            {isImage(studentDelivery.resposta) ? (
+                                              <>
+                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                              </>
+                                            ) : (
+                                              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
+                                                <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                              </div>
+                                            )}
                                           </div>
                                         );
                                       }
                                       if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
-                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left">
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
                                             <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                             <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
                                           </div>
@@ -838,8 +873,17 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                               {payload.texto && <p className="whitespace-pre-wrap">{payload.texto}</p>}
                                               {payload.imagem && (
                                                 <div className="space-y-1">
-                                                  <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                  <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                  {isImage(payload.imagem) ? (
+                                                    <>
+                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                    </>
+                                                  ) : (
+                                                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
+                                                      <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                    </div>
+                                                  )}
                                                 </div>
                                               )}
                                             </div>

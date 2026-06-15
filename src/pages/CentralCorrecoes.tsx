@@ -765,13 +765,19 @@ export const CentralCorrecoes: React.FC = () => {
                             Abrir em Nova Guia &nearr;
                           </a>
                         </div>
-                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2 flex justify-center shadow-inner">
-                          <img
-                            src={selectedEntrega.resposta}
-                            alt="Solução do Aluno"
-                            className="max-h-96 object-contain rounded-lg bg-white"
-                          />
-                        </div>
+                        {(selectedEntrega.resposta.match(/\.(jpeg|jpg|gif|png|webp)/i) || selectedEntrega.resposta.includes('atividades')) ? (
+                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2 flex justify-center shadow-inner">
+                            <img
+                              src={selectedEntrega.resposta}
+                              alt="Solução do Aluno"
+                              className="max-h-96 object-contain rounded-lg bg-white"
+                            />
+                          </div>
+                        ) : (
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center font-sans text-body-md text-slate-500">
+                            Este arquivo não é uma imagem visualizável diretamente. Clique no link acima para abrir ou fazer download.
+                          </div>
+                        )}
                       </div>
                     ) : selectedEntrega.atividade_tipo_entrega === 'quiz' ? (
                       (() => {
@@ -931,7 +937,7 @@ export const CentralCorrecoes: React.FC = () => {
                               )}
                               {payload.imagem && (
                                 <div className="space-y-3 text-left">
-                                  <p className="text-[11px] font-bold text-slate-450 uppercase font-mono tracking-wider">Imagem Anexada</p>
+                                  <p className="text-[11px] font-bold text-slate-450 uppercase font-mono tracking-wider">Anexo Enviado</p>
                                   <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                                     <span className="text-[12px] text-slate-500 font-semibold truncate max-w-xs">{payload.imagem}</span>
                                     <a
@@ -946,13 +952,19 @@ export const CentralCorrecoes: React.FC = () => {
                                       Abrir em Nova Guia &nearr;
                                     </a>
                                   </div>
-                                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2 flex justify-center shadow-inner">
-                                    <img
-                                      src={payload.imagem}
-                                      alt="Solução do Aluno"
-                                      className="max-h-96 object-contain rounded-lg bg-white"
-                                    />
-                                  </div>
+                                  {(payload.imagem.match(/\.(jpeg|jpg|gif|png|webp)/i) || payload.imagem.includes('atividades')) ? (
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-900 p-2 flex justify-center shadow-inner">
+                                      <img
+                                        src={payload.imagem}
+                                        alt="Solução do Aluno"
+                                        className="max-h-96 object-contain rounded-lg bg-white"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center font-sans text-body-md text-slate-500">
+                                      Este anexo não é uma imagem visualizável diretamente. Clique no link acima para abrir ou fazer download.
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
