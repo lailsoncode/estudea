@@ -566,7 +566,7 @@ export const CentralCorrecoes: React.FC = () => {
       </header>
 
       {/* Main Split-View Workspace */}
-      <div className="flex flex-col lg:flex-row gap-6 h-[65vh] items-stretch">
+      <div className="flex flex-col lg:flex-row gap-6 h-[80vh] lg:h-[78vh] items-stretch">
         
         {/* Left Column: List of Submissions */}
         <div className="w-full lg:w-1/3 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col overflow-hidden h-full">
@@ -715,8 +715,8 @@ export const CentralCorrecoes: React.FC = () => {
               </div>
 
               {/* Scrollable Work Preview Area */}
-              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm max-w-3xl mx-auto space-y-6">
+              <div className="flex-1 overflow-y-auto p-4 md:p-5 bg-slate-50/50">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 md:p-5 shadow-sm max-w-3xl mx-auto space-y-4 md:space-y-6">
                   {/* Task Instructions */}
                   <div className="border-b border-slate-100 pb-4">
                     <p className="text-[11px] font-bold text-slate-400 uppercase font-mono tracking-wider mb-1">Enunciado da Atividade</p>
@@ -762,7 +762,7 @@ export const CentralCorrecoes: React.FC = () => {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
-                            Abrir em Nova Guia &nearr;
+                            Abrir em Nova Guia ↗
                           </a>
                         </div>
                         {(selectedEntrega.resposta.match(/\.(jpeg|jpg|gif|png|webp)/i) || selectedEntrega.resposta.includes('atividades')) ? (
@@ -917,7 +917,7 @@ export const CentralCorrecoes: React.FC = () => {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
-                            Download / Abrir &nearr;
+                            Download / Abrir ↗
                           </a>
                         </div>
                       </div>
@@ -949,7 +949,7 @@ export const CentralCorrecoes: React.FC = () => {
                                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                       </svg>
-                                      Abrir em Nova Guia &nearr;
+                                      Abrir em Nova Guia ↗
                                     </a>
                                   </div>
                                   {(payload.imagem.match(/\.(jpeg|jpg|gif|png|webp)/i) || payload.imagem.includes('atividades')) ? (
@@ -983,7 +983,7 @@ export const CentralCorrecoes: React.FC = () => {
               </div>
 
               {/* Grading & Feedback Sticky Panel */}
-              <footer className="border-t border-slate-200 bg-white p-5 shrink-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
+              <footer className="border-t border-slate-200 bg-white p-4 md:p-5 shrink-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.03)]">
                 <div className="flex flex-col xl:flex-row gap-5 max-w-5xl mx-auto">
                   {(() => {
                     const isGradedActivity = selectedEntrega.atividade_pontua ?? true;

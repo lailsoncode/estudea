@@ -768,12 +768,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                             {isImage(studentDelivery.resposta) ? (
                                               <>
                                                 <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                               </>
                                             ) : (
                                               <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
                                                 <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
-                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                               </div>
                                             )}
                                           </div>
@@ -783,7 +783,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                         return (
                                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
                                             <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
-                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                           </div>
                                         );
                                       }
@@ -798,12 +798,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                                   {isImage(payload.imagem) ? (
                                                     <>
                                                       <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                                     </>
                                                   ) : (
                                                     <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
                                                       <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
-                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                                     </div>
                                                   )}
                                                 </div>
@@ -846,12 +846,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                             {isImage(studentDelivery.resposta) ? (
                                               <>
                                                 <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                               </>
                                             ) : (
                                               <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
                                                 <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
-                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                               </div>
                                             )}
                                           </div>
@@ -861,7 +861,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                         return (
                                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
                                             <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
-                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                           </div>
                                         );
                                       }
@@ -876,12 +876,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                                   {isImage(payload.imagem) ? (
                                                     <>
                                                       <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
-                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                                     </>
                                                   ) : (
                                                     <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
                                                       <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
-                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                                      <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                                     </div>
                                                   )}
                                                 </div>
