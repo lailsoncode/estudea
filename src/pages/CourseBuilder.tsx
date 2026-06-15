@@ -80,7 +80,7 @@ interface Aula {
     id: string;
     aula_id: string;
     enunciado: string;
-    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
   }[];
 }
 
@@ -228,7 +228,7 @@ export const CourseBuilder: React.FC = () => {
     tempo_limite: 15,
     has_atividade: false,
     atividade_enunciado: '',
-    atividade_tipo_entrega: 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla',
+    atividade_tipo_entrega: 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo',
     atividade_pontua: true,
     atividade_permite_refazer: true,
     atividade_quiz_proprio: false
@@ -369,7 +369,7 @@ export const CourseBuilder: React.FC = () => {
     // Parse ATIVIDADE
     let has_atividade = false;
     let atividade_enunciado = '';
-    let atividade_tipo_entrega = 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla';
+    let atividade_tipo_entrega = 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
     let atividade_quiz_proprio = false;
     
     const atividadeContent = sections['ATIVIDADE'] || '';
@@ -399,8 +399,8 @@ export const CourseBuilder: React.FC = () => {
         const entregaMatch = atividadeContent.match(/Tipo de Entrega:\s*(\w+)/i);
         if (entregaMatch) {
           const val = entregaMatch[1].toLowerCase();
-          if (['texto', 'imagem', 'quiz', 'multipla'].includes(val)) {
-            atividade_tipo_entrega = val as 'texto' | 'imagem' | 'quiz' | 'multipla';
+          if (['texto', 'imagem', 'quiz', 'multipla', 'arquivo'].includes(val)) {
+            atividade_tipo_entrega = val as 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
           }
         }
         
@@ -656,7 +656,7 @@ export const CourseBuilder: React.FC = () => {
     id?: string;
     tempId: string;
     enunciado: string;
-    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
     pontua: boolean;
     permite_refazer: boolean;
     atividade_quiz_proprio: boolean;
@@ -2541,6 +2541,20 @@ export const CourseBuilder: React.FC = () => {
                                     className="text-primary focus:ring-primary/20 border-slate-300"
                                   />
                                   <span>Múltipla Entrega (Texto + Imagem)</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-label-md text-slate-600 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`entrega_tipo_${act.tempId}`}
+                                    value="arquivo"
+                                    checked={act.tipo_entrega === 'arquivo'}
+                                    onChange={() => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'arquivo' as const } : a);
+                                      setAtividadesList(updated);
+                                    }}
+                                    className="text-primary focus:ring-primary/20 border-slate-300"
+                                  />
+                                  <span>Envio de Arquivo (Qualquer formato: PDF, ZIP, etc.)</span>
                                 </label>
                               </div>
                             </div>

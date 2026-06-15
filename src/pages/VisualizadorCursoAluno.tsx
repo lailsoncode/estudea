@@ -7,7 +7,9 @@ import {
   Alert01Icon,
   Task01Icon,
   CheckmarkCircle02Icon,
-  Progress01Icon
+  Progress01Icon,
+  Attachment01Icon,
+  Cancel01Icon
 } from '@hugeicons/core-free-icons';
 
 interface VisualizadorCursoAlunoProps {
@@ -37,12 +39,12 @@ interface Aula {
   tipo: 'video' | 'texto' | 'quiz' | 'arquivo';
   video_url?: string;
   arquivo_url?: string | null;
-  atividades?: {
-    id: string;
-    enunciado: string;
-    tipo_entrega: 'texto' | 'imagem';
-    pontua?: boolean;
-  }[];
+    atividades?: {
+      id: string;
+      enunciado: string;
+      tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
+      pontua?: boolean;
+    }[];
 }
 
 interface Progresso {
@@ -111,6 +113,38 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
   const [success, setSuccess] = useState<string | null>(null);
   const [respostaForm, setRespostaForm] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
+  const [selectedFilePreviews, setSelectedFilePreviews] = useState<Record<string, string>>({});
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, atividadeId: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFiles(prev => ({ ...prev, [atividadeId]: file }));
+      if (file.type.startsWith('image/')) {
+        const previewUrl = URL.createObjectURL(file);
+        setSelectedFilePreviews(prev => ({ ...prev, [atividadeId]: previewUrl }));
+      } else {
+        setSelectedFilePreviews(prev => {
+          const next = { ...prev };
+          delete next[atividadeId];
+          return next;
+        });
+      }
+    }
+  };
+
+  const handleRemoveFile = (atividadeId: string) => {
+    setSelectedFiles(prev => {
+      const next = { ...prev };
+      delete next[atividadeId];
+      return next;
+    });
+    setSelectedFilePreviews(prev => {
+      const next = { ...prev };
+      delete next[atividadeId];
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (turmaId) {
@@ -247,10 +281,31 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
   const handleSendAssignment = async (e: React.FormEvent, atividadeId: string, aulaId: string) => {
     e.preventDefault();
-    const currentResposta = (respostaForm[atividadeId] || '').trim();
-    if (!currentResposta) {
-      setError('Por favor, digite sua resposta.');
+    const activity = selectedAula?.atividades?.find(a => a.id === atividadeId);
+    if (!activity) {
+      setError('Atividade não encontrada.');
       return;
+    }
+
+    const tipoEntrega = activity.tipo_entrega;
+    const currentResposta = (respostaForm[atividadeId] || '').trim();
+    const file = selectedFiles[atividadeId];
+
+    if (tipoEntrega === 'texto') {
+      if (!currentResposta) {
+        setError('Por favor, digite sua resposta.');
+        return;
+      }
+    } else if (tipoEntrega === 'multipla') {
+      if (!currentResposta) {
+        setError('Por favor, digite a parte de texto da sua resposta.');
+        return;
+      }
+    } else if (tipoEntrega === 'imagem' || tipoEntrega === 'arquivo') {
+      if (!file && !currentResposta) {
+        setError('Por favor, selecione um arquivo ou insira uma resposta.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -258,18 +313,58 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
     setSuccess(null);
 
     try {
+      let finalResposta = currentResposta;
+
+      if (file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}/${atividadeId}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('atividades')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('atividades')
+          .getPublicUrl(fileName);
+
+        finalResposta = publicUrlData.publicUrl;
+      }
+
+      if (tipoEntrega === 'multipla') {
+        const payload = {
+          texto: currentResposta,
+          imagem: file ? finalResposta : null
+        };
+        finalResposta = JSON.stringify(payload);
+      }
+
       const { error: submitError } = await supabase
         .from('entregas_atividades')
         .upsert({
           aluno_id: userId,
           atividade_id: atividadeId,
-          resposta: currentResposta,
+          resposta: finalResposta,
           updated_at: new Date().toISOString()
         }, { onConflict: 'aluno_id,atividade_id' });
 
       if (submitError) throw submitError;
 
-      // Automatically register class progress when submitting activity if all activities are delivered
+      setSelectedFiles(prev => {
+        const next = { ...prev };
+        delete next[atividadeId];
+        return next;
+      });
+      setSelectedFilePreviews(prev => {
+        const next = { ...prev };
+        delete next[atividadeId];
+        return next;
+      });
+
       const allActs = selectedAula?.atividades || [];
       const allSubmitted = allActs.every(act =>
         act.id === atividadeId || entregas.some(ent => ent.atividade_id === act.id)
@@ -653,57 +748,210 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                              </div>
 
                              {/* Grading Box if Graded */}
-                             {studentDelivery && studentDelivery.nota !== null && (
-                               <div className="bg-emerald-50 border border-emerald-200/50 rounded-xl p-4 text-label-md text-emerald-800 space-y-1 shadow-sm">
-                                 <div className="flex items-center gap-1.5 font-bold text-emerald-700">
-                                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
-                                   <span>Atividade Avaliada — Nota: {studentDelivery.nota}/100</span>
-                                 </div>
-                                 {studentDelivery.feedback_professor && (
-                                   <p className="text-slate-600 text-body-md leading-relaxed">
-                                     <strong className="text-emerald-700 font-bold">Feedback do Professor: </strong>
-                                     {studentDelivery.feedback_professor}
-                                   </p>
-                                 )}
-                               </div>
-                             )}
+                              {studentDelivery && studentDelivery.nota !== null && (
+                                <div className="bg-emerald-50 border border-emerald-200/50 rounded-xl p-4 text-label-md text-emerald-800 space-y-2 shadow-sm">
+                                  <div className="flex items-center gap-1.5 font-bold text-emerald-700">
+                                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
+                                    <span>Atividade Avaliada — Nota: {studentDelivery.nota}/100</span>
+                                  </div>
+                                  
+                                  {/* User submission preview */}
+                                  <div className="bg-white/80 p-3 rounded-lg border border-emerald-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
+                                    {(() => {
+                                      if (atividade.tipo_entrega === 'imagem' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
+                                        return (
+                                          <div className="space-y-2 text-left">
+                                            <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                          </div>
+                                        );
+                                      }
+                                      if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
+                                        return (
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left">
+                                            <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                          </div>
+                                        );
+                                      }
+                                      if (atividade.tipo_entrega === 'multipla') {
+                                        try {
+                                          const payload = JSON.parse(studentDelivery.resposta);
+                                          return (
+                                            <div className="space-y-3 text-left">
+                                              {payload.texto && <p className="whitespace-pre-wrap">{payload.texto}</p>}
+                                              {payload.imagem && (
+                                                <div className="space-y-1">
+                                                  <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                  <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        } catch (e) {
+                                          return <span className="whitespace-pre-wrap text-left block">{studentDelivery.resposta}</span>;
+                                        }
+                                      }
+                                      return <span className="whitespace-pre-wrap text-left block">{studentDelivery.resposta}</span>;
+                                    })()}
+                                  </div>
 
-                             {/* Submitted and pending review */}
-                             {studentDelivery && studentDelivery.nota === null && (
+                                  {studentDelivery.feedback_professor && (
+                                    <p className="text-slate-650 text-body-md leading-relaxed border-t border-emerald-250/20 pt-2 text-left">
+                                      <strong className="text-emerald-700 font-bold">Feedback do Professor: </strong>
+                                      {studentDelivery.feedback_professor}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Submitted and pending review */}
+                              {studentDelivery && studentDelivery.nota === null && (
                                 <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-label-md text-amber-800 space-y-2 shadow-sm">
                                   <div className="flex items-center gap-1.5 font-bold text-amber-700">
                                     <HugeiconsIcon icon={Progress01Icon} size={16} className="animate-spin" />
                                     <span>Resposta Enviada — Aguardando Avaliação</span>
                                   </div>
-                                  <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-600 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                                    {studentDelivery.resposta}
+                                  <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
+                                    {(() => {
+                                      if (atividade.tipo_entrega === 'imagem' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
+                                        return (
+                                          <div className="space-y-2 text-left">
+                                            <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                          </div>
+                                        );
+                                      }
+                                      if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
+                                        return (
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left">
+                                            <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                            <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo &nearr;</a>
+                                          </div>
+                                        );
+                                      }
+                                      if (atividade.tipo_entrega === 'multipla') {
+                                        try {
+                                          const payload = JSON.parse(studentDelivery.resposta);
+                                          return (
+                                            <div className="space-y-3 text-left">
+                                              {payload.texto && <p className="whitespace-pre-wrap">{payload.texto}</p>}
+                                              {payload.imagem && (
+                                                <div className="space-y-1">
+                                                  <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                  <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia &nearr;</a>
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        } catch (e) {
+                                          return <span className="whitespace-pre-wrap text-left block">{studentDelivery.resposta}</span>;
+                                        }
+                                      }
+                                      return <span className="whitespace-pre-wrap text-left block">{studentDelivery.resposta}</span>;
+                                    })()}
                                   </div>
-                                  <p className="text-[10px] text-amber-600/90 font-semibold">
-                                    Você pode reenviar a atividade digitando e enviando uma nova resposta abaixo a qualquer momento.
+                                  <p className="text-[10px] text-amber-600/90 font-semibold text-left">
+                                    Você pode reenviar a atividade enviando uma nova resposta abaixo a qualquer momento.
                                   </p>
                                 </div>
                               )}
 
                               {/* Form to submit or resubmit */}
                               {(!studentDelivery || studentDelivery.nota === null) && (
-                                <form onSubmit={(e) => handleSendAssignment(e, atividade.id, selectedAula.id)} className="space-y-3 pt-2">
+                                <form onSubmit={(e) => handleSendAssignment(e, atividade.id, selectedAula.id)} className="space-y-3 pt-2 text-left">
                                   <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-bold text-slate-600">
+                                    <label className="text-label-sm font-bold text-slate-650">
                                       {studentDelivery ? 'Atualizar minha resposta' : 'Minha resposta'}
                                     </label>
-                                    <textarea
-                                      rows={4}
-                                      required
-                                      value={respostaForm[atividade.id] || ''}
-                                      onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
-                                      disabled={submitting}
-                                      placeholder={
-                                        atividade.tipo_entrega === 'imagem'
-                                          ? 'Cole o link público da imagem da sua atividade (ex: Imgur, Google Drive público)...'
-                                          : 'Escreva a solução da sua atividade prática aqui...'
-                                      }
-                                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md leading-relaxed font-sans"
-                                    />
+
+                                    {/* If tipo_entrega is 'texto' or 'multipla' */}
+                                    {(atividade.tipo_entrega === 'texto' || atividade.tipo_entrega === 'multipla') && (
+                                      <textarea
+                                        rows={4}
+                                        required={atividade.tipo_entrega === 'texto'}
+                                        value={respostaForm[atividade.id] || ''}
+                                        onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                        disabled={submitting}
+                                        placeholder="Escreva a solução da sua atividade prática aqui..."
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md leading-relaxed font-sans"
+                                      />
+                                    )}
+
+                                    {/* If tipo_entrega is 'imagem', 'arquivo' or 'multipla' */}
+                                    {(atividade.tipo_entrega === 'imagem' || atividade.tipo_entrega === 'arquivo' || atividade.tipo_entrega === 'multipla') && (
+                                      <div className="space-y-3">
+                                        {/* Dropzone / File Selection Area */}
+                                        {!selectedFiles[atividade.id] ? (
+                                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-primary rounded-2xl p-6 bg-slate-50 hover:bg-slate-100/30 cursor-pointer transition-all">
+                                            <div className="p-3 bg-white rounded-xl border border-slate-150 shadow-sm text-slate-400 group-hover:text-primary">
+                                              <HugeiconsIcon icon={Attachment01Icon} size={24} />
+                                            </div>
+                                            <span className="text-body-md font-bold text-slate-700 mt-3">
+                                              {atividade.tipo_entrega === 'imagem' ? 'Fazer upload de Imagem' : 'Fazer upload de Arquivo'}
+                                            </span>
+                                            <span className="text-[11px] text-slate-400 mt-1">
+                                              {atividade.tipo_entrega === 'imagem' 
+                                                ? 'Arraste ou clique para selecionar imagem (PNG, JPG, etc.)' 
+                                                : 'Arraste ou clique para selecionar arquivo (PDF, ZIP, DOCX, etc.)'}
+                                            </span>
+                                            <input
+                                              type="file"
+                                              className="hidden"
+                                              accept={atividade.tipo_entrega === 'imagem' ? "image/*" : "*/*"}
+                                              onChange={(e) => handleFileChange(e, atividade.id)}
+                                              disabled={submitting}
+                                            />
+                                          </label>
+                                        ) : (
+                                          <div className="flex items-center justify-between bg-white border border-slate-200 p-3.5 rounded-2xl shadow-xs">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                              {selectedFilePreviews[atividade.id] ? (
+                                                <img 
+                                                  src={selectedFilePreviews[atividade.id]} 
+                                                  alt="Preview" 
+                                                  className="w-12 h-12 rounded-lg object-cover border border-slate-150 shrink-0" 
+                                                />
+                                              ) : (
+                                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                  </svg>
+                                                </div>
+                                              )}
+                                              <div className="text-left overflow-hidden">
+                                                <span className="text-label-md font-bold text-slate-800 block truncate">{selectedFiles[atividade.id].name}</span>
+                                                <span className="text-[11px] text-slate-400 block">{(selectedFiles[atividade.id].size / 1024 / 1024).toFixed(2)} MB</span>
+                                              </div>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveFile(atividade.id)}
+                                              disabled={submitting}
+                                              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all"
+                                              title="Remover arquivo"
+                                            >
+                                              <HugeiconsIcon icon={Cancel01Icon} size={18} />
+                                            </button>
+                                          </div>
+                                        )}
+
+                                        {/* Fallback Text Input for image link, ONLY if tipo_entrega is 'imagem' */}
+                                        {atividade.tipo_entrega === 'imagem' && !selectedFiles[atividade.id] && (
+                                          <div className="flex flex-col gap-1.5 pt-1">
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block text-center">Ou cole um link público da imagem</span>
+                                            <input
+                                              type="url"
+                                              value={respostaForm[atividade.id] || ''}
+                                              onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
+                                              disabled={submitting}
+                                              placeholder="https://exemplo.com/imagem.png"
+                                              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md font-sans"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <button
                                     type="submit"

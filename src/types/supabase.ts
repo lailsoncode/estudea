@@ -203,21 +203,21 @@ export type Database = {
           id: string;
           aula_id: string;
           enunciado: string;
-          tipo_entrega: 'texto' | 'imagem';
+          tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
           created_at: string;
         };
         Insert: {
           id?: string;
           aula_id: string;
           enunciado: string;
-          tipo_entrega: 'texto' | 'imagem';
+          tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
           created_at?: string;
         };
         Update: {
           id?: string;
           aula_id?: string;
           enunciado?: string;
-          tipo_entrega?: 'texto' | 'imagem';
+          tipo_entrega?: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
           created_at?: string;
         };
       };

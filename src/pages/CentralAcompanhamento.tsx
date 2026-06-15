@@ -78,7 +78,7 @@ interface EntregaRecord {
   atividades?: {
     id: string;
     enunciado: string;
-    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla';
+    tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
     pontua: boolean;
     aulas?: {
       id: string;
