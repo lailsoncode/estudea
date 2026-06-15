@@ -58,7 +58,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
   const [responses, setResponses] = useState<ResponseData[]>([]);
 
   // Timers and counters
-  const [timer, setTimer] = useState<number>(20);
+  const [timer, setTimer] = useState<number>(30);
   const [activeTimer, setActiveTimer] = useState<boolean>(false);
   const timerIntervalRef = useRef<any>(null);
   const questionStartRef = useRef<number>(0);
@@ -350,7 +350,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
 
     setCurrentQuestionIdx(nextIdx);
     setResponses([]);
-    setTimer(20);
+    setTimer(30);
     setGameStatus('question');
     questionStartRef.current = Date.now();
 
