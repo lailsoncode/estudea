@@ -1989,18 +1989,18 @@ export const CourseBuilder: React.FC = () => {
             <div className="flex-1 space-y-6">
               
               {/* AI Assistant Card */}
-              <section className="app-card-padded bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border-indigo-100 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-indigo-100/50 pb-3">
-                  <h3 className="font-heading font-extrabold text-body-lg text-indigo-900 flex items-center gap-2">
-                    <HugeiconsIcon icon={SparklesIcon} size={22} className="text-indigo-600 animate-pulse" />
+              <section className="app-card-padded bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 dark:from-indigo-950/45 dark:via-slate-900/60 dark:to-purple-950/45 border-indigo-100/80 dark:border-indigo-900/40 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-indigo-100/50 dark:border-indigo-900/30 pb-3">
+                  <h3 className="font-heading font-extrabold text-body-lg text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+                    <HugeiconsIcon icon={SparklesIcon} size={22} className="text-indigo-600 dark:text-indigo-400 animate-pulse" />
                     Assistente de Criação com IA
                   </h3>
-                  <span className="text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
+                  <span className="text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/40">
                     Gemini Ativo
                   </span>
                 </div>
 
-                <p className="text-label-sm text-slate-500 leading-relaxed">
+                <p className="text-label-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                   Digite ou cole instruções para que a inteligência artificial configure a aula automaticamente. Ela criará o título, descrição, conteúdo teórico, materiais complementares (links/PDFs) e questionários!
                 </p>
 
@@ -2015,18 +2015,18 @@ export const CourseBuilder: React.FC = () => {
                     }}
                     rows={4}
                     disabled={aiLoading}
-                    className="w-full px-4 py-3 rounded-xl border border-indigo-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-body-md"
+                    className="w-full px-4 py-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white dark:bg-slate-950 focus:border-indigo-500 dark:focus:border-indigo-400 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-body-md"
                   />
 
                   {aiError && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-label-sm text-red-600 font-medium leading-relaxed flex items-center gap-2">
+                    <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/35 rounded-xl text-label-sm text-red-600 dark:text-red-300 font-medium leading-relaxed flex items-center gap-2">
                       <HugeiconsIcon icon={Alert01Icon} size={16} strokeWidth={2} className="shrink-0" />
                       <span>{aiError}</span>
                     </div>
                   )}
 
                   {aiSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-label-sm text-emerald-700 font-semibold leading-relaxed flex items-center gap-2">
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/35 rounded-xl text-label-sm text-emerald-700 dark:text-emerald-300 font-semibold leading-relaxed flex items-center gap-2">
                       <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} className="shrink-0" />
                       <span>{aiSuccess}</span>
                     </div>
@@ -2037,7 +2037,7 @@ export const CourseBuilder: React.FC = () => {
                       type="button"
                       onClick={handleGenerateWithAI}
                       disabled={aiLoading || !aiPrompt.trim()}
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-heading font-bold text-label-sm rounded-xl shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5"
+                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 disabled:opacity-50 text-white font-heading font-bold text-label-sm rounded-xl shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5"
                     >
                       {aiLoading ? (
                         <>
