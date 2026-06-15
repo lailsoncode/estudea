@@ -51,6 +51,18 @@ const renderFormattedText = (text: string) => {
   });
 };
 
+const getAtividadeTabLabel = (act: any, allActs: any[]) => {
+  if (act.tipo_entrega === 'quiz') return 'Quiz';
+  
+  const nonQuizActs = allActs.filter(a => a.tipo_entrega !== 'quiz');
+  if (nonQuizActs.length <= 1) {
+    return 'Atividade Prática';
+  } else {
+    const nonQuizIndex = nonQuizActs.findIndex(a => a.id === act.id);
+    return `Atividade Prática ${nonQuizIndex + 1}`;
+  }
+};
+
 const parseLessonConteudo = (rawConteudo: string, tipo?: string) => {
   if (!rawConteudo) {
     return { descricao: '', conteudo: '' };
@@ -182,7 +194,8 @@ interface Progresso {
 interface Entrega {
   id: string;
   aluno_id: string;
-  atividade_id: string;
+  atividade_id: string | null;
+  aula_id?: string | null;
   resposta: string;
   nota: number | null;
   feedback_professor: string | null;
@@ -232,7 +245,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
   // Lesson view specific UI states
   const [lessonSidebarOpen, setLessonSidebarOpen] = useState(true);
-  const [activeLessonTab, setActiveLessonTab] = useState<'conteudo' | 'arquivos' | 'quiz' | 'atividade'>('conteudo');
+  const [activeLessonTab, setActiveLessonTab] = useState<string>('conteudo');
 
   // File upload state for student activities
   const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
@@ -538,7 +551,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       } else if (selectedAula.arquivo_url) {
         setActiveLessonTab('arquivos');
       } else if (selectedAula.atividades && selectedAula.atividades.length > 0) {
-        setActiveLessonTab('atividade');
+        if (selectedAula.atividades.length === 1) {
+          setActiveLessonTab('atividade');
+        } else {
+          setActiveLessonTab(selectedAula.atividades[0].id);
+        }
       }
     }
 
@@ -785,6 +802,46 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     const quizActivity = selectedAula.atividades?.find(a => a.tipo_entrega === 'quiz');
     if (quizActivity) {
       await handleSubmitActivity(quizActivity.id, 'quiz');
+    } else {
+      // Save standard quiz submission in entregas_atividades so the teacher can review it
+      try {
+        const payload = {
+          respostas: quizAnswers,
+          score: score,
+          correctCount: gradeData?.correctCount ?? 0,
+          totalQuestions: gradeData?.totalQuestions ?? selectedAula.questoes.length,
+          passed: passed
+        };
+        const answerJson = JSON.stringify(payload);
+        const existingEntrega = entregas.find(e => e.aula_id === selectedAula.id && !e.atividade_id);
+
+        if (existingEntrega) {
+          const { error: updateError } = await supabase
+            .from('entregas_atividades')
+            .update({
+              resposta: answerJson,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingEntrega.id);
+          if (updateError) throw updateError;
+        } else {
+          const { data: insertData, error: insertError } = await supabase
+            .from('entregas_atividades')
+            .insert({
+              aluno_id: userId,
+              aula_id: selectedAula.id,
+              atividade_id: null,
+              resposta: answerJson
+            })
+            .select();
+          if (insertError) throw insertError;
+          if (insertData) {
+            setEntregas(prev => [...prev, insertData[0]]);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao salvar entrega do quiz:', err);
+      }
     }
   };
 
@@ -2828,33 +2885,65 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         )}
 
                         {selectedAula.atividades && selectedAula.atividades.length > 0 && (
-                          <button
-                            onClick={() => setActiveLessonTab('atividade')}
-                            className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
-                              activeLessonTab === 'atividade'
-                                ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.01]'
-                                : 'text-on-surface hover:text-primary hover:bg-surface-container-high/60'
-                            }`}
-                          >
-                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2.5} />
-                            <span>Atividade Prática</span>
-                            {(() => {
-                              const allActs = selectedAula.atividades || [];
-                              const entregasForAula = entregas.filter(e => allActs.some(a => a.id === e.atividade_id));
+                          selectedAula.atividades.length === 1 ? (
+                            <button
+                              onClick={() => setActiveLessonTab('atividade')}
+                              className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
+                                activeLessonTab === 'atividade'
+                                  ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.01]'
+                                  : 'text-on-surface hover:text-primary hover:bg-surface-container-high/60'
+                              }`}
+                            >
+                              <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2.5} />
+                              <span>Atividade Prática</span>
+                              {(() => {
+                                const allActs = selectedAula.atividades || [];
+                                const entregasForAula = entregas.filter(e => allActs.some(a => a.id === e.atividade_id));
+                                
+                                if (entregasForAula.length === 0) {
+                                  return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
+                                }
+                                if (entregasForAula.length < allActs.length) {
+                                  return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
+                                }
+                                const allGraded = entregasForAula.every(e => e.nota !== null);
+                                if (allGraded) {
+                                  return <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />;
+                                }
+                                return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />;
+                              })()}
+                            </button>
+                          ) : (
+                            selectedAula.atividades.map((act) => {
+                              const isSelected = activeLessonTab === act.id;
+                              const label = getAtividadeTabLabel(act, selectedAula.atividades || []);
+                              const actEntrega = entregas.find(e => e.atividade_id === act.id);
                               
-                              if (entregasForAula.length === 0) {
-                                return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
-                              }
-                              if (entregasForAula.length < allActs.length) {
-                                return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
-                              }
-                              const allGraded = entregasForAula.every(e => e.nota !== null);
-                              if (allGraded) {
-                                return <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />;
-                              }
-                              return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />;
-                            })()}
-                          </button>
+                              return (
+                                <button
+                                  key={act.id}
+                                  onClick={() => setActiveLessonTab(act.id)}
+                                  className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
+                                    isSelected
+                                      ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.01]'
+                                      : 'text-on-surface hover:text-primary hover:bg-surface-container-high/60'
+                                  }`}
+                                >
+                                  <HugeiconsIcon icon={act.tipo_entrega === 'quiz' ? Quiz01Icon : CheckmarkCircle02Icon} size={18} strokeWidth={2.5} />
+                                  <span>{label}</span>
+                                  {(() => {
+                                    if (!actEntrega) {
+                                      return <span className="flex h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />;
+                                    }
+                                    if (actEntrega.nota !== null) {
+                                      return <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />;
+                                    }
+                                    return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />;
+                                  })()}
+                                </button>
+                              );
+                            })
+                          )
                         )}
                       </div>
                     )}
@@ -3321,26 +3410,31 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                       )}
 
                       {/* Tab 4: Atividade Prática */}
-                      {activeLessonTab === 'atividade' && selectedAula.atividades && selectedAula.atividades.length > 0 && (
-                        <div className="app-card-padded space-y-5 animate-fade-in">
-                          <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-3 border-b border-outline-variant/20 flex items-center gap-2">
-                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-secondary" />
-                            Atividade Prática
-                          </h4>
+                      {selectedAula.atividades && selectedAula.atividades.length > 0 && (
+                        selectedAula.atividades.map((atividade) => {
+                          const isSingle = (selectedAula.atividades || []).length === 1;
+                          const shouldShow = (isSingle && activeLessonTab === 'atividade') || (activeLessonTab === atividade.id);
+                          if (!shouldShow) return null;
 
-                          {selectedAula.atividades.map((atividade) => {
-                            // Find the exact delivery match
-                            const exactEntrega = entregas.find(e => e.atividade_id === atividade.id);
-                            const canRedo = exactEntrega && (atividade.permite_refazer !== false) && exactEntrega.nota === null;
-                            const isRedoing = isRedoingActivity[atividade.id] || false;
-                            
-                            const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
-                            const activeQuestions = isProprio
-                              ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
-                              : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                          const exactEntrega = entregas.find(e => e.atividade_id === atividade.id);
+                          const canRedo = exactEntrega && (atividade.permite_refazer !== false) && exactEntrega.nota === null;
+                          const isRedoing = isRedoingActivity[atividade.id] || false;
+                          
+                          const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
+                          const activeQuestions = isProprio
+                            ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
+                            : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
 
-                            return (
-                              <div key={atividade.id} className="space-y-4">
+                          const tabLabel = isSingle ? 'Atividade Prática' : getAtividadeTabLabel(atividade, selectedAula.atividades || []);
+
+                          return (
+                            <div key={atividade.id} className="app-card-padded space-y-5 animate-fade-in">
+                              <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-3 border-b border-outline-variant/20 flex items-center gap-2">
+                                <HugeiconsIcon icon={atividade.tipo_entrega === 'quiz' ? Quiz01Icon : CheckmarkCircle02Icon} size={18} className="text-secondary" />
+                                {tabLabel}
+                              </h4>
+
+                              <div className="space-y-4">
                                 <div className="p-4 bg-surface rounded-xl border border-outline-variant/40 space-y-2">
                                   <p className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider">Instruções</p>
                                   <div className="prose prose-slate max-w-none text-body-md text-on-surface leading-relaxed font-sans space-y-3">
@@ -4056,9 +4150,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                   </form>
                                 )}
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   )}

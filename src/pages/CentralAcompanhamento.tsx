@@ -328,6 +328,7 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
           id,
           aluno_id,
           atividade_id,
+          aula_id,
           resposta,
           nota,
           feedback_professor,
@@ -342,13 +343,32 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
               titulo,
               numero_aula
             )
+          ),
+          aulas:aula_id (
+            id,
+            titulo,
+            numero_aula
           )
         `)
         .eq('aluno_id', alunoId)
         .order('created_at', { ascending: false });
 
       if (!entregasError && entregasData) {
-        setEntregas(entregasData as any);
+        const formatted = (entregasData || []).map((e: any) => {
+          const atividade = e.atividades;
+          const aula = atividade?.aulas || e.aulas;
+          return {
+            ...e,
+            atividades: atividade || {
+              id: null,
+              enunciado: 'Quiz Geral da Aula',
+              tipo_entrega: 'quiz',
+              pontua: true,
+              aulas: aula
+            }
+          };
+        });
+        setEntregas(formatted as any);
       }
       setLoadingEntregas(false);
 

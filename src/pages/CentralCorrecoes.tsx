@@ -15,7 +15,8 @@ interface Turma {
 interface Entrega {
   id: string;
   aluno_id: string;
-  atividade_id: string;
+  atividade_id: string | null;
+  aula_id?: string | null;
   resposta: string;
   nota: number | null;
   feedback_professor: string | null;
@@ -89,6 +90,7 @@ export const CentralCorrecoes: React.FC = () => {
           id,
           aluno_id,
           atividade_id,
+          aula_id,
           resposta,
           nota,
           feedback_professor,
@@ -114,6 +116,12 @@ export const CentralCorrecoes: React.FC = () => {
               numero_aula,
               questoes(*)
             )
+          ),
+          aulas:aula_id (
+            id,
+            titulo,
+            numero_aula,
+            questoes(*)
           )
         `);
 
@@ -123,7 +131,7 @@ export const CentralCorrecoes: React.FC = () => {
       let formatted: Entrega[] = (data || []).map((item: any) => {
         const profile = item.profiles;
         const atividade = item.atividades;
-        const aula = atividade?.aulas;
+        const aula = atividade?.aulas || item.aulas;
         const turma = profile?.turmas;
 
         // Mark high priority if it has been pending for more than 24 hours
@@ -135,25 +143,30 @@ export const CentralCorrecoes: React.FC = () => {
           id: item.id,
           aluno_id: item.aluno_id,
           atividade_id: item.atividade_id,
+          aula_id: item.aula_id,
           resposta: item.resposta,
           nota: item.nota !== null ? Number(item.nota) : null,
           feedback_professor: item.feedback_professor,
           created_at: item.created_at,
           aluno_nome: profile?.nome || 'Aluno sem nome',
           aluno_turma_nome: turma?.nome || 'Sem Turma',
-          atividade_enunciado: atividade?.enunciado || 'Atividade sem enunciado',
-          atividade_tipo_entrega: atividade?.tipo_entrega || 'texto',
+          atividade_enunciado: atividade?.enunciado || 'Quiz Geral da Aula',
+          atividade_tipo_entrega: atividade?.tipo_entrega || 'quiz',
           atividade_pontua: atividade?.pontua ?? true,
           atividade_permite_refazer: atividade?.permite_refazer ?? true,
           aula_titulo: aula?.titulo || 'Aula sem título',
           aula_numero: aula?.numero_aula || 0,
           isHighPriority,
           questoes: (() => {
-            const allQuestions = aula?.questoes || [];
-            const isProprio = allQuestions.some((q: any) => q.atividade_id === item.atividade_id);
-            return isProprio
-              ? allQuestions.filter((q: any) => q.atividade_id === item.atividade_id)
-              : allQuestions.filter((q: any) => !q.atividade_id && !q.para_arena);
+            if (atividade) {
+              const allQuestions = aula?.questoes || [];
+              const isProprio = allQuestions.some((q: any) => q.atividade_id === item.atividade_id);
+              return isProprio
+                ? allQuestions.filter((q: any) => q.atividade_id === item.atividade_id)
+                : allQuestions.filter((q: any) => !q.atividade_id && !q.para_arena);
+            } else {
+              return (aula?.questoes || []).filter((q: any) => !q.atividade_id && !q.para_arena);
+            }
           })()
         };
       });
@@ -313,18 +326,24 @@ export const CentralCorrecoes: React.FC = () => {
       if (updateError) throw updateError;
 
       // Register progress automatically
-      const { data: atividadeData } = await supabase
-        .from('atividades')
-        .select('aula_id')
-        .eq('id', selectedEntrega.atividade_id)
-        .single();
+      let aulaId = selectedEntrega.aula_id;
+      if (!aulaId && selectedEntrega.atividade_id) {
+        const { data: atividadeData } = await supabase
+          .from('atividades')
+          .select('aula_id')
+          .eq('id', selectedEntrega.atividade_id)
+          .single();
+        if (atividadeData) {
+          aulaId = atividadeData.aula_id;
+        }
+      }
 
-      if (atividadeData && atividadeData.aula_id) {
+      if (aulaId) {
         await supabase
           .from('progresso_alunos')
           .upsert({
             aluno_id: selectedEntrega.aluno_id,
-            aula_id: atividadeData.aula_id,
+            aula_id: aulaId,
             concluido_em: new Date().toISOString(),
           }, { onConflict: 'aluno_id,aula_id' });
       }
