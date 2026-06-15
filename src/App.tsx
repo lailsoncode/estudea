@@ -70,6 +70,70 @@ function App() {
   const [teacherView, setTeacherView] = useState<'content' | 'preview'>('content');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('dashboard');
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [theme]);
+
+  const ThemeToggle = () => (
+    <button
+      onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+      className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm shrink-0"
+      title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+    >
+      <div className="relative w-5 h-5 flex items-center justify-center">
+        {/* Sun Icon */}
+        <svg
+          className={`absolute w-5 h-5 transform transition-all duration-500 ease-in-out ${
+            theme === 'dark' ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+          }`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="M4.93 4.93l1.41 1.41" />
+          <path d="M17.66 17.66l1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="M6.34 17.66l-1.41 1.41" />
+          <path d="M19.07 4.93l-1.41 1.41" />
+        </svg>
+        {/* Moon Icon */}
+        <svg
+          className={`absolute w-5 h-5 transform transition-all duration-500 ease-in-out ${
+            theme === 'light' ? '-rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+          }`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      </div>
+    </button>
+  );
+
   // Teacher panel navigation & metrics states
   const [activeTeacherTab, setActiveTeacherTab] = useState<TeacherTab>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -621,6 +685,8 @@ function App() {
                 </svg>
               </button>
 
+              <ThemeToggle />
+
               <div className="h-8 w-px bg-outline-variant/30 mx-1"></div>
 
               {/* Profile click item */}
@@ -752,6 +818,8 @@ function App() {
             <div className="flex items-center gap-4">
               <NotificationBell userId={session.user.id} enabled={!isAdmin} />
 
+              <ThemeToggle />
+
               <div className="h-8 w-px bg-outline-variant/30 mx-1"></div>
 
               {/* User Avatar */}
@@ -855,6 +923,10 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-background text-on-background relative flex flex-col items-center justify-center font-sans">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Decorative Blur Backgrounds */}
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none" />

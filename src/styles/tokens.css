@@ -11,80 +11,167 @@
 
 :root {
   /* =============================================
-     CORES — Superfícies
+     CORES — Superfícies (Modo Claro)
      ============================================= */
-  --color-surface: #f8f9ff;
-  --color-surface-dim: #cbdbf5;
-  --color-surface-bright: #f8f9ff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #eff4ff;
-  --color-surface-container: #e5eeff;
-  --color-surface-container-high: #dce9ff;
-  --color-surface-container-highest: #d3e4fe;
-  --color-surface-variant: #d3e4fe;
+  --color-surface: 255 255 255;
+  --color-surface-dim: 241 245 249;
+  --color-surface-bright: 255 255 255;
+  --color-surface-container-lowest: 255 255 255;
+  --color-surface-container-low: 248 250 252;
+  --color-surface-container: 241 245 249;
+  --color-surface-container-high: 226 232 240;
+  --color-surface-container-highest: 203 213 225;
+  --color-surface-variant: 241 245 249;
 
   /* =============================================
      CORES — Conteúdo sobre superfície
      ============================================= */
-  --color-on-surface: #0b1c30;
-  --color-on-surface-variant: #434655;
-  --color-inverse-surface: #213145;
-  --color-inverse-on-surface: #eaf1ff;
+  --color-on-surface: 15 23 42;
+  --color-on-surface-variant: 71 85 105;
+  --color-inverse-surface: 30 41 59;
+  --color-inverse-on-surface: 248 250 252;
 
   /* =============================================
      CORES — Bordas e contornos
      ============================================= */
-  --color-outline: #737686;
-  --color-outline-variant: #c3c6d7;
+  --color-outline: 148 163 184;
+  --color-outline-variant: 226 232 240;
 
   /* =============================================
-     CORES — Primária (Azul)
+     CORES — Primária (Indigo/Azul)
      ============================================= */
-  --color-primary: #004ac6;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #2563eb;
-  --color-on-primary-container: #eeefff;
-  --color-inverse-primary: #b4c5ff;
-  --color-primary-fixed: #dbe1ff;
-  --color-primary-fixed-dim: #b4c5ff;
-  --color-on-primary-fixed: #00174b;
+  --color-primary: 79 70 229;
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 129 140 248;
+  --color-on-primary-container: 224 231 255;
+  --color-inverse-primary: 199 210 254;
+  --color-primary-fixed: 224 231 255;
+  --color-primary-fixed-dim: 199 210 254;
+  --color-on-primary-fixed: 49 46 129;
+  --color-on-primary-fixed-variant: 67 56 202;
 
   /* =============================================
-     CORES — Secundária (Roxo)
+     CORES — Secundária (Escuro/Roxo)
      ============================================= */
-  --color-secondary: #712ae2;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #8a4cfc;
-  --color-on-secondary-container: #fffbff;
-  --color-secondary-fixed: #eaddff;
-  --color-secondary-fixed-dim: #d2bbff;
-  --color-on-secondary-fixed: #25005a;
+  --color-secondary: 15 23 42;
+  --color-on-secondary: 255 255 255;
+  --color-secondary-container: 30 41 59;
+  --color-on-secondary-container: 248 250 252;
+  --color-secondary-fixed: 241 245 249;
+  --color-secondary-fixed-dim: 203 213 225;
+  --color-on-secondary-fixed: 15 23 42;
+  --color-on-secondary-fixed-variant: 30 41 59;
 
   /* =============================================
-     CORES — Terciária (Azul escuro)
+     CORES — Terciária (Teal)
      ============================================= */
-  --color-tertiary: #005a82;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #0074a6;
-  --color-on-tertiary-container: #e4f2ff;
+  --color-tertiary: 13 148 136;
+  --color-on-tertiary: 255 255 255;
+  --color-tertiary-container: 20 184 166;
+  --color-on-tertiary-container: 204 251 241;
+  --color-tertiary-fixed: 204 251 241;
+  --color-tertiary-fixed-dim: 153 246 228;
+  --color-on-tertiary-fixed: 17 94 89;
+  --color-on-tertiary-fixed-variant: 19 78 74;
 
   /* =============================================
      CORES — Erro
      ============================================= */
-  --color-error: #ba1a1a;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error: 239 68 68;
+  --color-on-error: 255 255 255;
+  --color-error-container: 254 226 226;
+  --color-on-error-container: 153 27 27;
 
   /* =============================================
-     CORES — Background
+     CORES — Background e Outras
      ============================================= */
-  --color-background: #f8f9ff;
-  --color-on-background: #0b1c30;
+  --color-background: 248 250 252;
+  --color-on-background: 15 23 42;
+  --color-surface-tint: 79 70 229;
+}
+
+.dark {
+  /* =============================================
+     CORES — Superfícies (Modo Escuro Premium)
+     ============================================= */
+  --color-surface: 15 23 42; /* slate-900 */
+  --color-surface-dim: 30 41 59; /* slate-800 */
+  --color-surface-bright: 30 41 59;
+  --color-surface-container-lowest: 11 17 31; /* slate-950-ish */
+  --color-surface-container-low: 24 34 54; /* slate-900-ish */
+  --color-surface-container: 30 41 59;
+  --color-surface-container-high: 51 65 85; /* slate-700 */
+  --color-surface-container-highest: 71 85 105; /* slate-600 */
+  --color-surface-variant: 30 41 59;
 
   /* =============================================
-     TIPOGRAFIA — Famílias
+     CORES — Conteúdo sobre superfície
      ============================================= */
+  --color-on-surface: 248 250 252; /* slate-50 */
+  --color-on-surface-variant: 148 163 184; /* slate-400 */
+  --color-inverse-surface: 255 255 255;
+  --color-inverse-on-surface: 15 23 42;
+
+  /* =============================================
+     CORES — Bordas e contornos
+     ============================================= */
+  --color-outline: 71 85 105; /* slate-600 */
+  --color-outline-variant: 51 65 85; /* slate-700 */
+
+  /* =============================================
+     CORES — Primária (Indigo vibrante)
+     ============================================= */
+  --color-primary: 99 102 241; /* indigo-500 */
+  --color-on-primary: 255 255 255;
+  --color-primary-container: 49 46 129; /* indigo-900 */
+  --color-on-primary-container: 224 231 255;
+  --color-inverse-primary: 79 70 229;
+  --color-primary-fixed: 49 46 129;
+  --color-primary-fixed-dim: 67 56 202;
+  --color-on-primary-fixed: 224 231 255;
+  --color-on-primary-fixed-variant: 199 210 254;
+
+  /* =============================================
+     CORES — Secundária (Cinza claro)
+     ============================================= */
+  --color-secondary: 248 250 252;
+  --color-on-secondary: 15 23 42;
+  --color-secondary-container: 51 65 85;
+  --color-on-secondary-container: 248 250 252;
+  --color-secondary-fixed: 30 41 59;
+  --color-secondary-fixed-dim: 51 65 85;
+  --color-on-secondary-fixed: 241 245 249;
+  --color-on-secondary-fixed-variant: 203 213 225;
+
+  /* =============================================
+     CORES — Terciária (Teal vibrante)
+     ============================================= */
+  --color-tertiary: 20 184 166; /* teal-500 */
+  --color-on-tertiary: 15 23 42;
+  --color-tertiary-container: 17 94 89;
+  --color-on-tertiary-container: 204 251 241;
+  --color-tertiary-fixed: 17 94 89;
+  --color-tertiary-fixed-dim: 19 78 74;
+  --color-on-tertiary-fixed: 204 251 241;
+  --color-on-tertiary-fixed-variant: 153 246 228;
+
+  /* =============================================
+     CORES — Erro
+     ============================================= */
+  --color-error: 248 113 113; /* red-400 */
+  --color-on-error: 255 255 255;
+  --color-error-container: 127 29 29;
+  --color-on-error-container: 252 165 165;
+
+  /* =============================================
+     CORES — Background e Outras
+     ============================================= */
+  --color-background: 11 15 25; /* slate-950 */
+  --color-on-background: 248 250 252;
+  --color-surface-tint: 129 140 248;
+}
+
+:root {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
 

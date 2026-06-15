@@ -1509,7 +1509,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                           }}
                           className={`app-card-padded transition-all ${
                             modulo.status !== 'BLOQUEADO' 
-                              ? 'hover-lift cursor-pointer hover:bg-white/80' 
+                              ? 'hover-lift cursor-pointer hover:bg-surface-container-low dark:hover:bg-surface-container-high/60' 
                               : 'opacity-75 cursor-not-allowed'
                           } ${borderStyle}`}
                         >
@@ -2301,17 +2301,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 
                 <div className="space-y-4">
                   {/* Quest 1 */}
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                       <HugeiconsIcon icon={Tick01Icon} size={18} strokeWidth={2.5} />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex justify-between items-center">
                         <h4 className="font-heading font-extrabold text-label-md text-on-surface">Consistência Diária</h4>
-                        <span className="text-label-sm font-bold text-emerald-600">Concluído (+10 XP)</span>
+                        <span className="text-label-sm font-bold text-emerald-600 dark:text-emerald-400">Concluído (+10 XP)</span>
                       </div>
                       <p className="text-sm text-on-surface-variant">Acesse a plataforma de ensino hoje.</p>
-                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mt-2">
+                      <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
                         <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }}></div>
                       </div>
                     </div>
@@ -2321,23 +2321,23 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                   {(() => {
                     const isCompleted = completedAulasCount > 0;
                     return (
-                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
+                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 border ${
                           isCompleted 
-                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200' 
-                            : 'bg-primary/10 text-primary border-primary/20'
+                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                            : 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/5 dark:text-primary dark:border-primary/20'
                         }`}>
                           <HugeiconsIcon icon={isCompleted ? Tick01Icon : PlayCircleIcon} size={18} strokeWidth={2.5} />
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex justify-between items-center">
                             <h4 className="font-heading font-extrabold text-label-md text-on-surface">Foco no Aprendizado</h4>
-                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600' : 'text-primary'}`}>
+                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary'}`}>
                               {isCompleted ? 'Concluído (+50 XP)' : '0 / 1 Aula (+50 XP)'}
                             </span>
                           </div>
                           <p className="text-sm text-on-surface-variant">Conclua pelo menos uma aula da sua trilha hoje.</p>
-                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mt-2">
+                          <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
                             <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: isCompleted ? '100%' : '0%' }}></div>
                           </div>
                         </div>
@@ -2351,23 +2351,23 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                     const isCompleted = value >= 3;
                     const percent = Math.round((value / 3) * 100);
                     return (
-                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
+                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 border ${
                           isCompleted 
-                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200' 
-                            : 'bg-indigo/10 text-indigo-500 border-indigo-200/50'
+                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                            : 'bg-indigo/10 text-indigo-500 border-indigo-200/50 dark:bg-indigo-500/5 dark:text-indigo-400 dark:border-indigo-500/20'
                         }`}>
                           <HugeiconsIcon icon={isCompleted ? Tick01Icon : NotebookIcon} size={18} strokeWidth={2.5} />
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex justify-between items-center">
                             <h4 className="font-heading font-extrabold text-label-md text-on-surface">Dedicação Total</h4>
-                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600' : 'text-on-surface-variant'}`}>
+                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-on-surface-variant'}`}>
                               {isCompleted ? 'Concluído (+150 XP)' : `${value} / 3 Aulas (+150 XP)`}
                             </span>
                           </div>
                           <p className="text-sm text-on-surface-variant">Conclua 3 aulas para um grande impulso no ranking semanal.</p>
-                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mt-2">
+                          <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
                             <div className="h-full bg-indigo-500 rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div>
                           </div>
                         </div>
@@ -2436,7 +2436,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         key={idx}
                         className={`relative p-6 rounded-3xl border transition-all duration-300 flex flex-col justify-between space-y-5 shadow-sm hover:shadow-md hover:-translate-y-1 group ${
                           !ach.unlocked
-                            ? 'grayscale bg-slate-50/50 border-slate-200 text-slate-400'
+                            ? 'grayscale bg-slate-50/50 border-slate-200 text-slate-400 dark:bg-surface-container/30 dark:border-outline-variant/30 dark:text-on-surface-variant/70'
                             : 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 border-outline-variant/30 text-on-surface'
                         }`}
                       >
@@ -2444,7 +2444,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         <div className="flex items-start justify-between gap-4">
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-transform duration-300 group-hover:scale-105 ${
                             !ach.unlocked
-                              ? 'bg-slate-200 border-slate-300 text-slate-400'
+                              ? 'bg-slate-200 border-slate-300 text-slate-400 dark:bg-surface-container-high dark:border-outline-variant/30 dark:text-on-surface-variant/60'
                               : `${ach.bgClass} border-transparent ${ach.iconClass} shadow-sm`
                           }`}>
                             <HugeiconsIcon icon={ach.icon as any} size={28} strokeWidth={2} />
@@ -2452,8 +2452,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                           
                           <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${
                             ach.unlocked 
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200/40' 
-                              : 'bg-slate-200 text-slate-500'
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200/40 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                              : 'bg-slate-200 text-slate-500 dark:bg-surface-container dark:text-on-surface-variant/60'
                           }`}>
                             {ach.unlocked ? 'Conquistada' : 'Bloqueada'}
                           </span>
@@ -2470,17 +2470,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         </div>
 
                         {/* Bottom Row: Dynamic Progress bar */}
-                        <div className="space-y-1.5 pt-3 border-t border-slate-100/85">
+                        <div className="space-y-1.5 pt-3 border-t border-slate-100/85 dark:border-outline-variant/20">
                           <div className="flex justify-between text-[11px] font-extrabold text-on-surface-variant">
                             <span>Progresso</span>
                             <span>{currentVal} / {targetVal} {unit}</span>
                           </div>
-                          <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden">
+                          <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden dark:bg-surface-container">
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${
                                 ach.unlocked 
                                   ? 'bg-gradient-to-r from-secondary to-secondary-container' 
-                                  : 'bg-slate-300'
+                                  : 'bg-slate-300 dark:bg-slate-700'
                               }`}
                               style={{ width: `${percent}%` }}
                             ></div>
