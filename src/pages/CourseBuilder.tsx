@@ -81,6 +81,7 @@ interface Aula {
     aula_id: string;
     enunciado: string;
     tipo_entrega: 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
+    material_url?: string | null;
   }[];
 }
 
@@ -229,12 +230,14 @@ export const CourseBuilder: React.FC = () => {
     has_atividade: false,
     atividade_enunciado: '',
     atividade_tipo_entrega: 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo',
+    atividade_material_url: '',
     atividade_pontua: true,
     atividade_permite_refazer: true,
     atividade_quiz_proprio: false
   });
 
   const [quizSubTab, setQuizSubTab] = useState<string>('standard');
+  const [activityTabs, setActivityTabs] = useState<Record<string, 'write' | 'preview'>>({});
   const [aiMaterial, setAiMaterial] = useState<string>('');
   const [aiGeneratingArena, setAiGeneratingArena] = useState<boolean>(false);
 
@@ -371,6 +374,7 @@ export const CourseBuilder: React.FC = () => {
     let atividade_enunciado = '';
     let atividade_tipo_entrega = 'texto' as 'texto' | 'imagem' | 'quiz' | 'multipla' | 'arquivo';
     let atividade_quiz_proprio = false;
+    let atividade_material_url = '';
     
     const atividadeContent = sections['ATIVIDADE'] || '';
     if (atividadeContent) {
@@ -380,6 +384,11 @@ export const CourseBuilder: React.FC = () => {
       if (isAtiva) {
         has_atividade = true;
         
+        const materialMatch = atividadeContent.match(/Material de Apoio:\s*([^\n]+)/i);
+        if (materialMatch) {
+          atividade_material_url = materialMatch[1].trim();
+        }
+
         let enunciadoText = '';
         const enunciadoStart = atividadeContent.indexOf('Enunciado:');
         if (enunciadoStart !== -1) {
@@ -498,6 +507,7 @@ export const CourseBuilder: React.FC = () => {
       atividade_enunciado,
       atividade_tipo_entrega,
       atividade_quiz_proprio,
+      atividade_material_url,
       questoes: questoesList
     };
   };
@@ -523,6 +533,7 @@ export const CourseBuilder: React.FC = () => {
         if (localParsed.conteudo) updatedForm.conteudo = localParsed.conteudo;
         if (localParsed.video_url) updatedForm.video_url = localParsed.video_url;
         if (localParsed.arquivo_url) updatedForm.arquivo_url = localParsed.arquivo_url;
+        if (localParsed.atividade_material_url) updatedForm.atividade_material_url = localParsed.atividade_material_url;
         
         if (localParsed.has_atividade !== undefined) {
           updatedForm.has_atividade = !!localParsed.has_atividade;
@@ -535,7 +546,8 @@ export const CourseBuilder: React.FC = () => {
                 tipo_entrega: localParsed.atividade_tipo_entrega || 'texto',
                 pontua: true,
                 permite_refazer: true,
-                atividade_quiz_proprio: !!localParsed.atividade_quiz_proprio
+                atividade_quiz_proprio: !!localParsed.atividade_quiz_proprio,
+                material_url: localParsed.atividade_material_url || ''
               }
             ]);
           } else {
@@ -598,6 +610,7 @@ export const CourseBuilder: React.FC = () => {
       if (parsedData.conteudo) updatedForm.conteudo = parsedData.conteudo;
       if (parsedData.video_url) updatedForm.video_url = parsedData.video_url;
       if (parsedData.arquivo_url) updatedForm.arquivo_url = parsedData.arquivo_url;
+      if (parsedData.atividade_material_url) updatedForm.atividade_material_url = parsedData.atividade_material_url;
       
       if (parsedData.has_atividade !== undefined) {
         updatedForm.has_atividade = !!parsedData.has_atividade;
@@ -610,7 +623,8 @@ export const CourseBuilder: React.FC = () => {
               tipo_entrega: parsedData.atividade_tipo_entrega || 'texto',
               pontua: parsedData.atividade_pontua !== false,
               permite_refazer: parsedData.atividade_permite_refazer !== false,
-              atividade_quiz_proprio: !!parsedData.atividade_quiz_proprio
+              atividade_quiz_proprio: !!parsedData.atividade_quiz_proprio,
+              material_url: parsedData.atividade_material_url || ''
             }
           ]);
         } else {
@@ -660,6 +674,7 @@ export const CourseBuilder: React.FC = () => {
     pontua: boolean;
     permite_refazer: boolean;
     atividade_quiz_proprio: boolean;
+    material_url?: string | null;
   }
 
   const [atividadesList, setAtividadesList] = useState<AtividadeForm[]>([]);
@@ -994,6 +1009,7 @@ export const CourseBuilder: React.FC = () => {
       has_atividade: false,
       atividade_enunciado: '',
       atividade_tipo_entrega: 'texto',
+      atividade_material_url: '',
       atividade_pontua: true,
       atividade_permite_refazer: true,
       atividade_quiz_proprio: false
@@ -1042,7 +1058,8 @@ export const CourseBuilder: React.FC = () => {
           tipo_entrega: act.tipo_entrega as any,
           pontua: act.pontua ?? true,
           permite_refazer: act.permite_refazer ?? true,
-          atividade_quiz_proprio: hasProprioQuiz
+          atividade_quiz_proprio: hasProprioQuiz,
+          material_url: act.material_url || ''
         };
       });
 
@@ -1066,6 +1083,7 @@ export const CourseBuilder: React.FC = () => {
         has_atividade: loadedAtividades.length > 0,
         atividade_enunciado: loadedAtividades[0] ? loadedAtividades[0].enunciado : '',
         atividade_tipo_entrega: loadedAtividades[0] ? loadedAtividades[0].tipo_entrega : 'texto',
+        atividade_material_url: loadedAtividades[0] ? (loadedAtividades[0].material_url || '') : '',
         atividade_pontua: loadedAtividades[0] ? loadedAtividades[0].pontua : true,
         atividade_permite_refazer: loadedAtividades[0] ? loadedAtividades[0].permite_refazer : true,
         atividade_quiz_proprio: loadedAtividades[0] ? loadedAtividades[0].atividade_quiz_proprio : false
@@ -1461,7 +1479,8 @@ export const CourseBuilder: React.FC = () => {
             enunciado: act.enunciado.trim(),
             tipo_entrega: act.tipo_entrega,
             pontua: act.pontua,
-            permite_refazer: act.permite_refazer
+            permite_refazer: act.permite_refazer,
+            material_url: act.material_url ? act.material_url.trim() : null
           };
 
           if (act.id) {
@@ -2390,96 +2409,142 @@ export const CourseBuilder: React.FC = () => {
                               </button>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
-                              <div className="flex items-center justify-between">
-                                <label className="text-label-sm font-bold text-slate-600">Instruções / Enunciado da Atividade</label>
-                                
-                                {/* Activity Toolbar */}
-                                <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                                <label className="text-label-sm font-bold text-slate-600 dark:text-slate-400">Instruções / Enunciado da Atividade</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
                                   <button
                                     type="button"
-                                    onClick={() => insertMarkdownToActivity('bold', act.tempId)}
-                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
-                                    title="Negrito (**texto**)"
+                                    onClick={() => setActivityTabs(prev => ({ ...prev, [act.tempId]: 'write' }))}
+                                    className={`px-2.5 py-1 rounded-md text-label-xs font-bold transition-all ${
+                                      (activityTabs[act.tempId] || 'write') === 'write'
+                                        ? 'bg-white dark:bg-slate-800 text-primary dark:text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                    }`}
                                   >
-                                    B
-                                  </button>
-                                  <div className="w-[1px] h-3 bg-slate-200" />
-                                  <button
-                                    type="button"
-                                    onClick={() => insertMarkdownToActivity('h2', act.tempId)}
-                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
-                                    title="Título (## Título)"
-                                  >
-                                    H2
+                                    Escrever
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => insertMarkdownToActivity('h3', act.tempId)}
-                                    className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
-                                    title="Subtítulo (### Subtítulo)"
+                                    onClick={() => setActivityTabs(prev => ({ ...prev, [act.tempId]: 'preview' }))}
+                                    className={`px-2.5 py-1 rounded-md text-label-xs font-bold transition-all ${
+                                      (activityTabs[act.tempId] || 'write') === 'preview'
+                                        ? 'bg-white dark:bg-slate-800 text-primary dark:text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                    }`}
                                   >
-                                    H3
-                                  </button>
-                                  <div className="w-[1px] h-3 bg-slate-200" />
-                                  <button
-                                    type="button"
-                                    onClick={() => insertMarkdownToActivity('list', act.tempId)}
-                                    className="p-1 px-2 rounded text-[10px] font-bold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
-                                    title="Lista (- item)"
-                                  >
-                                    • Lista
-                                  </button>
-                                  <div className="w-[1px] h-3 bg-slate-200" />
-                                  <button
-                                    type="button"
-                                    onClick={() => insertMarkdownToActivity('code', act.tempId)}
-                                    className="p-1 px-2 rounded text-[10px] font-mono font-bold hover:bg-slate-100 text-slate-700 hover:text-primary transition-all active:scale-95"
-                                    title="Código (`código`)"
-                                  >
-                                    &lt;/&gt;
+                                    Visualizar
                                   </button>
                                 </div>
                               </div>
-                              <textarea
-                                id={`activity_enunciado_${act.tempId}`}
-                                rows={3}
-                                placeholder="Descreva detalhadamente o que o aluno deve executar para esta atividade..."
-                                value={act.enunciado}
-                                onChange={(e) => {
-                                  const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, enunciado: e.target.value } : a);
-                                  setAtividadesList(updated);
-                                }}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans"
-                              />
 
-                              {/* Live preview */}
-                              {act.enunciado && (
-                                <div className="mt-2 p-4 bg-white border border-slate-200 rounded-xl space-y-2">
-                                  <p className="text-[10px] font-bold text-slate-450 uppercase font-mono tracking-wider">Visualização Prévia</p>
-                                  <div className="prose prose-slate max-w-none text-body-sm text-slate-650 leading-relaxed font-sans space-y-3">
-                                    {act.enunciado.split('\n').map((para, pIdx) => {
-                                      const trimmed = para.trim();
-                                      if (!trimmed) return <div key={pIdx} className="h-1" />;
-
-                                      if (trimmed.startsWith('###')) {
-                                        return <h5 key={pIdx} className="font-heading font-extrabold text-body-sm text-slate-800 pt-1">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
-                                      }
-                                      if (trimmed.startsWith('##')) {
-                                        return <h4 key={pIdx} className="font-heading font-extrabold text-body-md text-slate-800 pt-2 pb-0.5 border-b border-slate-100">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
-                                      }
-                                      if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                                        return (
-                                          <ul key={pIdx} className="list-disc pl-5 space-y-0.5 my-0.5">
-                                            <li className="text-body-sm">{renderFormattedText(trimmed.substring(1).trim())}</li>
-                                          </ul>
-                                        );
-                                      }
-                                      return <p key={pIdx} className="my-1.5 text-justify">{renderFormattedText(trimmed)}</p>;
-                                    })}
+                              {(activityTabs[act.tempId] || 'write') === 'write' ? (
+                                <div className="flex flex-col gap-2">
+                                  {/* Activity Toolbar */}
+                                  <div className="flex items-center gap-1 bg-white dark:bg-slate-950 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm self-end">
+                                    <button
+                                      type="button"
+                                      onClick={() => insertMarkdownToActivity('bold', act.tempId)}
+                                      className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-primary transition-all active:scale-95"
+                                      title="Negrito (**texto**)"
+                                    >
+                                      B
+                                    </button>
+                                    <div className="w-[1px] h-3 bg-slate-200 dark:bg-slate-800" />
+                                    <button
+                                      type="button"
+                                      onClick={() => insertMarkdownToActivity('h2', act.tempId)}
+                                      className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-primary transition-all active:scale-95"
+                                      title="Título (## Título)"
+                                    >
+                                      H2
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => insertMarkdownToActivity('h3', act.tempId)}
+                                      className="p-1 px-2 rounded text-[10px] font-extrabold hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-primary transition-all active:scale-95"
+                                      title="Subtítulo (### Subtítulo)"
+                                    >
+                                      H3
+                                    </button>
+                                    <div className="w-[1px] h-3 bg-slate-200 dark:bg-slate-800" />
+                                    <button
+                                      type="button"
+                                      onClick={() => insertMarkdownToActivity('list', act.tempId)}
+                                      className="p-1 px-2 rounded text-[10px] font-bold hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-primary transition-all active:scale-95"
+                                      title="Lista (- item)"
+                                    >
+                                      • Lista
+                                    </button>
+                                    <div className="w-[1px] h-3 bg-slate-200 dark:bg-slate-800" />
+                                    <button
+                                      type="button"
+                                      onClick={() => insertMarkdownToActivity('code', act.tempId)}
+                                      className="p-1 px-2 rounded text-[10px] font-mono font-bold hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-primary transition-all active:scale-95"
+                                      title="Código (`código`)"
+                                    >
+                                      &lt;/&gt;
+                                    </button>
                                   </div>
+                                  <textarea
+                                    id={`activity_enunciado_${act.tempId}`}
+                                    rows={4}
+                                    placeholder="Descreva detalhadamente o que o aluno deve executar para esta atividade..."
+                                    value={act.enunciado}
+                                    onChange={(e) => {
+                                      const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, enunciado: e.target.value } : a);
+                                      setAtividadesList(updated);
+                                    }}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+                                  />
+                                </div>
+                              ) : (
+                                /* Live preview */
+                                <div className="p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 min-h-[120px]">
+                                  {act.enunciado ? (
+                                    <div className="prose prose-slate dark:prose-invert max-w-none text-body-sm text-slate-650 dark:text-slate-300 leading-relaxed font-sans space-y-3">
+                                      {act.enunciado.split('\n').map((para, pIdx) => {
+                                        const trimmed = para.trim();
+                                        if (!trimmed) return <div key={pIdx} className="h-1" />;
+
+                                        if (trimmed.startsWith('###')) {
+                                          return <h5 key={pIdx} className="font-heading font-extrabold text-body-sm text-slate-850 dark:text-slate-200 pt-1">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
+                                        }
+                                        if (trimmed.startsWith('##')) {
+                                          return <h4 key={pIdx} className="font-heading font-extrabold text-body-md text-slate-850 dark:text-slate-200 pt-2 pb-0.5 border-b border-slate-100 dark:border-slate-800">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
+                                        }
+                                        if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
+                                          return (
+                                            <ul key={pIdx} className="list-disc pl-5 space-y-0.5 my-0.5">
+                                              <li className="text-body-sm">{renderFormattedText(trimmed.substring(1).trim())}</li>
+                                            </ul>
+                                          );
+                                        }
+                                        return <p key={pIdx} className="my-1.5 text-justify">{renderFormattedText(trimmed)}</p>;
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <p className="italic text-slate-400 dark:text-slate-500 text-body-sm">Nenhuma instrução disponível para visualizar.</p>
+                                  )}
                                 </div>
                               )}
+
+                              {/* Support material file/link input */}
+                              <div className="flex flex-col gap-1.5 mt-1">
+                                <label className="text-label-sm font-bold text-slate-600 dark:text-slate-400">
+                                  Link ou Arquivo de Apoio para a Atividade (Opcional)
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Cole o link de um PDF, repositório GitHub, Google Drive ou outro material de apoio..."
+                                  value={act.material_url || ''}
+                                  onChange={(e) => {
+                                    const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, material_url: e.target.value } : a);
+                                    setAtividadesList(updated);
+                                  }}
+                                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all text-body-md font-sans bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+                                />
+                              </div>
                             </div>
 
                             <div className="flex flex-col gap-1.5">
@@ -2654,7 +2719,8 @@ export const CourseBuilder: React.FC = () => {
                             tipo_entrega: 'texto',
                             pontua: true,
                             permite_refazer: true,
-                            atividade_quiz_proprio: false
+                            atividade_quiz_proprio: false,
+                            material_url: ''
                           }
                         ]);
                       }}

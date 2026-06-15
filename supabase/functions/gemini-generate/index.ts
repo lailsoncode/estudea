@@ -57,6 +57,7 @@ Você deve retornar um objeto JSON válido estruturado exatamente de acordo com 
 5. Se for pedida ou inferida uma atividade prática/projeto/exercício de entrega, configure "has_atividade": true e escreva o enunciado em "atividade_enunciado". Caso contrário, configure "has_atividade": false.
 6. Para o tipo de entrega da atividade prática ("atividade_tipo_entrega"), os valores aceitos são "texto", "imagem", "quiz" (questionário/perguntas) ou "multipla" (envio misto de texto e imagem).
 7. Se a atividade for do formato de entrega "quiz", ela pode possuir um questionário exclusivo (independente do quiz principal da aula). Nesse caso, defina "atividade_quiz_proprio" como true, liste as perguntas dessa atividade no campo "questoes" e configure a flag "pertence_a_atividade": true em cada uma dessas perguntas.
+8. Se houver um link ou arquivo específico de material de apoio para a execução da atividade prática (ex: repositório github, link no figma, etc), configure no campo "atividade_material_url".
 
 O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extras como \`\`\`json, apenas retorne o JSON cru):
 {
@@ -69,6 +70,7 @@ O JSON deve seguir exatamente a seguinte estrutura (não inclua marcações extr
   "has_atividade": false,
   "atividade_enunciado": "Enunciado da atividade prática se aplicável",
   "atividade_tipo_entrega": "texto | imagem | quiz | multipla",
+  "atividade_material_url": "URL do material de apoio da atividade se aplicável",
   "atividade_quiz_proprio": false,
   "questoes": [
     {
