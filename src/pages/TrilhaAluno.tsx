@@ -970,6 +970,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           .update({
             resposta: answer.trim(),
             nota: gradeValue,
+            aula_id: selectedAula?.id,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingEntrega.id);
@@ -983,6 +984,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           .insert({
             aluno_id: userId,
             atividade_id: atividadeId,
+            aula_id: selectedAula?.id,
             resposta: answer.trim(),
             nota: gradeValue
           })

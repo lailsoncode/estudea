@@ -717,6 +717,7 @@ function App() {
                     alunoId={selectedStudentId}
                     initialTab={initialTrackingSection}
                     onBack={() => setSelectedStudentId(null)}
+                    onChangeStudent={(id) => setSelectedStudentId(id)}
                   />
                 ) : (
                   <ListaAlunos

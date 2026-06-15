@@ -826,6 +826,7 @@ export const CentralCorrecoes: React.FC = () => {
                           
                           return (
                             <div className="space-y-4 text-left">
+                              <pre id="debug-info-box" style={{ display: "none" }}>{JSON.stringify({ payloadKeys: payload.respostas ? Object.keys(payload.respostas) : [], questoesIds: selectedEntrega.questoes ? selectedEntrega.questoes.map((q: any) => q.id) : [] })}</pre>
                               {/* Quiz Stats Row */}
                               {isGraded ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

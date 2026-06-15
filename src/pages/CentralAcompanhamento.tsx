@@ -8,7 +8,8 @@ import {
   Alert01Icon,
   FireIcon,
   Edit01Icon,
-  SchoolIcon
+  SchoolIcon,
+  ArrowDown01Icon
 } from '@hugeicons/core-free-icons';
 
 interface CentralAcompanhamentoProps {
@@ -177,12 +178,17 @@ const generateAIReport = (
 export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   alunoId,
   onBack,
-  initialTab: _initialTab = 'ficha'
+  initialTab: _initialTab = 'ficha',
+  onChangeStudent
 }) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [autonomia, setAutonomia] = useState<AutonomiaData>(DEFAULT_AUTONOMIA);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Switcher states
+  const [classStudents, setClassStudents] = useState<{ id: string; nome: string }[]>([]);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
 
   // Sub Tab States
   const [activeSubTab, setActiveSubTab] = useState<'ficha' | 'ia' | 'notas'>('ficha');
@@ -295,6 +301,23 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         });
 
         setNotes(profileData.anotacoes || '');
+
+        // Fetch students of the same class (turma) for the switcher dropdown
+        let classStudentsQuery = supabase
+          .from('profiles')
+          .select('id, nome')
+          .eq('role', 'student');
+
+        if (profileData.turma_id) {
+          classStudentsQuery = classStudentsQuery.eq('turma_id', profileData.turma_id);
+        } else {
+          classStudentsQuery = classStudentsQuery.is('turma_id', null);
+        }
+
+        const { data: studentsData } = await classStudentsQuery.order('nome', { ascending: true });
+        if (studentsData) {
+          setClassStudents(studentsData);
+        }
       }
 
       // 2. Fetch Autonomia Criteria
@@ -455,6 +478,13 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
       .toUpperCase();
   };
 
+  const formatShortName = (fullName: string) => {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length <= 2) return fullName;
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  };
+
   // Generate IA Report dynamically
   const report = useMemo(() => {
     if (!profile) return null;
@@ -488,15 +518,59 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         </div>
       )}
       {/* Page Header */}
-      <div className="flex flex-col gap-1">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors w-fit group"
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span>Voltar para Lista de Alunos</span>
-        </button>
-        <h2 className="font-heading font-extrabold text-2xl text-on-surface">Central de Acompanhamento</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors w-fit group"
+          >
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+            <span>Voltar para Lista de Alunos</span>
+          </button>
+          <h2 className="font-heading font-extrabold text-2xl text-on-surface">Central de Acompanhamento</h2>
+        </div>
+
+        {/* Student Switcher Dropdown */}
+        {classStudents.length > 1 && (
+          <div className="relative inline-block text-left z-20">
+            <button
+              onClick={() => setShowStudentDropdown(!showStudentDropdown)}
+              className="flex items-center gap-2.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-outline-variant/40 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl text-xs font-bold text-on-surface shadow-xs transition-colors"
+            >
+              <span>Aluno: {profile ? formatShortName(profile.nome) : 'Carregando...'}</span>
+              <HugeiconsIcon icon={ArrowDown01Icon} size={16} strokeWidth={2} className={`text-on-surface-variant transition-transform ${showStudentDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            {showStudentDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowStudentDropdown(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-800 border border-outline-variant/40 dark:border-slate-700 rounded-xl shadow-lg py-1.5 z-20 max-h-60 overflow-y-auto">
+                  {classStudents.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        onChangeStudent?.(s.id);
+                        setShowStudentDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center justify-between ${
+                        alunoId === s.id 
+                          ? 'text-primary bg-primary/5 dark:bg-primary/10' 
+                          : 'text-on-surface'
+                      }`}
+                    >
+                      <span>{formatShortName(s.nome)}</span>
+                      {alunoId === s.id && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Hero Card */}
