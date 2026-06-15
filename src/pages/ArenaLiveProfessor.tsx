@@ -81,7 +81,19 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
       try {
         const { data, error } = await supabase
           .from('aulas')
-          .select('id, titulo, modulo_id')
+          .select(`
+            id,
+            titulo,
+            modulo_id,
+            modulos (
+              id,
+              titulo,
+              cursos (
+                id,
+                titulo
+              )
+            )
+          `)
           .eq('tipo', 'quiz')
           .eq('permite_arena', true);
         if (error) throw error;
@@ -461,9 +473,17 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
                     onChange={(e) => setSelectedAulaId(e.target.value)}
                     className={`w-full p-3 border rounded-xl focus:border-primary text-sm outline-none ${projectorMode ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'}`}
                   >
-                    {quizzes.map(q => (
-                      <option key={q.id} value={q.id}>{q.titulo}</option>
-                    ))}
+                    {quizzes.map(q => {
+                      const courseTitle = q.modulos?.cursos?.titulo || 
+                                          (Array.isArray(q.modulos) ? q.modulos[0]?.cursos?.titulo : null) || 
+                                          (Array.isArray(q.modulos?.cursos) ? q.modulos.cursos[0]?.titulo : null);
+                      const displayTitle = courseTitle ? `[${courseTitle}] ${q.titulo}` : q.titulo;
+                      return (
+                        <option key={q.id} value={q.id}>
+                          {displayTitle}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 

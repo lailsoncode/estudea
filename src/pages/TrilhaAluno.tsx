@@ -69,6 +69,30 @@ const parseLessonConteudo = (rawConteudo: string, tipo?: string) => {
   };
 };
 
+const getTodayIsoDate = () => new Date().toISOString().slice(0, 10);
+
+const formatAgendaDate = (date?: string) => {
+  if (!date) return '';
+  const parsed = new Date(`${date}T12:00:00`);
+  return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
+
+const getAgendaAccent = (type?: string) => {
+  switch (type) {
+    case 'live':
+      return { border: 'border-primary', text: 'text-primary', label: 'Live' };
+    case 'deadline':
+      return { border: 'border-orange-400', text: 'text-orange-500', label: 'Prazo' };
+    case 'exam':
+      return { border: 'border-red-500', text: 'text-red-600', label: 'Prova' };
+    case 'mentorship':
+      return { border: 'border-purple-600', text: 'text-purple-600', label: 'Mentoria' };
+    case 'activity':
+    default:
+      return { border: 'border-emerald-500', text: 'text-emerald-600', label: 'Atividade' };
+  }
+};
+
 interface TrilhaAlunoProps {
   session: any;
   isAdmin: boolean;
@@ -383,7 +407,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       const { data: agendaData, error: agendaError } = await supabase
         .from('agenda')
         .select('*')
-        .order('time', { ascending: true });
+        .or(`turma_id.is.null,turma_id.eq.${profileData.turma_id}`)
+        .gte('event_date', getTodayIsoDate())
+        .order('event_date', { ascending: true })
+        .order('time', { ascending: true })
+        .limit(6);
 
       if (agendaError) throw agendaError;
       setSchedule(agendaData || []);
@@ -1617,34 +1645,29 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                     <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} className="text-primary" />
                   </button>
                 </div>
-                <div className="flex flex-col gap-4">
-                  {schedule.length === 0 ? (
-                    <div className="text-xs text-on-surface-variant italic pl-2">Nenhum compromisso hoje.</div>
-                  ) : (
-                    schedule.map((item) => {
-                      let borderColor = 'border-gray-300';
-                      let textColor = 'text-gray-500';
-                      if (item.type === 'live') {
-                        borderColor = 'border-primary';
-                        textColor = 'text-primary';
-                      } else if (item.type === 'deadline') {
-                        borderColor = 'border-orange-400';
-                        textColor = 'text-orange-500';
-                      } else if (item.type === 'mentorship') {
-                        borderColor = 'border-purple-600';
-                        textColor = 'text-purple-600';
-                      }
+	                <div className="flex flex-col gap-4">
+	                  {schedule.length === 0 ? (
+	                    <div className="text-xs text-on-surface-variant italic pl-2">Nenhum evento agendado.</div>
+	                  ) : (
+	                    schedule.map((item) => {
+	                      const accent = getAgendaAccent(item.type);
 
-                      return (
-                        <div key={item.id} className={`border-l-2 ${borderColor} pl-4 py-1`}>
-                          <div className={`text-xs font-bold ${textColor} mb-1 uppercase tracking-wide flex items-center gap-1.5`}>
-                            {item.time}
-                            {item.type === 'live' && (
-                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest animate-pulse">Live</span>
-                            )}
-                          </div>
-                          <div className="font-semibold text-on-surface text-sm">{item.title}</div>
-                          <div className="text-xs text-on-surface-variant mt-1 truncate">
+	                      return (
+	                        <div key={item.id} className={`border-l-2 ${accent.border} pl-4 py-1`}>
+	                          <div className={`text-xs font-bold ${accent.text} mb-1 uppercase tracking-wide flex items-center gap-1.5`}>
+	                            {formatAgendaDate(item.event_date)} • {item.time}
+	                            <span className={`text-[9px] text-white px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest ${
+	                              item.type === 'live' ? 'bg-red-500 animate-pulse' :
+	                              item.type === 'exam' ? 'bg-red-600' :
+	                              item.type === 'deadline' ? 'bg-orange-500' :
+	                              item.type === 'mentorship' ? 'bg-purple-600' :
+	                              'bg-emerald-600'
+	                            }`}>
+	                              {accent.label}
+	                            </span>
+	                          </div>
+	                          <div className="font-semibold text-on-surface text-sm">{item.title}</div>
+	                          <div className="text-xs text-on-surface-variant mt-1 truncate">
                             {item.cohort} • {item.duration}
                           </div>
                         </div>

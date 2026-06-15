@@ -6,8 +6,8 @@
 Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democratizar o acesso à educação tecnológica.
 
 [![Licença MIT](https://img.shields.io/badge/licença-MIT-22c55e?style=for-the-badge)](LICENSE)
-[![Open Source](https://img.shields.io/badge/open%20source-100%25-6366f1?style=for-the-badge&logo=github)](https://github.com/oxentecode/estudea)
-[![Gratuito](https://img.shields.io/badge/gratuito-para%20sempre-f59e0b?style=for-the-badge)](https://github.com/oxentecode/estudea)
+[![Open Source](https://img.shields.io/badge/open%20source-100%25-6366f1?style=for-the-badge&logo=github)](https://github.com/lailsoncode/estudea)
+[![Gratuito](https://img.shields.io/badge/gratuito-para%20sempre-f59e0b?style=for-the-badge)](https://github.com/lailsoncode/estudea)
 [![Feito com React](https://img.shields.io/badge/react-19-61dafb?style=for-the-badge&logo=react)](https://react.dev)
 [![Supabase](https://img.shields.io/badge/backend-supabase-3ecf8e?style=for-the-badge&logo=supabase)](https://supabase.com)
 
@@ -48,12 +48,14 @@ Milhões de brasileiros ainda não têm acesso pleno ao universo digital. O Estu
 |---|---|
 | 🏗️ **Criação de Cursos** | Crie trilhas de TI com módulos, aulas em vídeo, texto, quiz e atividades práticas |
 | 👨‍🎓 **Trilha Gamificada do Aluno** | Progresso sequencial, conquistas, XP e ranking motivam a aprendizagem em TI |
+| 🎮 **Arena Estudea (Kahoot)** | Quizzes multijogador em tempo real com PIN de acesso, pódio e ranking de turma automático |
 | 📊 **Dashboard do Professor** | Métricas em tempo real de progresso, frequência, digitação e engajamento por turma |
 | 🗓️ **Diário de Classe Digital** | Registre presença, compreensão, participação e necessidade de apoio por aula |
 | 🧠 **Inteligência Pedagógica** | Zonas de domínio e pontos de atenção calculados automaticamente da ficha prática |
 | 🤖 **Análise com IA** | Diagnóstico pedagógico automático com PDI personalizado para cada aluno |
 | 📋 **Ficha de Observação Prática** | Avalie autonomia digital: computador, internet, arquivos, ferramentas e redes sociais |
 | ⌨️ **Rastreamento de Digitação** | Acompanhe a evolução da velocidade de digitação de cada aluno ao longo da trilha |
+| ⌨️ **Treinador de Digitação** | Pratique digitação com 17 lições guiadas, teclado virtual colorido e métricas em tempo real (WPM/PPM) |
 | ✅ **Central de Correções** | Corrija atividades práticas e dê feedback individual com nota |
 | 💬 **Chat Professor-Aluno** | Comunicação direta e registrada dentro da plataforma |
 | 📄 **Visualizador de PDF** | PDFs do Google Drive ou links diretos exibidos inline |
@@ -114,7 +116,7 @@ O **Status de Risco** é calculado automaticamente no banco de dados e atualizad
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/oxentecode/estudea.git
+git clone https://github.com/lailsoncode/estudea.git
 cd estudea
 ```
 

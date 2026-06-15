@@ -165,7 +165,7 @@ function App() {
   // Hook centralizado — elimina query duplicada que existia em 3 lugares
   const { count: pendingCorrectionsCount } = usePendingCorrections(!!session && isAdmin);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, isNewLogin = false) => {
     setProfileLoaded(false);
     try {
       const { data, error } = await supabase
@@ -176,7 +176,25 @@ function App() {
       if (error) throw error;
       if (data) {
         setProfileStatus(data.status || 'ativo');
-        setProfileRole((data.role as 'student' | 'teacher' | 'admin' | null) || 'student');
+        const role = (data.role as 'student' | 'teacher' | 'admin' | null) || 'student';
+        setProfileRole(role);
+        
+        if (isNewLogin) {
+          // Reset view states on new login to avoid stale tabs
+          setSelectedStudentId(null);
+          setSelectedChatStudentId(null);
+          setArenaActive(false);
+          setArenaRole(null);
+          setMobileMenuOpen(false);
+          setSidebarCollapsed(false);
+          setTeacherView('content');
+          
+          if (role === 'admin' || role === 'teacher') {
+            setActiveTeacherTab('overview');
+          } else {
+            setActiveUserTab('dashboard');
+          }
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar status do perfil:', err);
@@ -191,7 +209,7 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, false);
       } else {
         setProfileLoaded(true);
       }
@@ -199,10 +217,10 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (session) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, event === 'SIGNED_IN');
       } else {
         setProfileStatus('ativo');
         setProfileRole(null);
@@ -616,7 +634,6 @@ function App() {
                     alunoId={selectedStudentId}
                     initialTab={initialTrackingSection}
                     onBack={() => setSelectedStudentId(null)}
-                    onChangeStudent={setSelectedStudentId}
                   />
                 ) : (
                   <ListaAlunos
@@ -820,7 +837,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background text-on-background relative flex items-center justify-center font-sans">
+    <div className="min-h-screen w-full bg-background text-on-background relative flex flex-col items-center justify-center font-sans">
       {/* Decorative Blur Backgrounds */}
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 left-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
@@ -838,6 +855,26 @@ function App() {
           />
         )}
       </main>
+
+      {/* Open Source / Free Badge Footer */}
+      <footer className="mt-2 text-center z-10 flex flex-col items-center gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-on-surface-variant/80 font-semibold">
+          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-primary/10 text-primary font-bold text-[10px] tracking-wide uppercase">Open Source</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-outline" />
+          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-tertiary/10 text-tertiary font-bold text-[10px] tracking-wide uppercase">Gratuito</span>
+        </div>
+        <p className="text-[11px] text-on-surface-variant/70 flex items-center gap-1 select-none">
+          Feito com <span className="text-error animate-pulse">❤️</span> por{' '}
+          <a
+            href="https://github.com/lailsoncode/estudea"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-primary hover:underline transition-colors"
+          >
+            Oxente Code
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

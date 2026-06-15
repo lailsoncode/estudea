@@ -112,13 +112,22 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
     setLoading(true);
 
     try {
+      const recommendedAvatars = [
+        'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Man%20student/Default/3D/man_student_3d_default.png',
+        'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Woman%20student/Default/3D/woman_student_3d_default.png',
+        'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Man%20technologist/Default/3D/man_technologist_3d_default.png',
+        'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Woman%20technologist/Default/3D/woman_technologist_3d_default.png'
+      ];
+      const randomAvatar = recommendedAvatars[Math.floor(Math.random() * recommendedAvatars.length)];
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: {
             nome: fullName.trim(),
-            codigo_acesso: accessCode.trim()
+            codigo_acesso: accessCode.trim(),
+            avatar_url: randomAvatar
           }
         }
       });

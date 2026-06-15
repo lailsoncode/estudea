@@ -102,13 +102,14 @@ BEGIN
     END IF;
   END IF;
 
-  INSERT INTO public.profiles (id, nome, email, role, turma_id)
+  INSERT INTO public.profiles (id, nome, email, role, turma_id, avatar_url)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'nome', new.raw_user_meta_data->>'full_name'),
     new.email,
     v_role,
-    v_turma_id
+    v_turma_id,
+    new.raw_user_meta_data->>'avatar_url'
   )
   ON CONFLICT (id) DO UPDATE
   SET
@@ -116,6 +117,7 @@ BEGIN
     email = EXCLUDED.email,
     role = EXCLUDED.role,
     turma_id = EXCLUDED.turma_id,
+    avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
     updated_at = now();
 
   RETURN new;

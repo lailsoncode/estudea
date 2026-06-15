@@ -177,14 +177,12 @@ const generateAIReport = (
 export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
   alunoId,
   onBack,
-  initialTab: _initialTab = 'ficha',
-  onChangeStudent
+  initialTab: _initialTab = 'ficha'
 }) => {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [autonomia, setAutonomia] = useState<AutonomiaData>(DEFAULT_AUTONOMIA);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [classStudents, setClassStudents] = useState<{ id: string; nome: string }[]>([]);
 
   // Sub Tab States
   const [activeSubTab, setActiveSubTab] = useState<'ficha' | 'ia' | 'notas'>('ficha');
@@ -281,22 +279,6 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
         });
 
         setNotes(profileData.anotacoes || '');
-      }
-
-      // Fetch other students from the same class
-      if (profileData && profileData.turma_id) {
-        const { data: listData, error: listError } = await supabase
-          .from('profiles')
-          .select('id, nome')
-          .eq('role', 'student')
-          .eq('turma_id', profileData.turma_id)
-          .order('nome', { ascending: true });
-
-        if (!listError && listData) {
-          setClassStudents(listData);
-        }
-      } else {
-        setClassStudents([]);
       }
 
       // 2. Fetch Autonomia Criteria
@@ -503,27 +485,6 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                   <h3 className="font-heading font-extrabold text-lg sm:text-xl text-on-surface leading-tight truncate">
                     {profile.nome}
                   </h3>
-                  {classStudents.length > 1 && onChangeStudent && (
-                    <div className="relative shrink-0">
-                      <select
-                        value={profile.id}
-                        onChange={(e) => onChangeStudent(e.target.value)}
-                        className="bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 text-xs font-bold rounded-lg px-2 py-1 pr-7 cursor-pointer focus:outline-none appearance-none transition-colors"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23004ac6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 6px center',
-                          backgroundSize: '10px'
-                        }}
-                      >
-                        {classStudents.map((std) => (
-                          <option key={std.id} value={std.id} className="text-on-surface bg-white font-sans text-xs">
-                            {std.nome} {std.id === profile.id ? ' (Atual)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
                 </div>
                 <p className="text-xs sm:text-sm font-medium text-on-surface-variant/70 mt-1 truncate">{profile.email}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-2">

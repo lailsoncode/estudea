@@ -25,6 +25,14 @@ const FactCheckIcon = () => (
   </svg>
 );
 
+const EngagementIcon = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 20V10" />
+    <path d="M12 20V4" />
+    <path d="M6 20v-6" />
+  </svg>
+);
+
 const TrendingUpIcon = () => (
   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -80,8 +88,33 @@ interface ScheduleItem {
   title: string;
   cohort: string;
   duration: string;
-  type: 'live' | 'deadline' | 'mentorship';
+  type: 'live' | 'deadline' | 'mentorship' | 'exam' | 'activity';
+  event_date: string;
+  turma_id?: string | null;
 }
+
+const getTodayIsoDate = () => new Date().toISOString().slice(0, 10);
+
+const formatScheduleDate = (date: string) => {
+  const parsed = new Date(`${date}T12:00:00`);
+  return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
+
+const getScheduleAccent = (type: ScheduleItem['type']) => {
+  switch (type) {
+    case 'live':
+      return { border: 'border-primary', text: 'text-primary', label: 'Live' };
+    case 'deadline':
+      return { border: 'border-orange-500', text: 'text-orange-600', label: 'Prazo' };
+    case 'exam':
+      return { border: 'border-red-600', text: 'text-red-600', label: 'Prova' };
+    case 'mentorship':
+      return { border: 'border-purple-600', text: 'text-purple-600', label: 'Mentoria' };
+    case 'activity':
+    default:
+      return { border: 'border-emerald-500', text: 'text-emerald-600', label: 'Atividade' };
+  }
+};
 
 const getErrorMessage = (err: unknown, fallback: string) => {
   if (err instanceof Error) return err.message;
@@ -98,6 +131,8 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
   const [loading, setLoading] = useState(true);
   const [studentsCount, setStudentsCount] = useState(0);
   const [engagementRate, setEngagementRate] = useState(88);
+  const [activeThisWeekCount, setActiveThisWeekCount] = useState(0);
+  const [totalCompletedLessonsCount, setTotalCompletedLessonsCount] = useState(0);
   const [courses, setCourses] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
 
@@ -120,13 +155,15 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
   const [msgError, setMsgError] = useState<string | null>(null);
 
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [schedDate, setSchedDate] = useState(getTodayIsoDate());
   const [schedTime, setSchedTime] = useState('');
   const [schedTitle, setSchedTitle] = useState('');
-  const [schedCohort, setSchedCohort] = useState('');
   const [schedDuration, setSchedDuration] = useState('');
-  const [schedType, setSchedType] = useState<'live' | 'deadline' | 'mentorship'>('live');
+  const [schedType, setSchedType] = useState<ScheduleItem['type']>('activity');
+  const [schedTargetTurmaId, setSchedTargetTurmaId] = useState('all');
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
-  // Schedule list loaded from LocalStorage or default fallback
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
 
 
@@ -205,15 +242,29 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
       });
 
       setCourses(enrichedCourses);
+ 
+      // 5. Calculate real engagement and active students statistics
+      let activeThisWeek = 0;
+      if (profilesData && profilesData.length > 0) {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        activeThisWeek = profilesData.filter(s => {
+          if (!s.ultimo_acesso_data) return false;
+          const accessDate = new Date(s.ultimo_acesso_data);
+          return accessDate >= sevenDaysAgo;
+        }).length;
+      }
+      setActiveThisWeekCount(activeThisWeek);
 
-      // 5. Calculate global Engagement Rate
+      const totalCompleted = progressData?.length || 0;
+      setTotalCompletedLessonsCount(totalCompleted);
+
       if (profilesData && profilesData.length > 0 && aulasData && aulasData.length > 0) {
         const totalExpected = profilesData.length * aulasData.length;
-        const totalCompleted = progressData?.length || 0;
         const rate = Math.round((totalCompleted / totalExpected) * 100);
-        setEngagementRate(rate > 0 ? rate : 76);
+        setEngagementRate(rate);
       } else {
-        setEngagementRate(85); // Fallback standard high Engagement rate
+        setEngagementRate(0);
       }
 
     } catch (err) {
@@ -223,43 +274,30 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
     }
   };
 
+  const fetchSchedule = async () => {
+    setScheduleError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('agenda')
+        .select('*')
+        .gte('event_date', getTodayIsoDate())
+        .order('event_date', { ascending: true })
+        .order('time', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      setSchedule((data || []) as ScheduleItem[]);
+    } catch (err) {
+      console.error('Erro ao buscar agenda:', err);
+      setScheduleError(getErrorMessage(err, 'Não foi possível carregar a agenda.'));
+      setSchedule([]);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-
-    // Load schedule from LocalStorage
-    const storedSchedule = localStorage.getItem('eduflow_schedule');
-    if (storedSchedule) {
-      setSchedule(JSON.parse(storedSchedule));
-    } else {
-      const defaultSchedule: ScheduleItem[] = [
-        {
-          id: '1',
-          time: '10:00 AM',
-          title: 'Design de Soluções - Plantão de Dúvidas',
-          cohort: 'Turma A',
-          duration: '45 min',
-          type: 'live'
-        },
-        {
-          id: '2',
-          time: '14:00 PM',
-          title: 'Prazo Limite: Desafio de Clean Architecture',
-          cohort: 'Todas as Turmas',
-          duration: 'Entrega Prática',
-          type: 'deadline'
-        },
-        {
-          id: '3',
-          time: '16:30 PM',
-          title: 'Mentoria Individual 1:1',
-          cohort: 'Aluno: Alex Chen',
-          duration: '30 min',
-          type: 'mentorship'
-        }
-      ];
-      setSchedule(defaultSchedule);
-      localStorage.setItem('eduflow_schedule', JSON.stringify(defaultSchedule));
-    }
+    fetchSchedule();
   }, []);
 
   // Handle stream initialization
@@ -339,31 +377,82 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
     }
   };
 
-  // Add Item to Schedule
-  const handleAddSchedule = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newItem: ScheduleItem = {
-      id: Date.now().toString(),
-      time: schedTime,
-      title: schedTitle,
-      cohort: schedCohort || 'Todas as Turmas',
-      duration: schedDuration || 'Sem limite',
-      type: schedType
-    };
-    const updated = [...schedule, newItem].sort((a, b) => a.time.localeCompare(b.time));
-    setSchedule(updated);
-    localStorage.setItem('eduflow_schedule', JSON.stringify(updated));
-    setShowScheduleModal(false);
+  const resetScheduleForm = () => {
+    setSchedDate(getTodayIsoDate());
     setSchedTime('');
     setSchedTitle('');
-    setSchedCohort('');
     setSchedDuration('');
+    setSchedType('activity');
+    setSchedTargetTurmaId('all');
+    setScheduleError(null);
   };
 
-  const removeScheduleItem = (id: string) => {
-    const updated = schedule.filter(item => item.id !== id);
-    setSchedule(updated);
-    localStorage.setItem('eduflow_schedule', JSON.stringify(updated));
+  // Add Item to Schedule
+  const handleAddSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = schedTitle.trim();
+    const selectedClass = schedTargetTurmaId === 'all'
+      ? null
+      : classes.find((turma) => turma.id === schedTargetTurmaId);
+
+    if (!title || !schedDate || !schedTime) {
+      setScheduleError('Preencha data, horário e título do evento.');
+      return;
+    }
+
+    if (schedTargetTurmaId !== 'all' && !selectedClass) {
+      setScheduleError('Selecione uma turma válida para o evento.');
+      return;
+    }
+
+    setScheduleSaving(true);
+    setScheduleError(null);
+
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { error } = await supabase
+        .from('agenda')
+        .insert({
+          professor_id: userData.user?.id || null,
+          turma_id: selectedClass?.id || null,
+          event_date: schedDate,
+          time: schedTime,
+          title,
+          cohort: selectedClass?.nome || 'Todas as Turmas',
+          duration: schedDuration.trim() || 'Sem detalhes',
+          type: schedType,
+        });
+
+      if (error) throw error;
+
+      await fetchSchedule();
+      resetScheduleForm();
+      setShowScheduleModal(false);
+    } catch (err) {
+      console.error('Erro ao salvar evento da agenda:', err);
+      setScheduleError(getErrorMessage(err, 'Não foi possível salvar o evento.'));
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
+
+  const removeScheduleItem = async (id: string) => {
+    if (!window.confirm('Excluir este evento da agenda?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('agenda')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setSchedule((current) => current.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Erro ao excluir evento da agenda:', err);
+      setScheduleError(getErrorMessage(err, 'Não foi possível excluir o evento.'));
+    }
   };
 
   // Export CSV Report of Students Progress
@@ -426,12 +515,12 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
         {/* KPI 1: Active Students */}
         <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between min-h-[140px]">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-3.5 bg-surface-container-low rounded-lg text-primary border border-outline-variant/30">
+            <div className="p-3 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 flex items-center justify-center">
               <GroupIcon />
             </div>
-            <span className="flex items-center gap-1 text-emerald-700 font-sans text-label-sm font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md">
+            <span className="flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200">
               <TrendingUpIcon />
-              +12% esta semana
+              {loading ? '...' : `${activeThisWeekCount} ativos esta semana`}
             </span>
           </div>
           <div>
@@ -444,11 +533,11 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
         <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden flex flex-col justify-between min-h-[140px]">
           <div className="absolute right-0 top-0 w-32 h-32 bg-error/5 rounded-bl-[100px] -z-0"></div>
           <div className="flex justify-between items-start mb-4 relative z-10">
-            <div className="p-3.5 bg-error-container text-error rounded-lg border border-error-container">
+            <div className="p-3 bg-error-container text-error rounded-lg border border-error/10 flex items-center justify-center">
               <FactCheckIcon />
             </div>
-            <span className={`flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md ${
-              pendingCorrections > 0 ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : 'bg-surface-container text-on-surface-variant'
+            <span className={`flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border ${
+              pendingCorrections > 0 ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' : 'bg-surface-container text-on-surface-variant border-outline-variant/30'
             }`}>
               {pendingCorrections > 0 ? 'Requer Atenção' : 'Tudo em dia'}
             </span>
@@ -462,13 +551,11 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
         {/* KPI 3: Engagement Rate */}
         <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between min-h-[140px]">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-3.5 bg-purple-50 text-secondary rounded-lg border border-purple-100">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
+            <div className="p-3 bg-primary-container text-primary rounded-lg border border-primary/10 flex items-center justify-center">
+              <EngagementIcon />
             </div>
-            <span className="flex items-center gap-1 text-secondary font-sans text-label-sm font-extrabold bg-purple-50 border border-purple-200 px-2 py-1 rounded-md">
-              Top 5% Educadores
+            <span className="flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border text-primary bg-primary-container border-primary/20">
+              {loading ? '...' : `${totalCompletedLessonsCount} lições concluídas`}
             </span>
           </div>
           <div>
@@ -476,7 +563,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
             <div className="flex items-center justify-between gap-3 mt-1.5">
               <h3 className="app-metric-value">{loading ? '...' : `${engagementRate}%`}</h3>
               <div className="flex-1 h-2 bg-surface-container rounded-full overflow-hidden shadow-inner max-w-[120px]">
-                <div className="h-full bg-secondary rounded-full transition-all duration-500" style={{ width: `${engagementRate}%` }}></div>
+                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${engagementRate}%` }}></div>
               </div>
             </div>
           </div>
@@ -661,7 +748,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
           {/* Schedule Widget Card */}
           <div id="schedule-card-widget" className="app-card-padded space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="app-section-title">Agenda de Hoje</h3>
+              <h3 className="app-section-title">Próximos Eventos</h3>
               <button 
                 onClick={() => setShowScheduleModal(true)}
                 className="text-primary hover:bg-surface-container-low p-2 rounded-lg transition-colors border border-outline-variant/20 flex items-center gap-1 text-[11px] font-bold"
@@ -675,40 +762,50 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
             </div>
             
             <div className="relative pl-6 border-l-2 border-surface-container-high space-y-6">
-              {schedule.length === 0 ? (
-                <p className="text-on-surface-variant font-sans text-label-sm italic pl-2">Nenhum compromisso hoje.</p>
+              {scheduleError ? (
+                <p className="text-error font-sans text-label-sm font-semibold pl-2">{scheduleError}</p>
+              ) : schedule.length === 0 ? (
+                <p className="text-on-surface-variant font-sans text-label-sm italic pl-2">Nenhum evento agendado.</p>
               ) : (
-                schedule.map(item => (
-                  <div key={item.id} className="relative group/item">
-                    {/* Circle timeline anchor */}
-                    <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-white ring-2 ring-white shadow-sm border-4 ${
-                      item.type === 'live' ? 'border-primary' : item.type === 'deadline' ? 'border-orange-500' : 'border-purple-600'
-                    }`} />
-                    
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className={`font-sans text-[11px] font-bold uppercase tracking-wider ${
-                        item.type === 'live' ? 'text-primary' : item.type === 'deadline' ? 'text-orange-600' : 'text-purple-600'
-                      }`}>{item.time}</span>
-                      
-                      {item.type === 'live' && (
-                        <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded font-extrabold uppercase tracking-widest animate-pulse">Live</span>
-                      )}
+                schedule.map(item => {
+                  const accent = getScheduleAccent(item.type);
+
+                  return (
+                    <div key={item.id} className="relative group/item">
+                      {/* Circle timeline anchor */}
+                      <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-white ring-2 ring-white shadow-sm border-4 ${accent.border}`} />
+
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className={`font-sans text-[11px] font-bold uppercase tracking-wider ${accent.text}`}>
+                          {formatScheduleDate(item.event_date)} • {item.time}
+                        </span>
+
+                        <span className={`text-[10px] text-white px-2 py-0.5 rounded font-extrabold uppercase tracking-widest ${
+                          item.type === 'live' ? 'bg-red-500 animate-pulse' :
+                          item.type === 'exam' ? 'bg-red-600' :
+                          item.type === 'deadline' ? 'bg-orange-500' :
+                          item.type === 'mentorship' ? 'bg-purple-600' :
+                          'bg-emerald-600'
+                        }`}>
+                          {accent.label}
+                        </span>
+                      </div>
+
+                      <h4 className="font-sans font-bold text-label-md text-on-surface group-hover/item:text-primary transition-colors leading-tight">
+                        {item.title}
+                      </h4>
+                      <p className="font-sans text-[11px] text-on-surface-variant mt-1.5 flex justify-between items-center">
+                        <span>{item.cohort} • {item.duration}</span>
+                        <button
+                          onClick={() => removeScheduleItem(item.id)}
+                          className="text-error opacity-0 group-hover/item:opacity-100 transition-opacity hover:underline font-bold text-[10px] ml-2"
+                        >
+                          Excluir
+                        </button>
+                      </p>
                     </div>
-                    
-                    <h4 className="font-sans font-bold text-label-md text-on-surface group-hover/item:text-primary transition-colors leading-tight">
-                      {item.title}
-                    </h4>
-                    <p className="font-sans text-[11px] text-on-surface-variant mt-1.5 flex justify-between items-center">
-                      <span>{item.cohort} • {item.duration}</span>
-                      <button 
-                        onClick={() => removeScheduleItem(item.id)}
-                        className="text-error opacity-0 group-hover/item:opacity-100 transition-opacity hover:underline font-bold text-[10px] ml-2"
-                      >
-                        Excluir
-                      </button>
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -937,7 +1034,10 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
             <div className="flex justify-between items-center pb-3 border-b border-outline-variant/20">
               <h3 className="font-heading font-extrabold text-headline-md text-on-surface">Agendar Evento</h3>
               <button 
-                onClick={() => setShowScheduleModal(false)}
+                onClick={() => {
+                  setShowScheduleModal(false);
+                  resetScheduleForm();
+                }}
                 className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-lg transition-all"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -947,40 +1047,67 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
             </div>
 
             <form onSubmit={handleAddSchedule} className="space-y-4">
-              
-              <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Horário</label>
-                <input 
-                  type="text" 
-                  value={schedTime} 
-                  onChange={(e) => setSchedTime(e.target.value)}
-                  placeholder="Ex: 10:00 AM, 15:30 PM, SEXTA-FEIRA"
-                  required
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                />
-              </div>
+              {scheduleError && (
+                <div className="bg-red-50 border border-red-200 text-error px-3 py-2 rounded-xl text-xs font-semibold">
+                  {scheduleError}
+                </div>
+              )}
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-on-surface font-sans font-bold text-label-sm block">Data</label>
+                  <input
+                    type="date"
+                    value={schedDate}
+                    min={getTodayIsoDate()}
+                    onChange={(e) => setSchedDate(e.target.value)}
+                    required
+                    disabled={scheduleSaving}
+                    className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-on-surface font-sans font-bold text-label-sm block">Horário</label>
+                  <input
+                    type="time"
+                    value={schedTime}
+                    onChange={(e) => setSchedTime(e.target.value)}
+                    required
+                    disabled={scheduleSaving}
+                    className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-1.5">
                 <label className="text-on-surface font-sans font-bold text-label-sm block">Título do Evento</label>
                 <input 
                   type="text" 
                   value={schedTitle} 
                   onChange={(e) => setSchedTitle(e.target.value)}
-                  placeholder="Ex: Revisão Semanal de Código"
+                  placeholder="Ex: Prova de digitação, entrega de atividade, aula ao vivo"
                   required
+                  disabled={scheduleSaving}
                   className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Turma ou Alvo</label>
-                <input 
-                  type="text" 
-                  value={schedCohort} 
-                  onChange={(e) => setSchedCohort(e.target.value)}
-                  placeholder="Ex: Turma A, Todas as Turmas, Aluno X"
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                />
+                <label className="text-on-surface font-sans font-bold text-label-sm block">Destino</label>
+                <select
+                  value={schedTargetTurmaId}
+                  onChange={(e) => setSchedTargetTurmaId(e.target.value)}
+                  disabled={scheduleSaving}
+                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none font-sans"
+                >
+                  <option value="all">Todas as turmas</option>
+                  {classes.map((turma) => (
+                    <option key={turma.id} value={turma.id}>
+                      {turma.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1.5">
@@ -989,7 +1116,8 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                   type="text" 
                   value={schedDuration} 
                   onChange={(e) => setSchedDuration(e.target.value)}
-                  placeholder="Ex: 45 min, Entrega Prática, 1 hora"
+                  placeholder="Ex: 45 min, Entrega prática, 2 questões discursivas"
+                  disabled={scheduleSaving}
                   className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
                 />
               </div>
@@ -998,11 +1126,14 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                 <label className="text-on-surface font-sans font-bold text-label-sm block">Tipo do Evento</label>
                 <select 
                   value={schedType} 
-                  onChange={(e) => setSchedType(e.target.value as any)}
+                  onChange={(e) => setSchedType(e.target.value as ScheduleItem['type'])}
+                  disabled={scheduleSaving}
                   className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none font-sans"
                 >
                   <option value="live">Live / Aula Síncrona</option>
                   <option value="deadline">Prazo Limite / Atividade</option>
+                  <option value="exam">Prova / Avaliação</option>
+                  <option value="activity">Atividade / Exercício</option>
                   <option value="mentorship">Mentoria Individual</option>
                 </select>
               </div>
@@ -1010,16 +1141,21 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
               <div className="flex justify-end gap-3 pt-2">
                 <button 
                   type="button"
-                  onClick={() => setShowScheduleModal(false)}
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    resetScheduleForm();
+                  }}
+                  disabled={scheduleSaving}
                   className="px-4 py-2 bg-surface-container-high text-on-surface-variant font-heading font-bold text-label-md rounded-lg"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
+                  disabled={scheduleSaving}
                   className="px-5 py-2 bg-primary text-white font-heading font-extrabold text-label-md rounded-lg shadow hover:bg-blue-700 transition-colors"
                 >
-                  Confirmar Evento
+                  {scheduleSaving ? 'Salvando...' : 'Confirmar Evento'}
                 </button>
               </div>
             </form>
