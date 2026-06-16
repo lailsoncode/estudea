@@ -1384,7 +1384,7 @@ export const CourseBuilder: React.FC = () => {
     try {
       const totalLessonsCount = modulos.reduce((acc, m) => acc + (m.aulas?.length || 0), 0);
       const lessonOrder = selectedLesson ? selectedLesson.ordem : totalLessonsCount + 1;
-      const lessonNumber = selectedLesson ? selectedLesson.numero_aula : Math.min(totalLessonsCount + 1, 40);
+      const lessonNumber = selectedLesson ? selectedLesson.numero_aula : totalLessonsCount + 1;
 
       // Determine primary tipo to satisfy DB check constraint:
       let primaryTipo: 'video' | 'texto' | 'quiz' | 'arquivo' = 'texto';
