@@ -83,8 +83,8 @@ export const CentralCorrecoes: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch activities submissions
-      const { data, error: queryError } = await supabase
+      // 1. Build the dynamic query for deliveries
+      let query = supabase
         .from('entregas_atividades')
         .select(`
           id,
@@ -123,8 +123,27 @@ export const CentralCorrecoes: React.FC = () => {
             numero_aula,
             questoes(*)
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
+      // Apply Turma filter at the database level for efficiency and correct paging
+      if (selectedTurmaId !== 'todas') {
+        let studentsQuery = supabase
+          .from('profiles')
+          .select('id');
+
+        if (selectedTurmaId === 'sem_turma') {
+          studentsQuery = studentsQuery.is('turma_id', null);
+        } else {
+          studentsQuery = studentsQuery.eq('turma_id', selectedTurmaId);
+        }
+        
+        const { data: studentsInTurma } = await studentsQuery;
+        const studentIds = (studentsInTurma || []).map(s => s.id);
+        query = query.in('aluno_id', studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000']);
+      }
+
+      const { data, error: queryError } = await query;
       if (queryError) throw queryError;
 
       // 2. Format relations
@@ -200,16 +219,7 @@ export const CentralCorrecoes: React.FC = () => {
       setAvgGrade(avg !== null ? Math.round(avg * 10) / 10 : null);
 
       // 4. Apply filters to list view
-      // Filter by Turma
-      if (selectedTurmaId !== 'todas') {
-        const { data: studentsInTurma } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('turma_id', selectedTurmaId);
-        
-        const studentIds = (studentsInTurma || []).map(s => s.id);
-        formatted = formatted.filter(e => studentIds.includes(e.aluno_id));
-      }
+      // (Filtered by Turma at the database level)
 
       // Filter by Correction Status
       if (statusFilter === 'pendentes') {
@@ -477,6 +487,7 @@ export const CentralCorrecoes: React.FC = () => {
                 className="bg-slate-50 border border-slate-200 text-on-surface rounded-xl py-2 pl-3 pr-8 font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
               >
                 <option value="todas">Todas as Turmas</option>
+                <option value="sem_turma">Alunos Sem Turma</option>
                 {turmas.map(t => (
                   <option key={t.id} value={t.id}>{t.nome}</option>
                 ))}
