@@ -3496,8 +3496,6 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                   </div>
                                 </div>
 
-                                )}
-
                                 {/* Submitted feedback */}
                                 {exactEntrega && (
                                   <div className={`p-4 rounded-xl border space-y-3 ${
