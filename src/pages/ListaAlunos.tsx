@@ -427,22 +427,27 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     }
   };
 
-  // DELETE student profile
+  // REMOVE student from class (set turma_id to null)
   const handleDeleteStudentClick = async (id: string, name: string) => {
-    if (!window.confirm(`Tem certeza que deseja remover o(a) aluno(a) "${name}" permanentemente?`)) return;
+    if (selectedTurma?.id === 'sem_turma') {
+      alert('Este aluno já está sem turma.');
+      return;
+    }
+
+    if (!window.confirm(`Tem certeza que deseja remover o(a) aluno(a) "${name}" desta turma?`)) return;
 
     try {
-      const { error: deleteError } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
-        .delete()
+        .update({ turma_id: null })
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (updateError) throw updateError;
 
       setStudents((prev) => prev.filter((s) => s.id !== id));
     } catch (err: any) {
-      console.error('Error deleting student:', err);
-      alert('Erro ao excluir aluno: ' + err.message);
+      console.error('Error removing student from class:', err);
+      alert('Erro ao remover aluno da turma: ' + err.message);
     }
   };
 
@@ -961,7 +966,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                           <button
                             onClick={() => handleDeleteStudentClick(student.id, student.nome)}
                             className="p-2 text-on-surface-variant/50 hover:text-error hover:bg-error/5 rounded-xl transition-all"
-                            title="Excluir Aluno"
+                            title="Remover da Turma"
                           >
                             <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                           </button>
