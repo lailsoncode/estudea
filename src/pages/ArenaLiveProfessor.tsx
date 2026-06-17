@@ -79,7 +79,44 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const { data, error } = await supabase
+        // 1. Find all aula_ids that have at least one Arena question (para_arena=true)
+        const { data: arenaQuestoes, error: qError } = await supabase
+          .from('questoes')
+          .select('aula_id')
+          .eq('para_arena', true);
+        if (qError) throw qError;
+
+        // Extract unique aula_ids
+        const arenaAulaIds = [...new Set((arenaQuestoes || []).map(q => q.aula_id))];
+
+        if (arenaAulaIds.length === 0) {
+          setQuizzes([]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fetch all aulas that have Arena questions (regardless of tipo)
+        // Also include regular quizzes with permite_arena enabled
+        const { data: aulasPorQuestoes, error: aError } = await supabase
+          .from('aulas')
+          .select(`
+            id,
+            titulo,
+            modulo_id,
+            modulos (
+              id,
+              titulo,
+              cursos (
+                id,
+                titulo
+              )
+            )
+          `)
+          .in('id', arenaAulaIds);
+        if (aError) throw aError;
+
+        // 3. Also fetch regular quizzes with permite_arena=true that may not yet have para_arena questions
+        const { data: quizzesComPermissao, error: pError } = await supabase
           .from('aulas')
           .select(`
             id,
@@ -96,10 +133,15 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
           `)
           .eq('tipo', 'quiz')
           .eq('permite_arena', true);
-        if (error) throw error;
-        setQuizzes(data || []);
-        if (data && data.length > 0) {
-          setSelectedAulaId(data[0].id);
+        if (pError) throw pError;
+
+        // Merge both lists, deduplicating by id
+        const allAulas = [...(aulasPorQuestoes || []), ...(quizzesComPermissao || [])];
+        const uniqueAulas = Array.from(new Map(allAulas.map(a => [a.id, a])).values());
+
+        setQuizzes(uniqueAulas);
+        if (uniqueAulas.length > 0) {
+          setSelectedAulaId(uniqueAulas[0].id);
         }
       } catch (err: any) {
         console.error('Erro ao buscar quizzes:', err.message);
@@ -205,28 +247,21 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
     setAiLoadingMessage('Carregando questões da Arena...');
 
     try {
-      // 1. Fetch Arena questions first
+      // 1. Fetch all questions for this quiz first
       const { data: qData, error: qError } = await supabase
         .from('questoes')
         .select('*')
         .eq('aula_id', selectedAulaId)
-        .eq('para_arena', true)
         .order('ordem', { ascending: true });
       if (qError) throw qError;
 
-      let finalQuestions = qData || [];
+      const allQuestions = qData || [];
+      let finalQuestions = allQuestions.filter(q => q.para_arena === true);
 
       // Fallback to standard questions if no Arena questions are configured
       if (finalQuestions.length === 0) {
         setAiLoadingMessage('Nenhuma questão específica da Arena encontrada. Carregando quiz original...');
-        const { data: stdData, error: stdError } = await supabase
-          .from('questoes')
-          .select('*')
-          .eq('aula_id', selectedAulaId)
-          .eq('para_arena', false)
-          .order('ordem', { ascending: true });
-        if (stdError) throw stdError;
-        finalQuestions = stdData || [];
+        finalQuestions = allQuestions.filter(q => q.para_arena === false || q.para_arena === null || q.para_arena === undefined);
       }
 
       if (finalQuestions.length === 0) {
