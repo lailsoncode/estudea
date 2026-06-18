@@ -1520,16 +1520,7 @@ export const CourseBuilder: React.FC = () => {
         questoes.some(q => q.para_arena);
 
       if (hasQuestions) {
-        // Delete old questions if updating
-        if (selectedLesson) {
-          const { error: deleteError } = await supabase
-            .from('questoes')
-            .delete()
-            .eq('aula_id', aulaId);
-          if (deleteError) throw deleteError;
-        }
-
-        // Insert new questions (only include the ones that are relevant based on configurations)
+        // Filter standard & arena questions based on current config
         const activeQuestions = questoes.filter(q => {
           // 1. If it's an arena question, keep it
           if (q.para_arena) return true;
@@ -1542,6 +1533,27 @@ export const CourseBuilder: React.FC = () => {
           return activeTypes.quiz;
         });
 
+        // Sync deleted questions
+        if (selectedLesson) {
+          const { data: dbQuestions, error: fetchQError } = await supabase
+            .from('questoes')
+            .select('id')
+            .eq('aula_id', aulaId);
+          if (fetchQError) throw fetchQError;
+
+          const dbQuestionsIds = dbQuestions ? dbQuestions.map(q => q.id) : [];
+          const activeQuestionsIds = activeQuestions.map(q => q.id).filter(Boolean) as string[];
+
+          const toDeleteQIds = dbQuestionsIds.filter(id => !activeQuestionsIds.includes(id));
+          if (toDeleteQIds.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('questoes')
+              .delete()
+              .in('id', toDeleteQIds);
+            if (deleteError) throw deleteError;
+          }
+        }
+
         if (activeQuestions.length > 0) {
           const questionsPayload = activeQuestions.map(q => {
             const isActivityQuestion = !!q.atividade_id;
@@ -1550,6 +1562,7 @@ export const CourseBuilder: React.FC = () => {
               realActId = tempIdToRealId[q.atividade_id!] || null;
             }
             return {
+              ...(q.id ? { id: q.id } : {}), // Preserve ID if it exists (upsert will update it)
               aula_id: aulaId,
               enunciado: q.enunciado.trim(),
               opcoes: q.opcoes,
@@ -1563,16 +1576,17 @@ export const CourseBuilder: React.FC = () => {
 
           const { error: questionsError } = await supabase
             .from('questoes')
-            .insert(questionsPayload);
+            .upsert(questionsPayload);
           if (questionsError) throw questionsError;
         }
       } else {
-        // Delete old questions if none are configured
+        // Delete all questions if none are configured
         if (selectedLesson) {
-          await supabase
+          const { error: deleteError } = await supabase
             .from('questoes')
             .delete()
             .eq('aula_id', aulaId);
+          if (deleteError) throw deleteError;
         }
       }
 
