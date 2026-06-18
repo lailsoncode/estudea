@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -64,6 +65,8 @@ const sidebarActionClass =
 const getSidebarLabelClass = (collapsed: boolean) => collapsed ? 'lg:hidden' : '';
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const currentProfileUserIdRef = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
@@ -260,9 +263,9 @@ function App() {
           setTeacherView('content');
           
           if (role === 'admin' || role === 'teacher') {
-            setActiveTeacherTab('overview');
+            navigate('/admin/overview', { replace: true });
           } else {
-            setActiveUserTab('dashboard');
+            navigate('/dashboard', { replace: true });
           }
         }
       }
@@ -311,6 +314,107 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Synchronize URL path to App State
+  useEffect(() => {
+    if (!profileLoaded) return;
+
+    const path = location.pathname;
+
+    // 1. Not Authenticated Flow
+    if (!session) {
+      if (path === '/signup') {
+        setAuthView('signup');
+      } else {
+        setAuthView('login');
+        if (path !== '/login') {
+          navigate('/login', { replace: true });
+        }
+      }
+      return;
+    }
+
+    // 2. Authenticated Flow
+    if (isAdmin && teacherView === 'content') {
+      // Teacher Panel Routing
+      if (path === '/' || path === '/login' || path === '/signup' || path === '/dashboard') {
+        navigate('/admin/overview', { replace: true });
+        return;
+      }
+
+      if (path.startsWith('/admin/alunos/')) {
+        const studentId = path.substring('/admin/alunos/'.length);
+        if (studentId) {
+          setActiveTeacherTab('progress');
+          setSelectedStudentId(studentId);
+          setInitialTrackingSection('ficha');
+        } else {
+          setActiveTeacherTab('progress');
+          setSelectedStudentId(null);
+        }
+      } else if (path.startsWith('/admin/chat/')) {
+        const studentId = path.substring('/admin/chat/'.length);
+        if (studentId) {
+          setActiveTeacherTab('chat');
+          setSelectedChatStudentId(studentId);
+        } else {
+          setActiveTeacherTab('chat');
+          setSelectedChatStudentId(null);
+        }
+      } else {
+        const tabMap: Record<string, TeacherTab> = {
+          '/admin': 'overview',
+          '/admin/overview': 'overview',
+          '/admin/alunos': 'progress',
+          '/admin/diario': 'diario',
+          '/admin/lessons': 'lessons',
+          '/admin/correcoes': 'corrections',
+          '/admin/course-builder': 'assignments',
+          '/admin/turmas': 'turmas',
+          '/admin/materiais': 'materials',
+          '/admin/arena-ranking': 'arena_ranking',
+          '/admin/chat': 'chat',
+          '/admin/perfil': 'settings',
+        };
+
+        const targetTab = tabMap[path];
+        if (targetTab) {
+          setActiveTeacherTab(targetTab);
+          if (targetTab === 'progress') {
+            setSelectedStudentId(null);
+          } else if (targetTab === 'chat') {
+            setSelectedChatStudentId(null);
+          }
+        } else if (path.startsWith('/admin')) {
+          navigate('/admin/overview', { replace: true });
+        } else {
+          navigate('/admin/overview', { replace: true });
+        }
+      }
+    } else {
+      // Student Portal Routing (or teacher in preview mode)
+      if (path.startsWith('/admin') || path === '/login' || path === '/signup') {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      const tabMap: Record<string, UserTab> = {
+        '/': 'dashboard',
+        '/dashboard': 'dashboard',
+        '/conquistas': 'achievements',
+        '/arena': 'arena_ranking',
+        '/digitacao': 'digitacao',
+        '/perfil': 'profile',
+      };
+
+      const targetTab = tabMap[path];
+      if (targetTab) {
+        setActiveUserTab(targetTab);
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [location.pathname, session, profileRole, teacherView, profileLoaded]);
 
   // Dynamic page title — teacher panel
   useEffect(() => {
@@ -380,7 +484,7 @@ function App() {
 
         <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
           <button
-            onClick={() => { setActiveTeacherTab('overview'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/overview'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
             title="Visão Geral"
           >
@@ -390,8 +494,7 @@ function App() {
 
           <button
             onClick={() => {
-              setActiveTeacherTab('progress');
-              setSelectedStudentId(null);
+              navigate('/admin/alunos');
               setMobileMenuOpen(false);
             }}
             className={getSidebarItemClass(activeTeacherTab === 'progress', sidebarCollapsed)}
@@ -403,7 +506,7 @@ function App() {
 
           <button
             onClick={() => {
-              setActiveTeacherTab('diario');
+              navigate('/admin/diario');
               setMobileMenuOpen(false);
             }}
             className={getSidebarItemClass(activeTeacherTab === 'diario', sidebarCollapsed)}
@@ -415,7 +518,7 @@ function App() {
 
           <button
             onClick={() => {
-              setActiveTeacherTab('lessons');
+              navigate('/admin/lessons');
               setMobileMenuOpen(false);
             }}
             className={getSidebarItemClass(activeTeacherTab === 'lessons', sidebarCollapsed)}
@@ -426,7 +529,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveTeacherTab('corrections'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/correcoes'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
             title="Central de Correções"
           >
@@ -440,7 +543,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveTeacherTab('assignments'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/course-builder'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
             title="Criador de Cursos"
           >
@@ -449,7 +552,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveTeacherTab('turmas'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/turmas'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
             title="Gerenciar Turmas"
           >
@@ -458,7 +561,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveTeacherTab('materials'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/materiais'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
             title="Materiais de Apoio (IA)"
           >
@@ -467,7 +570,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveTeacherTab('arena_ranking'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/arena-ranking'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
             title="Ranking da Arena"
           >
@@ -477,7 +580,7 @@ function App() {
 
           <button
             onClick={() => {
-              setActiveTeacherTab('chat');
+              navigate('/admin/chat');
               setMobileMenuOpen(false);
             }}
             className={getSidebarItemClass(activeTeacherTab === 'chat', sidebarCollapsed)}
@@ -495,7 +598,7 @@ function App() {
           <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
 
           <button
-            onClick={() => { setActiveTeacherTab('settings'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/admin/perfil'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
             title="Minha Conta / Perfil"
           >
@@ -544,7 +647,7 @@ function App() {
 
         <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
           <button
-            onClick={() => { setActiveUserTab('dashboard'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'dashboard', sidebarCollapsed)}
             title="Minhas Aulas"
           >
@@ -553,7 +656,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveUserTab('achievements'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/conquistas'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'achievements', sidebarCollapsed)}
             title="Minhas Conquistas"
           >
@@ -562,7 +665,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveUserTab('arena_ranking'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/arena'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
             title="Ranking da Arena"
           >
@@ -571,7 +674,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveUserTab('digitacao'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/digitacao'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'digitacao', sidebarCollapsed)}
             title="Treino de Digitação"
           >
@@ -580,7 +683,7 @@ function App() {
           </button>
 
           <button
-            onClick={() => { setActiveUserTab('profile'); setMobileMenuOpen(false); }}
+            onClick={() => { navigate('/perfil'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
             title="Meu Perfil"
           >
@@ -665,7 +768,7 @@ function App() {
             <div className="flex items-center gap-4">
               <button
                 className="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-all relative"
-                onClick={() => setActiveTeacherTab('corrections')}
+                onClick={() => navigate('/admin/correcoes')}
                 title="Correções pendentes"
               >
                 <HugeiconsIcon icon={Notification01Icon} size={20} strokeWidth={2} />
@@ -691,7 +794,7 @@ function App() {
 
               {/* Profile click item */}
               <div
-                onClick={() => { setActiveTeacherTab('settings'); }}
+                onClick={() => { navigate('/admin/perfil'); }}
                 className="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low rounded-lg p-1.5 pr-3 transition-colors"
                 title="Ver Meu Perfil"
               >
@@ -716,18 +819,16 @@ function App() {
                   <CentralAcompanhamento
                     alunoId={selectedStudentId}
                     initialTab={initialTrackingSection}
-                    onBack={() => setSelectedStudentId(null)}
-                    onChangeStudent={(id) => setSelectedStudentId(id)}
+                    onBack={() => navigate('/admin/alunos')}
+                    onChangeStudent={(id) => navigate(`/admin/alunos/${id}`)}
                   />
                 ) : (
                   <ListaAlunos
                     onSelectStudent={(id, section) => {
                       if (section === 'chat') {
-                        setSelectedChatStudentId(id);
-                        setActiveTeacherTab('chat');
+                        navigate(`/admin/chat/${id}`);
                       } else {
-                        setSelectedStudentId(id);
-                        setInitialTrackingSection('ficha');
+                        navigate(`/admin/alunos/${id}`);
                       }
                     }}
                   />
@@ -738,12 +839,9 @@ function App() {
                 <GerenciadorTurmas
                   onSelectStudent={(id, section) => {
                     if (section === 'chat') {
-                      setSelectedChatStudentId(id);
-                      setActiveTeacherTab('chat');
+                      navigate(`/admin/chat/${id}`);
                     } else {
-                      setSelectedStudentId(id);
-                      setInitialTrackingSection('ficha');
-                      setActiveTeacherTab('progress');
+                      navigate(`/admin/alunos/${id}`);
                     }
                   }}
                 />
@@ -761,7 +859,22 @@ function App() {
 
               {activeTeacherTab === 'overview' && (
                 <DashboardProfessorOverview
-                  setActiveTab={setActiveTeacherTab}
+                  setActiveTab={(tab) => {
+                    const pathMap: Record<TeacherTab, string> = {
+                      overview: '/admin/overview',
+                      progress: '/admin/alunos',
+                      corrections: '/admin/correcoes',
+                      assignments: '/admin/course-builder',
+                      turmas: '/admin/turmas',
+                      settings: '/admin/perfil',
+                      materials: '/admin/materiais',
+                      arena_ranking: '/admin/arena-ranking',
+                      diario: '/admin/diario',
+                      lessons: '/admin/lessons',
+                      chat: '/admin/chat'
+                    };
+                    navigate(pathMap[tab]);
+                  }}
                   session={session}
                   onStartArena={() => {
                     setArenaActive(true);
@@ -825,7 +938,7 @@ function App() {
 
               {/* User Avatar */}
               <div
-                onClick={() => { setActiveUserTab('profile'); }}
+                onClick={() => { navigate('/perfil'); }}
                 className="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low rounded-lg p-1.5 pr-3 transition-colors"
                 title="Ver Meu Perfil"
               >
@@ -878,7 +991,7 @@ function App() {
                 <PerfilUsuario
                   session={session}
                   isAdmin={isAdmin}
-                  onBack={() => setActiveUserTab('dashboard')}
+                  onBack={() => navigate('/dashboard')}
                 />
               ) : activeUserTab === 'achievements' ? (
                 <TrilhaAluno
@@ -935,15 +1048,15 @@ function App() {
       <main className="w-full max-w-md p-4 z-10">
         {authView === 'login' ? (
           <LoginAluno
-            onNavigateToSignup={() => setAuthView('signup')}
+            onNavigateToSignup={() => navigate('/signup')}
             onAuthSuccess={() => {
               sessionStorage.setItem('just_logged_in', 'true');
             }}
           />
         ) : (
           <CadastroAluno
-            onNavigateToLogin={() => setAuthView('login')}
-            onAuthSuccess={() => setAuthView('login')}
+            onNavigateToLogin={() => navigate('/login')}
+            onAuthSuccess={() => navigate('/login')}
           />
         )}
       </main>
