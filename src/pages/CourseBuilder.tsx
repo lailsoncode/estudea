@@ -1733,7 +1733,7 @@ export const CourseBuilder: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Course Identity Details Widget */}
+              {/* Course Identity Details Widget */}
             <div className="xl:col-span-1 app-card-padded space-y-4 h-fit">
               <div className="w-full h-32 bg-slate-100 rounded-xl overflow-hidden relative">
                 <img
