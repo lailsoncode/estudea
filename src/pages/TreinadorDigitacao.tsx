@@ -312,28 +312,368 @@ const LICOES: Licao[] = [
   },
 ];
 
-// ——— Mapa do teclado visual ———
-const KEYBOARD_ROWS = [
-  ['q','w','e','r','t','y','u','i','o','p'],
-  ['a','s','d','f','g','h','j','k','l','ç'],
-  ['z','x','c','v','b','n','m'],
-];
+// ——— Mapeamento de Dedos por Dedo ———
+type FingerType = 'L5' | 'L4' | 'L3' | 'L2' | 'L1' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
 
-const FINGER_COLORS: Record<string, string> = {
-  a: 'bg-red-400', s: 'bg-orange-400', d: 'bg-yellow-400', f: 'bg-green-400',
-  g: 'bg-green-300', h: 'bg-blue-300', j: 'bg-blue-400', k: 'bg-purple-400',
-  l: 'bg-pink-400', ç: 'bg-rose-400',
-  q: 'bg-red-400', w: 'bg-orange-400', e: 'bg-yellow-400', r: 'bg-green-400',
-  t: 'bg-green-300', y: 'bg-blue-300', u: 'bg-blue-400', i: 'bg-purple-400',
-  o: 'bg-pink-400', p: 'bg-rose-400',
-  z: 'bg-red-400', x: 'bg-orange-400', c: 'bg-yellow-400', v: 'bg-green-400',
-  b: 'bg-green-300', n: 'bg-blue-300', m: 'bg-blue-400',
+const FINGER_BG_CLASSES: Record<FingerType, { bg: string, text: string, border: string, active: string }> = {
+  L5: { bg: 'bg-red-500/10 dark:bg-red-500/5', border: 'border-red-500/30', text: 'text-red-600 dark:text-red-400', active: 'bg-red-500 text-white shadow-red-500/50 shadow-lg border-transparent ring-2 ring-red-500' },
+  L4: { bg: 'bg-orange-500/10 dark:bg-orange-500/5', border: 'border-orange-500/30', text: 'text-orange-600 dark:text-orange-400', active: 'bg-orange-500 text-white shadow-orange-500/50 shadow-lg border-transparent ring-2 ring-orange-500' },
+  L3: { bg: 'bg-amber-500/10 dark:bg-amber-500/5', border: 'border-amber-500/30', text: 'text-amber-600 dark:text-amber-400', active: 'bg-amber-500 text-white shadow-amber-500/50 shadow-lg border-transparent ring-2 ring-amber-500' },
+  L2: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/5', border: 'border-emerald-500/30', text: 'text-emerald-600 dark:text-emerald-400', active: 'bg-emerald-500 text-white shadow-emerald-500/50 shadow-lg border-transparent ring-2 ring-emerald-500' },
+  L1: { bg: 'bg-slate-500/10 dark:bg-slate-500/5', border: 'border-slate-500/30', text: 'text-slate-600 dark:text-slate-400', active: 'bg-slate-500 text-white shadow-slate-500/50 shadow-lg border-transparent ring-2 ring-slate-500' },
+  R1: { bg: 'bg-slate-500/10 dark:bg-slate-500/5', border: 'border-slate-500/30', text: 'text-slate-600 dark:text-slate-400', active: 'bg-slate-500 text-white shadow-slate-500/50 shadow-lg border-transparent ring-2 ring-slate-500' },
+  R2: { bg: 'bg-blue-500/10 dark:bg-blue-500/5', border: 'border-blue-500/30', text: 'text-blue-600 dark:text-blue-400', active: 'bg-blue-500 text-white shadow-blue-500/50 shadow-lg border-transparent ring-2 ring-blue-500' },
+  R3: { bg: 'bg-indigo-500/10 dark:bg-indigo-500/5', border: 'border-indigo-500/30', text: 'text-indigo-600 dark:text-indigo-400', active: 'bg-indigo-500 text-white shadow-indigo-500/50 shadow-lg border-transparent ring-2 ring-indigo-500' },
+  R4: { bg: 'bg-purple-500/10 dark:bg-purple-500/5', border: 'border-purple-500/30', text: 'text-purple-600 dark:text-purple-400', active: 'bg-purple-500 text-white shadow-purple-500/50 shadow-lg border-transparent ring-2 ring-purple-500' },
+  R5: { bg: 'bg-rose-500/10 dark:bg-rose-500/5', border: 'border-rose-500/30', text: 'text-rose-600 dark:text-rose-400', active: 'bg-rose-500 text-white shadow-rose-500/50 shadow-lg border-transparent ring-2 ring-rose-500' }
 };
 
-const FINGER_LABELS: Record<string, string> = {
-  a: 'Min.E', s: 'Anel.E', d: 'Méd.E', f: 'Ind.E',
-  g: 'Ind.E', h: 'Ind.D', j: 'Ind.D', k: 'Méd.D',
-  l: 'Anel.D', ç: 'Min.D',
+const getFingerForKey = (key: string): { hand: 'left' | 'right', finger: 'thumb' | 'index' | 'middle' | 'ring' | 'pinky', label: string } => {
+  const k = key.toLowerCase();
+  
+  if (k === ' ') {
+    return { hand: 'right', finger: 'thumb', label: 'Polegar D.' };
+  }
+  
+  const leftPinky = ['1', 'q', 'a', 'z', 'tab', 'capslock', 'shift_l', 'ctrl_l', 'win_l', 'alt_l', '`', '~', "'", '"', '\\', '|'];
+  const leftRing = ['2', 'w', 's', 'x'];
+  const leftMiddle = ['3', 'e', 'd', 'c'];
+  const leftIndex = ['4', 'r', 'f', 'v', '5', 't', 'g', 'b'];
+  
+  const rightIndex = ['6', 'y', 'h', 'n', '7', 'u', 'j', 'm'];
+  const rightMiddle = ['8', 'i', 'k', ','];
+  const rightRing = ['9', 'o', 'l', '.'];
+  const rightPinky = ['0', 'p', ';', 'ç', '/', '-', '_', '=', '+', '[', '{', ']', '}', 'enter', 'backspace', 'delete', 'altgr', 'shift_r', 'ctrl_r', 'win_r', "'", '"', '?', ':', '´', '`', '~', '^'];
+  
+  if (leftPinky.includes(k)) return { hand: 'left', finger: 'pinky', label: 'Mindinho E.' };
+  if (leftRing.includes(k)) return { hand: 'left', finger: 'ring', label: 'Anelar E.' };
+  if (leftMiddle.includes(k)) return { hand: 'left', finger: 'middle', label: 'Médio E.' };
+  if (leftIndex.includes(k)) return { hand: 'left', finger: 'index', label: 'Indicador E.' };
+  
+  if (rightIndex.includes(k)) return { hand: 'right', finger: 'index', label: 'Indicador D.' };
+  if (rightMiddle.includes(k)) return { hand: 'right', finger: 'middle', label: 'Médio D.' };
+  if (rightRing.includes(k)) return { hand: 'right', finger: 'ring', label: 'Anelar D.' };
+  if (rightPinky.includes(k)) return { hand: 'right', finger: 'pinky', label: 'Mindinho D.' };
+  
+  return { hand: 'right', finger: 'index', label: 'Indicador D.' };
+};
+
+interface KeyConfig {
+  key: string;
+  display: string;
+  shiftDisplay?: string;
+  finger: FingerType;
+  width: string;
+}
+
+const getKeyboardLayout = (layout: 'abnt2' | 'us'): KeyConfig[][] => {
+  if (layout === 'abnt2') {
+    return [
+      [
+        { key: "'", display: "'", shiftDisplay: '"', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '1', display: '1', shiftDisplay: '!', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '2', display: '2', shiftDisplay: '@', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '3', display: '3', shiftDisplay: '#', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '4', display: '4', shiftDisplay: '$', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '5', display: '5', shiftDisplay: '%', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '6', display: '6', shiftDisplay: '¨', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '7', display: '7', shiftDisplay: '&', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '8', display: '8', shiftDisplay: '*', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '9', display: '9', shiftDisplay: '(', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '0', display: '0', shiftDisplay: ')', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '-', display: '-', shiftDisplay: '_', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '=', display: '=', shiftDisplay: '+', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'backspace', display: 'apagar', finger: 'R5', width: 'flex-1 min-w-[55px] h-10 sm:h-11 text-[10px]' }
+      ],
+      [
+        { key: 'tab', display: 'tab', finger: 'L5', width: 'w-14 sm:w-16 h-10 sm:h-11 text-xs' },
+        { key: 'q', display: 'Q', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'w', display: 'W', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'e', display: 'E', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'r', display: 'R', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 't', display: 'T', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'y', display: 'Y', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'u', display: 'U', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'i', display: 'I', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'o', display: 'O', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'p', display: 'P', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '´', display: '´', shiftDisplay: '`', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '[', display: '[', shiftDisplay: '{', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'enter', display: 'enter', finger: 'R5', width: 'flex-1 min-w-[50px] h-10 sm:h-11 text-xs' }
+      ],
+      [
+        { key: 'capslock', display: 'caps', finger: 'L5', width: 'w-16 sm:w-18 h-10 sm:h-11 text-xs' },
+        { key: 'a', display: 'A', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 's', display: 'S', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'd', display: 'D', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'f', display: 'F', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'g', display: 'G', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'h', display: 'H', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'j', display: 'J', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'k', display: 'K', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'l', display: 'L', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'ç', display: 'Ç', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '~', display: '~', shiftDisplay: '^', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ']', display: ']', shiftDisplay: '}', finger: 'R5', width: 'flex-1 min-w-[45px] h-10 sm:h-11' }
+      ],
+      [
+        { key: 'shift_l', display: 'shift', finger: 'L5', width: 'w-12 sm:w-14 h-10 sm:h-11 text-xs' },
+        { key: '\\', display: '\\', shiftDisplay: '|', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'z', display: 'Z', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'x', display: 'X', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'c', display: 'C', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'v', display: 'V', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'b', display: 'B', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'n', display: 'N', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'm', display: 'M', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ',', display: ',', shiftDisplay: '<', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '.', display: '.', shiftDisplay: '>', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ';', display: ';', shiftDisplay: ':', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '/', display: '/', shiftDisplay: '?', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'shift_r', display: 'shift', finger: 'R5', width: 'flex-1 h-10 sm:h-11 text-xs' }
+      ],
+      [
+        { key: 'ctrl_l', display: 'ctrl', finger: 'L5', width: 'w-10 sm:w-12 h-10 sm:h-11 text-xs' },
+        { key: 'win_l', display: 'win', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-[10px]' },
+        { key: 'alt_l', display: 'alt', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-xs' },
+        { key: ' ', display: 'barra de espaço', finger: 'L1', width: 'w-[180px] sm:w-[260px] md:w-[300px] h-10 sm:h-11 text-xs' },
+        { key: 'altgr', display: 'alt gr', finger: 'R1', width: 'w-10 sm:w-11 h-10 sm:h-11 text-[10px]' },
+        { key: 'win_r', display: 'win', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-[10px]' },
+        { key: 'ctrl_r', display: 'ctrl', finger: 'R5', width: 'flex-1 h-10 sm:h-11 text-xs' }
+      ]
+    ];
+  } else {
+    return [
+      [
+        { key: '`', display: '`', shiftDisplay: '~', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '1', display: '1', shiftDisplay: '!', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '2', display: '2', shiftDisplay: '@', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '3', display: '3', shiftDisplay: '#', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '4', display: '4', shiftDisplay: '$', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '5', display: '5', shiftDisplay: '%', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '6', display: '6', shiftDisplay: '^', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '7', display: '7', shiftDisplay: '&', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '8', display: '8', shiftDisplay: '*', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '9', display: '9', shiftDisplay: '(', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '0', display: '0', shiftDisplay: ')', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '-', display: '-', shiftDisplay: '_', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '=', display: '=', shiftDisplay: '+', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'backspace', display: 'delete', finger: 'R5', width: 'flex-1 min-w-[55px] h-10 sm:h-11 text-xs' }
+      ],
+      [
+        { key: 'tab', display: 'tab', finger: 'L5', width: 'w-14 sm:w-16 h-10 sm:h-11 text-xs' },
+        { key: 'q', display: 'Q', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'w', display: 'W', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'e', display: 'E', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'r', display: 'R', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 't', display: 'T', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'y', display: 'Y', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'u', display: 'U', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'i', display: 'I', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'o', display: 'O', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'p', display: 'P', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '[', display: '[', shiftDisplay: '{', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ']', display: ']', shiftDisplay: '}', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '\\', display: '\\', shiftDisplay: '|', finger: 'R5', width: 'flex-1 min-w-[40px] h-10 sm:h-11' }
+      ],
+      [
+        { key: 'capslock', display: 'caps', finger: 'L5', width: 'w-16 sm:w-18 h-10 sm:h-11 text-xs' },
+        { key: 'a', display: 'A', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 's', display: 'S', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'd', display: 'D', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'f', display: 'F', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'g', display: 'G', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'h', display: 'H', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'j', display: 'J', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'k', display: 'K', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'l', display: 'L', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ';', display: ';', shiftDisplay: ':', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: "'", display: "'", shiftDisplay: '"', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'enter', display: 'enter', finger: 'R5', width: 'flex-1 h-10 sm:h-11 text-xs' }
+      ],
+      [
+        { key: 'shift_l', display: 'shift', finger: 'L5', width: 'w-20 sm:w-22 h-10 sm:h-11 text-xs' },
+        { key: 'z', display: 'Z', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'x', display: 'X', finger: 'L4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'c', display: 'C', finger: 'L3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'v', display: 'V', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'b', display: 'B', finger: 'L2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'n', display: 'N', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'm', display: 'M', finger: 'R2', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: ',', display: ',', shiftDisplay: '<', finger: 'R3', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '.', display: '.', shiftDisplay: '>', finger: 'R4', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: '/', display: '/', shiftDisplay: '?', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11' },
+        { key: 'shift_r', display: 'shift', finger: 'R5', width: 'flex-1 h-10 sm:h-11 text-xs' }
+      ],
+      [
+        { key: 'ctrl_l', display: 'ctrl', finger: 'L5', width: 'w-10 sm:w-12 h-10 sm:h-11 text-xs' },
+        { key: 'win_l', display: 'alt/cmd', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-[9px]' },
+        { key: 'alt_l', display: 'alt', finger: 'L5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-xs' },
+        { key: ' ', display: 'space', finger: 'L1', width: 'w-[180px] sm:w-[260px] md:w-[300px] h-10 sm:h-11 text-xs' },
+        { key: 'alt_r', display: 'alt', finger: 'R1', width: 'w-10 sm:w-11 h-10 sm:h-11 text-xs' },
+        { key: 'win_r', display: 'alt/cmd', finger: 'R5', width: 'w-10 sm:w-11 h-10 sm:h-11 text-[9px]' },
+        { key: 'ctrl_r', display: 'ctrl', finger: 'R5', width: 'flex-1 h-10 sm:h-11 text-xs' }
+      ]
+    ];
+  }
+};
+
+// ——— Visual Hands Overlay Components ———
+const VisualHandsLeft: React.FC<{ activeFinger: string | null }> = ({ activeFinger }) => {
+  const getFingerIndicator = (finger: 'pinky' | 'ring' | 'middle' | 'index' | 'thumb', cx: number, cy: number) => {
+    const isActive = activeFinger === finger;
+    if (isActive) {
+      return (
+        <g key={finger}>
+          <circle cx={cx} cy={cy} r="9" className="fill-primary/20 stroke-primary/30 animate-ping" />
+          <circle cx={cx} cy={cy} r="5" className="fill-primary stroke-white stroke-2 shadow-lg" />
+        </g>
+      );
+    }
+    return <circle key={finger} cx={cx} cy={cy} r="3.5" className="fill-slate-400 dark:fill-slate-600 stroke-slate-500 dark:stroke-slate-500 stroke-1" />;
+  };
+
+  return (
+    <svg viewBox="0 0 150 200" className="w-full h-full text-slate-400/30 dark:text-slate-700/40">
+      <path
+        d="M 90,200 
+           C 90,200 110,160 110,140 
+           C 110,120 130,125 140,110 
+           C 148,102 140,90 130,100 
+           C 118,112 105,120 105,112 
+           C 105,95 105,50 105,35 
+           C 105,27 92,27 92,35 
+           C 92,55 90,90 90,90 
+           C 90,90 82,60 75,22 
+           C 71,14 60,18 63,26 
+           C 71,48 78,92 78,92 
+           C 78,92 66,70 58,40 
+           C 54,32 43,36 47,44 
+           C 55,66 63,98 63,98 
+           C 63,98 51,82 43,62 
+           C 39,54 28,58 32,66 
+           C 40,86 52,114 52,130 
+           C 52,150 56,178 40,200 
+           Z"
+        fill="currentColor"
+        fillOpacity="0.18"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-slate-400/50 dark:text-slate-500/50"
+      />
+      {getFingerIndicator('thumb', 132, 102)}
+      {getFingerIndicator('index', 98, 35)}
+      {getFingerIndicator('middle', 69, 22)}
+      {getFingerIndicator('ring', 49, 40)}
+      {getFingerIndicator('pinky', 32, 66)}
+    </svg>
+  );
+};
+
+const VisualHandsRight: React.FC<{ activeFinger: string | null }> = ({ activeFinger }) => {
+  const getFingerIndicator = (finger: 'pinky' | 'ring' | 'middle' | 'index' | 'thumb', cx: number, cy: number) => {
+    const isActive = activeFinger === finger;
+    if (isActive) {
+      return (
+        <g key={finger}>
+          <circle cx={cx} cy={cy} r="9" className="fill-primary/20 stroke-primary/30 animate-ping" />
+          <circle cx={cx} cy={cy} r="5" className="fill-primary stroke-white stroke-2 shadow-lg" />
+        </g>
+      );
+    }
+    return <circle key={finger} cx={cx} cy={cy} r="3.5" className="fill-slate-400 dark:fill-slate-600 stroke-slate-500 dark:stroke-slate-500 stroke-1" />;
+  };
+
+  return (
+    <svg viewBox="0 0 150 200" className="w-full h-full text-slate-400/30 dark:text-slate-700/40">
+      <path
+        d="M 60,200 
+           C 60,200 40,160 40,140 
+           C 40,120 20,125 10,110 
+           C 2,102 10,90 20,100 
+           C 32,112 45,120 45,112 
+           C 45,95 45,50 45,35 
+           C 45,27 58,27 58,35 
+           C 58,55 60,90 60,90 
+           C 60,90 68,60 75,22 
+           C 79,14 90,18 87,26 
+           C 79,48 72,92 72,92 
+           C 72,92 84,70 92,40 
+           C 96,32 107,36 103,44 
+           C 95,66 87,98 87,98 
+           C 87,98 99,82 107,62 
+           C 111,54 122,58 118,66 
+           C 110,86 98,114 98,130 
+           C 98,150 94,178 110,200 
+           Z"
+        fill="currentColor"
+        fillOpacity="0.18"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-slate-400/50 dark:text-slate-500/50"
+      />
+      {getFingerIndicator('thumb', 18, 102)}
+      {getFingerIndicator('index', 52, 35)}
+      {getFingerIndicator('middle', 81, 22)}
+      {getFingerIndicator('ring', 101, 40)}
+      {getFingerIndicator('pinky', 118, 66)}
+    </svg>
+  );
+};
+
+// ——— Sons Dinâmicos Web Audio API ———
+const playClickSound = (volume: number = 0.5) => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.04);
+    
+    gain.gain.setValueAtTime(volume * 0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch (e) {
+    console.error('Audio play error', e);
+  }
+};
+
+const playErrorSound = (volume: number = 0.3) => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.15);
+    
+    gain.gain.setValueAtTime(volume * 0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.16);
+  } catch (e) {
+    console.error('Audio play error', e);
+  }
 };
 
 const corMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -483,6 +823,31 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   const [progressos, setProgressos] = useState<ProgressoLicao[]>([]);
   const [salvando, setSalvando] = useState(false);
 
+  // Preferências de customização do teclado
+  const [layout, setLayout] = useState<'abnt2' | 'us'>(() => {
+    return (localStorage.getItem('estudea_teclado_layout') as 'abnt2' | 'us') || 'abnt2';
+  });
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>(() => {
+    return (localStorage.getItem('estudea_teclado_fontsize') as 'sm' | 'md' | 'lg') || 'md';
+  });
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('estudea_teclado_sound');
+    return saved === null ? true : saved === 'true';
+  });
+  const [volume, setVolume] = useState<number>(() => {
+    const saved = localStorage.getItem('estudea_teclado_volume');
+    return saved === null ? 50 : Number(saved);
+  });
+  const [showHands, setShowHands] = useState<boolean>(() => {
+    const saved = localStorage.getItem('estudea_teclado_showhands');
+    return saved === null ? true : saved === 'true';
+  });
+  const [showKeyboard, setShowKeyboard] = useState<boolean>(() => {
+    const saved = localStorage.getItem('estudea_teclado_showkeyboard');
+    return saved === null ? true : saved === 'true';
+  });
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textoAlvo = licaoAtiva ? licaoAtiva.textos[textoIndex] : '';
@@ -490,6 +855,39 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   useEffect(() => {
     if (session?.user?.id) fetchProgressos();
   }, [session]);
+
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_layout', layout);
+  }, [layout]);
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_fontsize', fontSize);
+  }, [fontSize]);
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_sound', String(soundEnabled));
+  }, [soundEnabled]);
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_volume', String(volume));
+  }, [volume]);
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_showhands', String(showHands));
+  }, [showHands]);
+  useEffect(() => {
+    localStorage.setItem('estudea_teclado_showkeyboard', String(showKeyboard));
+  }, [showKeyboard]);
+
+  // Captura global de foco para começar a digitar
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (licaoAtiva && !concluido && !mostrarGuia) {
+        if (document.activeElement?.tagName === 'INPUT' || e.ctrlKey || e.metaKey || e.altKey) {
+          return;
+        }
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [licaoAtiva, concluido, mostrarGuia]);
 
   // Mostrar guia automaticamente na primeira visita ao nível 1
   useEffect(() => {
@@ -559,15 +957,37 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (concluido) return;
-    if (!iniciado) { setIniciado(true); setStartTime(Date.now()); }
-    const novosErros = new Set(erros);
+    
+    if (!iniciado) { 
+      setIniciado(true); 
+      setStartTime(Date.now()); 
+    }
+    
+    const novosErros = new Set<number>();
     for (let i = 0; i < val.length; i++) {
       if (val[i] !== textoAlvo[i]) novosErros.add(i);
     }
+    
+    // Play sound effects
+    if (val.length > digitado.length) {
+      const lastCharIndex = val.length - 1;
+      const typedChar = val[lastCharIndex];
+      const targetChar = textoAlvo[lastCharIndex];
+      
+      if (typedChar === targetChar) {
+        if (soundEnabled) playClickSound(volume / 100);
+      } else {
+        if (soundEnabled) playErrorSound(volume / 100);
+      }
+    } else if (val.length < digitado.length) {
+      // Backspace pressed
+      if (soundEnabled) playClickSound((volume / 100) * 0.7);
+    }
+    
     setErros(novosErros);
     setDigitado(val);
     if (val.length >= textoAlvo.length) finalizarLicao(novosErros);
-  }, [concluido, iniciado, erros, textoAlvo]);
+  }, [concluido, iniciado, textoAlvo, digitado, soundEnabled, volume]);
 
   const finalizarLicao = (novosErros: Set<number>) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -622,6 +1042,50 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   const teclaEsperada = textoAlvo[digitado.length] ?? '';
   const cores = licaoAtiva ? corMap[licaoAtiva.cor] : corMap.blue;
   const totalMelhorWpm = progressos.length > 0 ? Math.max(...progressos.map(p => p.melhor_wpm)) : 0;
+
+  const activeFingerInfo = useMemo(() => {
+    return getFingerForKey(teclaEsperada);
+  }, [teclaEsperada]);
+
+  const isKeyActive = useCallback((keyConfigKey: string): boolean => {
+    const targetChar = teclaEsperada;
+    if (!targetChar) return false;
+    
+    const targetLower = targetChar.toLowerCase();
+    
+    // 1. Direct match
+    if (keyConfigKey === targetLower) return true;
+    
+    // 2. Spacebar match
+    if (targetChar === ' ' && keyConfigKey === ' ') return true;
+    
+    // 3. Ç and ; layout mapping fallback
+    if (targetLower === 'ç' && keyConfigKey === ';') return true;
+    
+    // 4. Shift key highlighting:
+    // If typing an uppercase letter or standard shift characters
+    const isShiftNeeded = targetChar !== targetLower || ['!', '@', '#', '$', '%', '¨', '&', '*', '(', ')', '_', '+', '{', '}', '|', ':', '"', '<', '>', '?', 'Ç', '^', '~'].includes(targetChar);
+    
+    if (isShiftNeeded) {
+      const fingerInfo = getFingerForKey(targetLower);
+      if (fingerInfo.hand === 'left' && keyConfigKey === 'shift_r') {
+        return true;
+      }
+      if (fingerInfo.hand === 'right' && keyConfigKey === 'shift_l') {
+        return true;
+      }
+    }
+    
+    return false;
+  }, [teclaEsperada]);
+
+  const fontSizeClasses = useMemo(() => {
+    return {
+      sm: 'typing-lines-container-sm typing-char-sm',
+      md: 'typing-lines-container-md typing-char-md',
+      lg: 'typing-lines-container-lg typing-char-lg'
+    }[fontSize];
+  }, [fontSize]);
   const totalConcluidas = progressos.filter(p => p.concluida).length;
 
   // ══════════════════════════════════════════
@@ -835,7 +1299,42 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   const nivelDaLicao = NIVEIS.find(n => n.id === licaoAtiva.nivel)!;
 
   return (
-    <div className="w-full space-y-5 animate-fade-in pb-12">
+    <div className="w-full space-y-5 animate-fade-in pb-12 relative">
+      <style>{`
+        .typing-lines-container-sm {
+          background-image: linear-gradient(to bottom, transparent 39px, rgb(var(--color-outline-variant) / 0.15) 39px, rgb(var(--color-outline-variant) / 0.15) 40px);
+          background-size: 100% 2.5rem;
+          line-height: 2.5rem;
+        }
+        .typing-char-sm {
+          font-size: 1.125rem;
+          font-family: 'JetBrains Mono', 'Fira Code', Courier New, monospace;
+          letter-spacing: 0.05em;
+        }
+        
+        .typing-lines-container-md {
+          background-image: linear-gradient(to bottom, transparent 47px, rgb(var(--color-outline-variant) / 0.15) 47px, rgb(var(--color-outline-variant) / 0.15) 48px);
+          background-size: 100% 3rem;
+          line-height: 3rem;
+        }
+        .typing-char-md {
+          font-size: 1.45rem;
+          font-family: 'JetBrains Mono', 'Fira Code', Courier New, monospace;
+          letter-spacing: 0.06em;
+        }
+        
+        .typing-lines-container-lg {
+          background-image: linear-gradient(to bottom, transparent 59px, rgb(var(--color-outline-variant) / 0.15) 59px, rgb(var(--color-outline-variant) / 0.15) 60px);
+          background-size: 100% 3.75rem;
+          line-height: 3.75rem;
+        }
+        .typing-char-lg {
+          font-size: 1.8rem;
+          font-family: 'JetBrains Mono', 'Fira Code', Courier New, monospace;
+          letter-spacing: 0.07em;
+        }
+      `}</style>
+
       {mostrarGuia && <ModalPostura onClose={() => setMostrarGuia(false)} />}
 
       {/* Header breadcrumb + stats */}
@@ -843,7 +1342,7 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setLicaoAtiva(null)}
-            className="p-2 rounded-xl bg-white/60 hover:bg-white transition-colors text-on-surface-variant"
+            className="p-2 rounded-xl bg-white/60 hover:bg-white dark:bg-slate-800/60 dark:hover:bg-slate-800 transition-colors text-on-surface-variant"
             title="Voltar às lições"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
@@ -873,7 +1372,7 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
           {licaoAtiva.nivel === 1 && (
             <button
               onClick={() => setMostrarGuia(true)}
-              className={`p-2 rounded-xl bg-white/60 hover:bg-white transition-colors ${cores.text}`}
+              className={`p-2 rounded-xl bg-white/60 hover:bg-white dark:bg-slate-800/60 dark:hover:bg-slate-800 transition-colors ${cores.text}`}
               title="Ver guia de postura"
             >
               <HugeiconsIcon icon={InformationCircleIcon} size={18} />
@@ -884,97 +1383,54 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
 
       {/* Dica da lição */}
       {licaoAtiva.dica && !iniciado && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-xl px-4 py-3 flex items-start gap-2.5">
           <span className="text-amber-500 text-sm mt-0.5">💡</span>
-          <p className="text-xs text-amber-800 font-semibold leading-relaxed">{licaoAtiva.dica}</p>
+          <p className="text-xs text-amber-800 dark:text-amber-300 font-semibold leading-relaxed">{licaoAtiva.dica}</p>
         </div>
       )}
 
-      {/* ——— Teclado Visual MAIOR ——— */}
-      <div className="bg-white border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
-        <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest mb-5">
-          Teclado — tecla atual em destaque · código de cores por dedo
-        </p>
-        <div className="space-y-3">
-          {KEYBOARD_ROWS.map((row, ri) => (
-            <div key={ri} className={`flex gap-2.5 ${ri === 1 ? 'pl-7' : ri === 2 ? 'pl-[68px]' : ''}`}>
-              {row.map(key => {
-                const isActive = key === teclaEsperada.toLowerCase();
-                const isHomeRow = ri === 1;
-                const fingerColor = FINGER_COLORS[key] || 'bg-slate-300';
-                const isFJ = key === 'f' || key === 'j';
-                return (
-                  <div
-                    key={key}
-                    className={`relative w-14 h-14 rounded-xl flex flex-col items-center justify-center text-base font-extrabold border-2 transition-all select-none uppercase shadow-sm ${
-                      isActive
-                        ? `${fingerColor} text-white border-transparent shadow-xl scale-110 ring-2 ring-offset-2 ring-current`
-                        : isHomeRow
-                          ? `${fingerColor}/20 text-on-surface/80 border-current/40`
-                          : 'bg-slate-100 text-on-surface-variant/60 border-slate-200'
-                    }`}
-                  >
-                    {key}
-                    {isFJ && (
-                      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-current opacity-60" />
-                    )}
-                    {isHomeRow && FINGER_LABELS[key] && !isActive && (
-                      <span className="absolute -bottom-5 text-[7px] font-bold text-on-surface-variant/40 whitespace-nowrap">
-                        {FINGER_LABELS[key]}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          {/* Barra de espaço */}
-          <div className="pl-20 pt-5">
-            <div className={`h-14 w-[400px] rounded-xl flex items-center justify-center text-sm font-extrabold border-2 transition-all shadow-sm ${
-              teclaEsperada === ' '
-                ? 'bg-slate-500 text-white border-transparent shadow-xl scale-105 ring-2 ring-offset-2 ring-slate-500'
-                : 'bg-slate-100 text-on-surface-variant/40 border-slate-200'
-            }`}>
-              Barra de Espaço — Polegar
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Área de digitação */}
+      {/* Área de digitação Caderno de Linhas */}
       <div
-        className="bg-white border border-outline-variant/30 rounded-2xl p-6 shadow-sm cursor-text"
+        className="bg-white dark:bg-slate-900 border border-outline-variant/30 rounded-2xl p-8 shadow-sm cursor-text relative overflow-hidden"
         onClick={() => inputRef.current?.focus()}
       >
         {!iniciado && (
-          <p className="text-xs text-on-surface-variant/50 mb-4 text-center animate-pulse">
-            ⌨️ Clique aqui ou comece a digitar para iniciar o cronômetro...
+          <p className="text-xs text-on-surface-variant/50 mb-3 text-center animate-pulse">
+            ⌨️ Clique na área de texto ou simplesmente comece a digitar para iniciar...
           </p>
         )}
 
-        <div className="font-mono text-xl leading-loose tracking-wide select-none flex flex-wrap">
+        <div className={`w-full select-none flex flex-wrap pt-2 pb-2 ${fontSizeClasses}`}>
           {textoAlvo.split('').map((char, i) => {
-            let className = 'text-on-surface-variant/30';
+            let className = 'text-on-surface-variant/30 dark:text-on-surface-variant/20';
             if (i < digitado.length) {
-              className = erros.has(i) ? 'text-error bg-red-100 rounded px-0.5' : 'text-emerald-600';
+              className = erros.has(i) 
+                ? 'text-error bg-red-100 dark:bg-red-950/50 rounded px-0.5 font-bold' 
+                : 'text-emerald-600 dark:text-emerald-400 font-bold';
             } else if (i === digitado.length) {
-              className = 'text-on-surface border-b-2 border-primary animate-pulse';
+              className = 'text-on-surface dark:text-white border-b-2 border-primary animate-pulse relative';
             }
             return (
-              <span key={i} className={`transition-colors ${className}`}>
+              <span key={i} className={`transition-colors duration-100 ${className}`}>
+                {i === digitado.length && !iniciado && (
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-bold rounded-lg whitespace-nowrap shadow-md z-30 animate-bounce">
+                    Comece a digitar!
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700" />
+                  </span>
+                )}
                 {char === ' ' ? '\u00A0' : char}
               </span>
             );
           })}
         </div>
 
-        <div className="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className="mt-6 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${cores.badge}`}
+            className={`h-full rounded-full transition-all duration-150 ${cores.badge}`}
             style={{ width: `${textoAlvo.length > 0 ? (digitado.length / textoAlvo.length) * 100 : 0}%` }}
           />
         </div>
-        <div className="flex justify-between mt-1.5">
+        <div className="flex justify-between mt-2.5">
           <span className="text-[10px] text-on-surface-variant/40 font-semibold">{digitado.length} / {textoAlvo.length} caracteres</span>
           <span className="text-[10px] text-on-surface-variant/40 font-semibold">{erros.size} erros</span>
         </div>
@@ -989,20 +1445,240 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
         />
       </div>
 
+      {/* ——— Teclado Visual Personalizável + Mãos Overlay ——— */}
+      {showKeyboard && (
+        <div className="bg-white dark:bg-slate-950 border border-outline-variant/30 rounded-3xl p-6 shadow-sm flex flex-col items-center relative overflow-hidden">
+          {/* Header do Teclado */}
+          <div className="flex justify-between items-center mb-5 w-full max-w-4xl px-1">
+            <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest">
+              {layout === 'abnt2' ? 'Layout do Teclado: ABNT2 (Brasil)' : 'Layout do Teclado: US International'}
+            </p>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="text-[11px] font-bold text-primary hover:text-primary-container transition-colors flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full"
+            >
+              <HugeiconsIcon icon={KeyboardIcon} size={13} />
+              Personalizar Tipos de Teclado
+            </button>
+          </div>
+
+          {/* Rows of keys */}
+          <div className="w-full max-w-4xl space-y-2 relative z-10">
+            {getKeyboardLayout(layout).map((row, ri) => (
+              <div key={ri} className="flex justify-center gap-1.5 w-full">
+                {row.map(key => {
+                  const isActive = isKeyActive(key.key);
+                  const isModifier = ['tab', 'capslock', 'shift_l', 'shift_r', 'ctrl_l', 'ctrl_r', 'alt_l', 'alt_r', 'altgr', 'win_l', 'win_r', 'backspace', 'enter'].includes(key.key);
+                  
+                  const keyStyleClass = isActive
+                    ? FINGER_BG_CLASSES[key.finger].active
+                    : isModifier
+                      ? 'bg-slate-100 dark:bg-slate-800 text-on-surface-variant/70 dark:text-on-surface-variant/60 border-slate-200 dark:border-slate-800'
+                      : `${FINGER_BG_CLASSES[key.finger].bg} ${FINGER_BG_CLASSES[key.finger].border} ${FINGER_BG_CLASSES[key.finger].text}`;
+
+                  const isFJ = key.key === 'f' || key.key === 'j';
+
+                  return (
+                    <div
+                      key={key.key}
+                      className={`relative rounded-lg flex flex-col items-center justify-center font-bold border select-none transition-all duration-100 text-xs sm:text-sm uppercase shadow-sm ${key.width} ${keyStyleClass}`}
+                    >
+                      {/* Secondary value on shift (for symbols) */}
+                      {key.shiftDisplay && (
+                        <span className="absolute top-1 left-2 text-[8px] sm:text-[9px] opacity-40 leading-none">
+                          {key.shiftDisplay}
+                        </span>
+                      )}
+                      
+                      {/* Main Key Display */}
+                      <span className={key.shiftDisplay ? 'pt-1.5' : ''}>
+                        {key.display}
+                      </span>
+                      
+                      {/* Home row anchor line (calombinhos) on F & J */}
+                      {isFJ && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-current opacity-60" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Hands Overlay */}
+          {showHands && (
+            <div className="absolute inset-x-0 bottom-0 top-14 pointer-events-none flex justify-between px-8 sm:px-16 z-20">
+              <div className="w-[32%] max-w-[200px] h-full flex items-end">
+                <VisualHandsLeft activeFinger={activeFingerInfo.hand === 'left' ? activeFingerInfo.finger : null} />
+              </div>
+              <div className="w-[32%] max-w-[200px] h-full flex items-end">
+                <VisualHandsRight activeFinger={activeFingerInfo.hand === 'right' ? activeFingerInfo.finger : null} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl border border-outline-variant/20 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-heading font-extrabold text-lg flex items-center gap-2">
+                    ⌨️ Configurar Teclado
+                  </h2>
+                  <p className="text-white/70 text-xs mt-1">Ajuste as preferências do treino de digitação</p>
+                </div>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={18} className="text-white" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Layout Selection */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider block">Layout do Teclado</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setLayout('abnt2')}
+                    className={`py-3 px-4 rounded-xl border-2 text-xs font-bold text-center transition-all ${
+                      layout === 'abnt2'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-slate-200 dark:border-slate-800 text-on-surface-variant dark:text-on-surface-variant/80 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    ABNT2 (Brasil)
+                  </button>
+                  <button
+                    onClick={() => setLayout('us')}
+                    className={`py-3 px-4 rounded-xl border-2 text-xs font-bold text-center transition-all ${
+                      layout === 'us'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-slate-200 dark:border-slate-800 text-on-surface-variant dark:text-on-surface-variant/80 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    US International
+                  </button>
+                </div>
+              </div>
+              
+              {/* Font Size Selection */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider block">Tamanho da Letra</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'sm', label: 'Pequeno' },
+                    { id: 'md', label: 'Médio' },
+                    { id: 'lg', label: 'Grande' }
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => setFontSize(item.id as any)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-bold text-center transition-all ${
+                        fontSize === item.id
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-slate-200 dark:border-slate-800 text-on-surface-variant dark:text-on-surface-variant/80 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Audio Toggle & Volume */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-on-surface-variant dark:text-on-surface-variant/80">Sons de Digitação</span>
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors ${soundEnabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${soundEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                
+                {soundEnabled && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-on-surface-variant/60 font-bold">
+                      <span>Volume</span>
+                      <span>{volume}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={volume}
+                      onChange={e => setVolume(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Display Toggles */}
+              <div className="space-y-3 pt-4 border-t border-outline-variant/10 dark:border-slate-800">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-on-surface-variant dark:text-on-surface-variant/80">Exibir Mãos Auxiliares</span>
+                  <button
+                    onClick={() => setShowHands(!showHands)}
+                    className={`w-10 h-5 rounded-full p-0.5 transition-colors ${showHands ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${showHands ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-on-surface-variant dark:text-on-surface-variant/80">Exibir Teclado Virtual</span>
+                  <button
+                    onClick={() => setShowKeyboard(!showKeyboard)}
+                    className={`w-10 h-5 rounded-full p-0.5 transition-colors ${showKeyboard ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${showKeyboard ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-5 border-t border-outline-variant/10 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  if (soundEnabled) playClickSound(volume / 100);
+                }}
+                className="w-full py-2.5 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary/95 transition-all shadow-sm"
+              >
+                Confirmar Configurações
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal resultado */}
       {concluido && resultado && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className={`p-6 ${resultado.acuracia >= 85 ? 'bg-emerald-50' : 'bg-amber-50'} border-b border-outline-variant/20`}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-outline-variant/20">
+            <div className={`p-6 ${resultado.acuracia >= 85 ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-amber-50 dark:bg-amber-950/20'} border-b border-outline-variant/20 dark:border-slate-800`}>
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${resultado.acuracia >= 85 ? 'bg-emerald-500' : 'bg-amber-500'}`}>
                   <HugeiconsIcon icon={resultado.acuracia >= 85 ? Award01Icon : Alert01Icon} size={24} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-heading font-extrabold text-lg text-on-surface">
+                  <h3 className="font-heading font-extrabold text-lg text-on-surface dark:text-white">
                     {resultado.acuracia >= 85 ? '🎉 Lição Concluída!' : '💪 Continue Treinando!'}
                   </h3>
-                  <p className="text-xs text-on-surface-variant/70">
+                  <p className="text-xs text-on-surface-variant/70 dark:text-on-surface-variant/80">
                     {resultado.acuracia >= 85
                       ? 'Acurácia ≥ 85% — próxima lição desbloqueada!'
                       : `Acurácia de ${resultado.acuracia}% — precisa de 85% para avançar.`}
@@ -1015,7 +1691,7 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
               {[
                 { label: 'WPM', value: resultado.wpm, sub: 'palavras/min', color: 'text-primary' },
                 { label: 'Acurácia', value: `${resultado.acuracia}%`, sub: 'precisão', color: resultado.acuracia >= 85 ? 'text-emerald-600' : 'text-amber-600' },
-                { label: 'Tempo', value: `${resultado.duracao}s`, sub: `${resultado.erros} erros`, color: 'text-on-surface' },
+                { label: 'Tempo', value: `${resultado.duracao}s`, sub: `${resultado.erros} erros`, color: 'text-on-surface dark:text-white' },
               ].map(({ label, value, sub, color }) => (
                 <div key={label} className="text-center">
                   <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-widest mb-1">{label}</p>
@@ -1028,7 +1704,7 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
             <div className="px-6 pb-6 flex gap-3">
               <button
                 onClick={() => resetLicao()}
-                className="flex-1 px-4 py-2.5 border border-outline-variant/50 rounded-xl text-sm font-bold text-on-surface hover:bg-slate-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-outline-variant/50 dark:border-slate-800 rounded-xl text-sm font-bold text-on-surface dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 Outro Texto
               </button>
