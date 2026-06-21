@@ -198,6 +198,21 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
       const { data: modulosData } = await supabase.from('modulos').select('*');
       const { data: aulasData } = await supabase.from('aulas').select('*');
       const { data: progressData } = await supabase.from('progresso_alunos').select('*');
+      const { data: releasedData } = await supabase.from('turma_aulas_liberadas').select('*');
+
+      // Create maps for efficient lookups of released lessons and student profiles
+      const releasedMap = new Map<string, Set<string>>();
+      (releasedData || []).forEach(r => {
+        if (!releasedMap.has(r.turma_id)) {
+          releasedMap.set(r.turma_id, new Set());
+        }
+        releasedMap.get(r.turma_id)!.add(r.aula_id);
+      });
+
+      const studentMap = new Map<string, any>();
+      (profilesData || []).forEach(s => {
+        studentMap.set(s.id, s);
+      });
 
       const enrichedCourses = (coursesData || []).map(course => {
         // Find classes of this course
@@ -221,8 +236,34 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
           const studentIds = courseStudents.map(s => s.id);
           const courseProgress = (progressData || []).filter(p => lessonIds.includes(p.aula_id) && studentIds.includes(p.aluno_id));
           
-          if (sCount > 0) {
-            avgProgress = Math.round((courseProgress.length / (sCount * courseLessons.length)) * 100);
+          // Calculate average progress considering ONLY released lessons for the students' classes
+          let courseExpected = 0;
+          let courseCompleted = 0;
+
+          courseStudents.forEach(s => {
+            if (s.turma_id) {
+              const releasedAulas = releasedMap.get(s.turma_id);
+              if (releasedAulas) {
+                const courseReleasedAulasCount = Array.from(releasedAulas).filter(id => lessonIds.includes(id)).length;
+                courseExpected += courseReleasedAulasCount;
+              }
+            }
+          });
+
+          courseProgress.forEach(p => {
+            const student = studentMap.get(p.aluno_id);
+            if (student && student.turma_id) {
+              const releasedAulas = releasedMap.get(student.turma_id);
+              if (releasedAulas && releasedAulas.has(p.aula_id)) {
+                courseCompleted++;
+              }
+            }
+          });
+
+          if (courseExpected > 0) {
+            avgProgress = Math.round((courseCompleted / courseExpected) * 100);
+          } else {
+            avgProgress = 0;
           }
 
           // Fetch all ratings for these lessons from progressData
@@ -256,11 +297,32 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
       }
       setActiveThisWeekCount(activeThisWeek);
 
-      const totalCompleted = progressData?.length || 0;
+      // Calculate total expected completions and total completed lessons (only counting released ones)
+      let totalExpected = 0;
+      let totalCompleted = 0;
+
+      (profilesData || []).forEach(s => {
+        if (s.turma_id) {
+          const releasedAulas = releasedMap.get(s.turma_id);
+          if (releasedAulas) {
+            totalExpected += releasedAulas.size;
+          }
+        }
+      });
+
+      (progressData || []).forEach(p => {
+        const student = studentMap.get(p.aluno_id);
+        if (student && student.turma_id) {
+          const releasedAulas = releasedMap.get(student.turma_id);
+          if (releasedAulas && releasedAulas.has(p.aula_id)) {
+            totalCompleted++;
+          }
+        }
+      });
+
       setTotalCompletedLessonsCount(totalCompleted);
 
-      if (profilesData && profilesData.length > 0 && aulasData && aulasData.length > 0) {
-        const totalExpected = profilesData.length * aulasData.length;
+      if (totalExpected > 0) {
         const rate = Math.round((totalCompleted / totalExpected) * 100);
         setEngagementRate(rate);
       } else {
