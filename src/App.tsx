@@ -47,10 +47,12 @@ import { ArenaRanking } from './pages/ArenaRanking';
 import { ArenaLiveProfessor } from './pages/ArenaLiveProfessor';
 import { ArenaLiveAluno } from './pages/ArenaLiveAluno';
 import { StudentChatWidget } from './components/common/StudentChatWidget';
+import { ProjetoIntegrador } from './pages/ProjetoIntegrador';
+import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat';
-type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
@@ -375,6 +377,7 @@ function App() {
           '/admin/arena-ranking': 'arena_ranking',
           '/admin/chat': 'chat',
           '/admin/perfil': 'settings',
+          '/admin/projeto-integrador': 'projeto_integrador',
         };
 
         const targetTab = tabMap[path];
@@ -405,6 +408,7 @@ function App() {
         '/arena': 'arena_ranking',
         '/digitacao': 'digitacao',
         '/perfil': 'profile',
+        '/projeto-integrador': 'projeto_integrador',
       };
 
       const targetTab = tabMap[path];
@@ -422,13 +426,14 @@ function App() {
     const titles: Record<string, string> = {
       overview: 'Visão Geral | Estudea',
       progress: 'Alunos | Estudea',
-      corrections: 'Central de Correções | Estudea',
-      assignments: 'Criador de Cursos | Estudea',
+      corrections: 'Corrigir Atividades | Estudea',
+      assignments: 'Gerenciar Cursos | Estudea',
       turmas: 'Gerenciar Turmas | Estudea',
       settings: 'Minha Conta | Estudea',
       arena_ranking: 'Ranking da Arena | Estudea',
       diario: 'Diário de Classe | Estudea',
       lessons: 'Liberação de Aulas | Estudea',
+      projeto_integrador: 'Projeto Integrador | Estudea',
     };
     document.title = titles[activeTeacherTab] ?? 'Estudea';
   }, [activeTeacherTab, session, isAdmin, teacherView]);
@@ -441,6 +446,8 @@ function App() {
       achievements: 'Minhas Conquistas | Estudea',
       profile: 'Meu Perfil | Estudea',
       arena_ranking: 'Ranking da Arena | Estudea',
+      digitacao: 'Treino de Digitação | Estudea',
+      projeto_integrador: 'Projeto Integrador | Estudea',
     };
     document.title = titles[activeUserTab] ?? 'Estudea';
   }, [activeUserTab, session, isAdmin, teacherView]);
@@ -531,10 +538,10 @@ function App() {
           <button
             onClick={() => { navigate('/admin/correcoes'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'corrections', sidebarCollapsed)}
-            title="Central de Correções"
+            title="Corrigir Atividades"
           >
             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
-            <span className={getSidebarLabelClass(sidebarCollapsed)}>Central de Correções</span>
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Corrigir Atividades</span>
             {pendingCorrectionsCount > 0 && (
               <span className={`ml-auto bg-error text-on-error font-label-sm text-[11px] px-2 py-0.5 rounded-full ${sidebarCollapsed ? 'lg:absolute lg:right-1 lg:top-1 lg:ml-0 lg:px-1.5' : ''}`}>
                 {pendingCorrectionsCount}
@@ -545,10 +552,19 @@ function App() {
           <button
             onClick={() => { navigate('/admin/course-builder'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'assignments', sidebarCollapsed)}
-            title="Criador de Cursos"
+            title="Gerenciar Cursos"
           >
             <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
-            <span className={getSidebarLabelClass(sidebarCollapsed)}>Criador de Cursos</span>
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Cursos</span>
+          </button>
+
+          <button
+            onClick={() => { navigate('/admin/projeto-integrador'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'projeto_integrador', sidebarCollapsed)}
+            title="Projeto Integrador"
+          >
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
           </button>
 
           <button
@@ -558,15 +574,6 @@ function App() {
           >
             <HugeiconsIcon icon={SchoolIcon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
-          </button>
-
-          <button
-            onClick={() => { navigate('/admin/materiais'); setMobileMenuOpen(false); }}
-            className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
-            title="Materiais de Apoio (IA)"
-          >
-            <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
-            <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio (IA)</span>
           </button>
 
           <button
@@ -593,6 +600,15 @@ function App() {
                 {totalUnreadChatCount}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => { navigate('/admin/materiais'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'materials', sidebarCollapsed)}
+            title="Materiais de Apoio"
+          >
+            <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio</span>
           </button>
 
           <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
@@ -683,6 +699,15 @@ function App() {
           </button>
 
           <button
+            onClick={() => { navigate('/projeto-integrador'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'projeto_integrador', sidebarCollapsed)}
+            title="Projeto Integrador"
+          >
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
+          </button>
+
+          <button
             onClick={() => { navigate('/perfil'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
             title="Meu Perfil"
@@ -755,11 +780,12 @@ function App() {
                   {activeTeacherTab === 'diario' && 'Diário de Classe'}
                   {activeTeacherTab === 'chat' && 'Chat com Alunos'}
                   {activeTeacherTab === 'lessons' && 'Liberação de Aulas'}
-                  {activeTeacherTab === 'assignments' && 'Criador de Cursos'}
+                  {activeTeacherTab === 'assignments' && 'Gerenciar Cursos'}
+                  {activeTeacherTab === 'projeto_integrador' && 'Projeto Integrador'}
                   {activeTeacherTab === 'turmas' && 'Gerenciar Turmas'}
-                  {activeTeacherTab === 'corrections' && 'Central de Correções'}
+                  {activeTeacherTab === 'corrections' && 'Corrigir Atividades'}
                   {activeTeacherTab === 'settings' && 'Minha Conta / Perfil'}
-                  {activeTeacherTab === 'materials' && 'Materiais de Apoio (IA)'}
+                  {activeTeacherTab === 'materials' && 'Materiais de Apoio'}
                   {activeTeacherTab === 'arena_ranking' && 'Ranking da Arena'}
                 </h3>
               </div>
@@ -835,6 +861,7 @@ function App() {
                 )
               )}
               {activeTeacherTab === 'assignments' && <CourseBuilder />}
+              {activeTeacherTab === 'projeto_integrador' && <ProjetoIntegradorProfessor />}
               {activeTeacherTab === 'turmas' && (
                 <GerenciadorTurmas
                   onSelectStudent={(id, section) => {
@@ -871,7 +898,8 @@ function App() {
                       arena_ranking: '/admin/arena-ranking',
                       diario: '/admin/diario',
                       lessons: '/admin/lessons',
-                      chat: '/admin/chat'
+                      chat: '/admin/chat',
+                      projeto_integrador: '/admin/projeto-integrador'
                     };
                     navigate(pathMap[tab]);
                   }}
@@ -925,6 +953,7 @@ function App() {
                   {activeUserTab === 'profile' && 'Meu Perfil'}
                   {activeUserTab === 'arena_ranking' && 'Ranking da Arena'}
                   {activeUserTab === 'digitacao' && 'Treino de Digitação'}
+                  {activeUserTab === 'projeto_integrador' && 'Projeto Integrador'}
                 </h3>
               </div>
             </div>
@@ -1008,6 +1037,8 @@ function App() {
                 <ArenaRanking session={session} isAdmin={false} />
               ) : activeUserTab === 'digitacao' ? (
                 <TreinadorDigitacao session={session} />
+              ) : activeUserTab === 'projeto_integrador' ? (
+                <ProjetoIntegrador session={session} />
               ) : (
                 <TrilhaAluno
                   session={session}
