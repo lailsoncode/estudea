@@ -87,6 +87,14 @@ const isOverdue = (prazo: string | null) => {
   return new Date(prazo) < new Date();
 };
 
+const GoogleDriveLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.2 2H15.8L22.6 13.8H15L8.2 2Z" fill="#FFC107" />
+    <path d="M15 13.8H2.4L5.8 22H18.4L15 13.8Z" fill="#4CAF50" />
+    <path d="M8.2 2L1.4 13.8L5.8 22L12.6 10.2L8.2 2Z" fill="#2196F3" />
+  </svg>
+);
+
 export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session }) => {
   const userId = session?.user?.id;
 
@@ -130,6 +138,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
     segmento: '',
     justificativa: '',
     canais_digitais: defaultCanais,
+    drive_url: '',
     publico_alvo: '',
     persona_nome: '',
     persona_idade: '',
@@ -171,6 +180,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
           segmento: data.segmento || '',
           justificativa: data.justificativa || '',
           canais_digitais: Array.isArray(data.canais_digitais) && data.canais_digitais.length > 0 ? data.canais_digitais : defaultCanais,
+          drive_url: data.drive_url || '',
           publico_alvo: data.publico_alvo || '',
           persona_nome: data.persona_nome || '',
           persona_idade: data.persona_idade || '',
@@ -194,6 +204,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
           segmento: '',
           justificativa: '',
           canais_digitais: defaultCanais,
+          drive_url: '',
           publico_alvo: '',
           persona_nome: '',
           persona_idade: '',
@@ -258,6 +269,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
         segmento: formMarca.segmento.trim() || null,
         justificativa: formMarca.justificativa.trim() || null,
         canais_digitais: formMarca.canais_digitais,
+        drive_url: formMarca.drive_url.trim() || null,
         publico_alvo: formMarca.publico_alvo.trim() || null,
         persona_nome: formMarca.persona_nome.trim() || null,
         persona_idade: formMarca.persona_idade.trim() || null,
@@ -398,6 +410,114 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
 
   const getSubmissao = (entregaId: string) =>
     submissoes.find(s => s.entrega_def_id === entregaId) || null;
+
+  const getInstagramHandle = () => {
+    const instaCanal = formMarca.canais_digitais.find((c: any) => c.canal?.toLowerCase() === 'instagram');
+    if (!instaCanal || !instaCanal.url) return '@marca.digital';
+    
+    const urlStr = instaCanal.url.trim();
+    if (!urlStr) return '@marca.digital';
+    
+    if (!urlStr.includes('/') && !urlStr.includes('instagram.com')) {
+      return urlStr.startsWith('@') ? urlStr : `@${urlStr}`;
+    }
+    
+    try {
+      const cleanUrl = urlStr.replace(/\/$/, '');
+      const parts = cleanUrl.split('/');
+      const lastPart = parts[parts.length - 1];
+      if (lastPart && !lastPart.includes('instagram.com')) {
+        const handle = lastPart.split('?')[0];
+        return handle.startsWith('@') ? handle : `@${handle}`;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return '@marca.digital';
+  };
+
+  const getCompletude = () => {
+    const fields = [
+      'nome_marca',
+      'segmento',
+      'justificativa',
+      'drive_url',
+      'publico_alvo',
+      'persona_nome',
+      'persona_idade',
+      'persona_dores',
+      'persona_desejos',
+      'persona_necessidades',
+      'persona_comportamento',
+      'pontos_fortes',
+      'pontos_fracos',
+      'oportunidades',
+      'concorrentes',
+      'palavras_chave',
+      'frase_posicionamento',
+      'tom_voz'
+    ];
+    let filledCount = 0;
+    fields.forEach(f => {
+      if (formMarca[f]?.trim()) {
+        filledCount++;
+      }
+    });
+    const hasChannel = formMarca.canais_digitais.some((c: any) => c.url?.trim());
+    if (hasChannel) filledCount++;
+    
+    return Math.round((filledCount / (fields.length + 1)) * 100);
+  };
+
+  const getChannelIcon = (canalName: string) => {
+    const c = canalName?.toLowerCase() || '';
+    if (c.includes('instagram')) {
+      return (
+        <svg className="w-3.5 h-3.5 text-pink-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+        </svg>
+      );
+    }
+    if (c.includes('facebook')) {
+      return (
+        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+        </svg>
+      );
+    }
+    if (c.includes('whatsapp')) {
+      return (
+        <svg className="w-3.5 h-3.5 text-green-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+      );
+    }
+    if (c.includes('website') || c.includes('site')) {
+      return (
+        <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      );
+    }
+    if (c.includes('tiktok') || c.includes('youtube')) {
+      return (
+        <svg className="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.54a29 29 0 0 0 .46 5.12 2.78 2.78 0 0 0 1.95 1.96c1.71.46 8.59.46 8.59.46s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.12 29 29 0 0 0-.46-5.12z" />
+          <polygon points="9.75 15.02 15.5 11.54 9.75 8.07 9.75 15.02" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    );
+  };
 
   const handleOpenModal = (entrega: EntregaDef) => {
     const sub = getSubmissao(entrega.id);
@@ -544,7 +664,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
   ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+    <div className="px-4 py-6 space-y-5">
 
       {/* ── Hero Header ── */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-950 to-indigo-950 border border-violet-800/30 shadow-xl">
@@ -643,7 +763,9 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
               <p className="text-sm text-on-surface-variant font-semibold">Carregando ficha da marca...</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+              {/* Formulário Ficha da Marca */}
+              <div className="space-y-3">
               {/* Ficha header card */}
               <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-violet-950 to-indigo-950 px-5 py-4 flex items-center justify-between">
@@ -738,6 +860,22 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                                   rows={3}
                                   className="w-full rounded-xl border border-outline-variant bg-surface-container px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none transition-all"
                                 />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-on-surface-variant mb-1.5 flex items-center gap-1.5">
+                                  <GoogleDriveLogo className="w-3.5 h-3.5 shrink-0" />
+                                  Link da Pasta Google Drive da Equipe
+                                </label>
+                                <input
+                                  type="url"
+                                  value={formMarca.drive_url || ''}
+                                  onChange={e => setFormMarca({ ...formMarca, drive_url: e.target.value })}
+                                  placeholder="https://drive.google.com/drive/folders/... ou link de rascunhos da equipe"
+                                  className="w-full rounded-xl border border-outline-variant bg-surface-container px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-medium"
+                                />
+                                <p className="text-[10px] text-on-surface-variant/80 mt-1">
+                                  Centralize aqui a pasta onde a equipe rascunha entregas, arquivos de design e outros detalhes.
+                                </p>
                               </div>
                               <div className="space-y-2">
                                 <label className="block text-xs font-bold text-on-surface-variant">Canais de Presença Digital Atuais</label>
@@ -928,72 +1066,240 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      ) : (
-        /* ── Etapas Tab ── */
-        <>
-          {/* Grupo Info Card */}
-          {pi.tipo === 'grupo' && (
-            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4">
-              {grupo ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <HugeiconsIcon icon={UserGroupIcon} size={18} strokeWidth={2} className="text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-on-surface text-sm">Grupo: {grupo.nome}</span>
+
+              {/* Card de Perfil da Marca (Visual Preview) — Premium Redesign */}
+              <div className="lg:sticky lg:top-6 space-y-3 w-full">
+                <div className="flex items-center gap-2 px-1">
+                  <h2 className="text-xs font-heading font-black uppercase tracking-widest text-on-surface-variant flex-1">Prévia da Presença Digital</h2>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">ao vivo</span>
+                </div>
+                
+                <div className="rounded-2xl overflow-hidden shadow-xl border border-outline-variant/40 dark:border-white/5 bg-white dark:bg-[#0f0f13]">
+                  {/* ── Cover ── */}
+                  <div className="h-32 bg-gradient-to-br from-violet-700 via-fuchsia-700 to-indigo-800 relative overflow-hidden">
+                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-pink-500/25 rounded-full blur-2xl" />
+                    <div className="absolute -bottom-4 right-8 w-24 h-24 bg-indigo-400/25 rounded-full blur-2xl" />
+                    <div className="absolute top-4 right-4 w-14 h-14 bg-yellow-400/15 rounded-full blur-xl" />
+
+                    {/* completude pill top-left */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-2.5 py-1">
+                      <svg viewBox="0 0 12 12" className="w-3 h-3 -rotate-90 shrink-0">
+                        <circle cx="6" cy="6" r="4.5" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
+                        <circle cx="6" cy="6" r="4.5" fill="none" stroke="#a78bfa" strokeWidth="1.5"
+                          strokeDasharray={`${(getCompletude() / 100) * 28.27} 28.27`} strokeLinecap="round"/>
+                      </svg>
+                      <span className="text-[10px] font-black text-white">{getCompletude()}%</span>
+                      <span className="text-[9px] text-white/60 font-semibold">completo</span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {membros.map((m: any) => (
-                        <div key={m.aluno_id} className="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-full text-xs text-on-surface">
-                          {m.profiles?.avatar_url ? (
-                            <img src={m.profiles.avatar_url} className="w-4 h-4 rounded-full" alt="" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-[8px] font-black text-primary">{(m.profiles?.nome || 'A')[0].toUpperCase()}</span>
-                            </div>
+
+                    {/* type badge top-right */}
+                    <div className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white/80">
+                      {pi.tipo === 'grupo' ? '👥 Grupo' : '👤 Individual'}
+                    </div>
+                  </div>
+
+                  {/* ── Avatar + action buttons ── */}
+                  <div className="relative px-4">
+                    <div className="flex items-end justify-between -mt-9">
+                      {/* Avatar with spinning ring */}
+                      <div className="relative shrink-0">
+                        <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-violet-600 pointer-events-none" style={{ animation: 'spin 8s linear infinite' }} />
+                        <div className="absolute -inset-[1.5px] rounded-full bg-white dark:bg-[#0f0f13]" />
+                        <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center font-heading font-black text-2xl text-white shadow-xl z-10">
+                          {formMarca.nome_marca?.trim()
+                            ? formMarca.nome_marca.trim().split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()
+                            : <HugeiconsIcon icon={BriefcaseIcon} size={26} className="text-white/80" />
+                          }
+                        </div>
+                      </div>
+
+                      {/* Buttons */}
+                      <div className="flex gap-1.5 pb-1">
+                        <button type="button" disabled className="h-7 px-3 rounded-lg bg-surface-container border border-outline-variant/40 text-on-surface-variant text-[11px] font-bold cursor-not-allowed">Seguir</button>
+                        <button type="button" disabled className="h-7 px-3 rounded-lg bg-surface-container-low border border-outline-variant/30 text-on-surface-variant text-[11px] font-bold cursor-not-allowed">Mensagem</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Name / handle / segment ── */}
+                  <div className="px-4 pt-2 pb-3 space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-heading font-black text-on-surface text-[15px] leading-tight">
+                        {formMarca.nome_marca?.trim() || <span className="text-on-surface-variant/50 italic font-normal text-sm">Nome da marca...</span>}
+                      </h3>
+                      {formMarca.nome_marca?.trim() && (
+                        <svg className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-violet-600 dark:text-violet-400 font-bold">{getInstagramHandle()}</div>
+                    {formMarca.segmento?.trim() && (
+                      <span className="inline-flex items-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-white/50">
+                        {formMarca.segmento}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* ── Stats ── */}
+                  <div className="grid grid-cols-3 border-y border-slate-100 dark:border-white/5 mx-4 mb-4">
+                    {[
+                      { label: 'Entregas', value: `${completedCount}/${entregas.length}`,      cls: 'text-sky-600 dark:text-sky-400' },
+                      { label: 'Canais',   value: `${formMarca.canais_digitais.filter((c: any) => c.url?.trim()).length}`, cls: 'text-pink-600 dark:text-pink-400' },
+                      { label: 'Ficha',    value: `${getCompletude()}%`,                       cls: 'text-violet-600 dark:text-violet-400' },
+                    ].map((s, i) => (
+                      <div key={i} className="py-3 text-center border-r border-slate-100 dark:border-white/5 last:border-r-0">
+                        <div className={`text-sm font-heading font-black leading-none ${s.cls}`}>{s.value}</div>
+                        <div className="text-[9px] text-slate-400 dark:text-white/25 font-bold uppercase tracking-wider mt-1">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Bio ── */}
+                  <div className="px-4 pb-4 space-y-2">
+                    <p className="text-[12px] leading-relaxed text-slate-500 dark:text-white/60 italic">
+                      {formMarca.frase_posicionamento?.trim()
+                        ? `"${formMarca.frase_posicionamento.trim()}"`
+                        : <span className="text-slate-300 dark:text-white/20 not-italic">Preencha a frase de posicionamento na Seção 04...</span>
+                      }
+                    </p>
+
+                    {formMarca.tom_voz?.trim() && (
+                      <div className="flex items-start gap-1.5 text-[11px] text-slate-400 dark:text-white/40">
+                        <span className="text-base leading-none">🗣️</span>
+                        <span className="leading-relaxed">{formMarca.tom_voz}</span>
+                      </div>
+                    )}
+
+                    {formMarca.palavras_chave?.trim() && (
+                      <div className="flex flex-wrap gap-1">
+                        {formMarca.palavras_chave.split(',').map((w: string, i: number) => {
+                          const word = w.trim().replace(/\s+/g, '');
+                          if (!word) return null;
+                          return <span key={i} className="text-[11px] font-bold text-violet-600 dark:text-violet-400">#{word}</span>;
+                        })}
+                      </div>
+                    )}
+
+                    {/* Channel pills */}
+                    {(formMarca.canais_digitais.some((c: any) => c.url?.trim()) || formMarca.drive_url?.trim()) && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-white/25">Presença Digital & Arquivos</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {formMarca.drive_url?.trim() && (
+                            <a href={formMarca.drive_url} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/10 dark:hover:bg-green-500/20 border border-green-500/20 text-[10px] font-bold text-green-700 dark:text-green-400 transition-all">
+                              <GoogleDriveLogo className="w-3.5 h-3.5" />
+                              Pasta da Equipe
+                            </a>
                           )}
-                          <span className="font-medium">{m.profiles?.nome || 'Aluno'}</span>
-                          {m.lider && <span className="text-amber-500 text-[10px] font-black">★</span>}
+                          {formMarca.canais_digitais.map((canalObj: any, index: number) => {
+                            if (!canalObj.url?.trim()) return null;
+                            return (
+                              <a key={index} href={canalObj.url} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white transition-all">
+                                {getChannelIcon(canalObj.canal)}
+                                {canalObj.canal || 'Link'}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Feed grid ── */}
+                  <div className="border-t border-slate-100 dark:border-white/5">
+                    <div className="px-4 py-2.5">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-white/25">Estrutura de Conteúdo</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-px bg-slate-100 dark:bg-white/5">
+                      {[
+                        { label: '01', title: 'Identidade', desc: formMarca.justificativa, ph: 'Justificativa...', from: '#4c1d95', to: '#5b21b6', accent: '#a78bfa' },
+                        { label: '02', title: 'Persona',    desc: formMarca.persona_nome ? `${formMarca.persona_nome}${formMarca.persona_idade ? `, ${formMarca.persona_idade}` : ''}` : '', ph: 'Crie sua persona...', from: '#0c4a6e', to: '#1e3a5f', accent: '#38bdf8' },
+                        { label: '03', title: 'SWOT',       desc: formMarca.pontos_fortes, ph: 'Diagnóstico...', from: '#7f1d1d', to: '#78350f', accent: '#fb923c' },
+                        { label: '04', title: 'Branding',   desc: formMarca.palavras_chave, ph: 'Posicionamento...', from: '#064e3b', to: '#134e4a', accent: '#34d399' },
+                      ].map((post, idx) => (
+                        <div key={idx} className="aspect-square relative overflow-hidden group/post cursor-default">
+                          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${post.from}, ${post.to})` }} />
+                          {/* default state */}
+                          <div className="absolute inset-0 p-3 flex flex-col justify-between transition-opacity duration-200 group-hover/post:opacity-0">
+                            <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{post.label}</span>
+                            <span className="text-[12px] font-bold text-white leading-tight">{post.title}</span>
+                          </div>
+                          {/* hover state */}
+                          <div className="absolute inset-0 p-3 flex flex-col gap-1 bg-white/90 dark:bg-black/80 backdrop-blur-sm opacity-0 group-hover/post:opacity-100 transition-opacity duration-200">
+                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: post.accent }}>{post.label}. {post.title}</span>
+                            <p className="text-[9px] text-slate-600 dark:text-white/50 line-clamp-5 leading-relaxed flex-1">
+                              {post.desc?.trim() || <span className="italic text-slate-400 dark:text-white/20">{post.ph}</span>}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
-                  <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                    <HugeiconsIcon icon={Alert01Icon} size={18} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Aguardando alocação em grupo</p>
-                    <p className="text-xs opacity-80 mt-0.5">Você ainda não foi adicionado a um grupo. Aguarde seu professor.</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           )}
-
-          {/* Stats summary row */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Total de Etapas', value: entregas.length, icon: ChartHistogramIcon, color: 'text-on-surface' },
-              { label: 'Enviadas', value: completedCount, icon: Upload01Icon, color: 'text-blue-600 dark:text-blue-400' },
-              { label: 'Aprovadas', value: approvedCount, icon: CheckmarkCircle02Icon, color: 'text-green-600 dark:text-green-400' },
-            ].map(stat => (
-              <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 text-center">
-                <HugeiconsIcon icon={stat.icon} size={18} strokeWidth={2} className={`${stat.color} mx-auto mb-1`} />
-                <div className={`text-xl font-heading font-black ${stat.color}`}>{stat.value}</div>
-                <div className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Entregas list */}
+        </div>
+      ) : (
+        /* ── Etapas Tab ── */
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
+          {/* Left: Entregas list */}
           <div className="space-y-3">
-            <h2 className="text-sm font-heading font-black text-on-surface px-1 uppercase tracking-widest text-on-surface-variant">Etapas do Projeto</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-1">
+              <h2 className="text-xs font-heading font-black uppercase tracking-widest text-on-surface-variant">Etapas do Projeto</h2>
+              {isMidiasDigitais && formMarca.drive_url?.trim() && (
+                <a
+                  href={formMarca.drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-bold bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full hover:bg-green-500/20 transition-all shrink-0"
+                >
+                  <GoogleDriveLogo className="w-3.5 h-3.5" />
+                  Pasta Google Drive da Equipe
+                </a>
+              )}
+            </div>
+
+            {isMidiasDigitais && (
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 justify-between shadow-sm">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
+                    <GoogleDriveLogo className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="font-bold text-on-surface text-sm">Central de Entregas & Arquivos</h4>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      {formMarca.drive_url?.trim()
+                        ? "Utilize a pasta do Google Drive da sua equipe para concentrar entregas, rascunhos e outros detalhes de mídias."
+                        : "Sua equipe ainda não configurou o link da pasta do Google Drive. Adicione-o para concentrar rascunhos e entregas."}
+                    </p>
+                  </div>
+                </div>
+                {formMarca.drive_url?.trim() ? (
+                  <a
+                    href={formMarca.drive_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 px-3.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md shadow-green-500/10 shrink-0"
+                  >
+                    <GoogleDriveLogo className="w-4 h-4" />
+                    Acessar Pasta
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('ficha')}
+                    className="py-2 px-3.5 border border-dashed border-outline-variant hover:border-primary/50 text-on-surface-variant hover:text-primary font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    Configurar Drive
+                  </button>
+                )}
+              </div>
+            )}
+
             {entregas.map((entrega, idx) => {
               const sub = getSubmissao(entrega.id);
               const status = sub?.status || 'pendente';
@@ -1012,7 +1318,6 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                 >
                   <div className="p-4">
                     <div className="flex items-start gap-3">
-                      {/* Step indicator */}
                       <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-heading font-black text-sm shadow-sm ${
                         status === 'avaliada' ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-green-500/20' :
                         status === 'enviada' ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-blue-500/20' :
@@ -1023,7 +1328,6 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                           ? <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2.5} />
                           : idx + 1}
                       </div>
-
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -1037,8 +1341,6 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                             {cfg.label}
                           </span>
                         </div>
-
-                        {/* Meta info chips */}
                         <div className="flex flex-wrap items-center gap-2 mt-2.5">
                           {entrega.prazo && (
                             <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
@@ -1055,13 +1357,11 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                             Peso {entrega.peso}
                           </span>
                           <span className="inline-flex items-center gap-1.5 text-[11px] text-on-surface-variant">
-                            {entrega.aceita_arquivo && <HugeiconsIcon icon={FileAttachmentIcon} size={12} strokeWidth={2} title="Aceita arquivo" />}
-                            {entrega.aceita_link && <HugeiconsIcon icon={LinkSquare01Icon} size={12} strokeWidth={2} title="Aceita link" />}
-                            {entrega.aceita_texto && <HugeiconsIcon icon={TextIcon} size={12} strokeWidth={2} title="Aceita texto" />}
+                            {entrega.aceita_arquivo && <span title="Aceita arquivo"><HugeiconsIcon icon={FileAttachmentIcon} size={12} strokeWidth={2} /></span>}
+                            {entrega.aceita_link && <span title="Aceita link"><HugeiconsIcon icon={LinkSquare01Icon} size={12} strokeWidth={2} /></span>}
+                            {entrega.aceita_texto && <span title="Aceita texto"><HugeiconsIcon icon={TextIcon} size={12} strokeWidth={2} /></span>}
                           </span>
                         </div>
-
-                        {/* Nota / feedback */}
                         {sub?.nota !== null && sub?.nota !== undefined && (
                           <div className="mt-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-xl p-3">
                             <div className="flex items-center gap-3">
@@ -1080,8 +1380,6 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
                             )}
                           </div>
                         )}
-
-                        {/* Action */}
                         {canSubmit && status !== 'avaliada' && (
                           <div className="mt-3">
                             <button
@@ -1104,7 +1402,128 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
               );
             })}
           </div>
-        </>
+
+          {/* Right: Sidebar */}
+          <div className="space-y-3 lg:sticky lg:top-4">
+            {/* Stats */}
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+                <span className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Resumo</span>
+              </div>
+              <div className="p-3 space-y-2">
+                {[
+                  { label: 'Total de Etapas', value: entregas.length, icon: ChartHistogramIcon, color: 'text-on-surface' },
+                  { label: 'Enviadas', value: completedCount, icon: Upload01Icon, color: 'text-blue-600 dark:text-blue-400' },
+                  { label: 'Aprovadas', value: approvedCount, icon: CheckmarkCircle02Icon, color: 'text-green-600 dark:text-green-400' },
+                ].map(stat => (
+                  <div key={stat.label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HugeiconsIcon icon={stat.icon} size={14} strokeWidth={2} className={stat.color} />
+                      <span className="text-xs text-on-surface-variant font-medium">{stat.label}</span>
+                    </div>
+                    <span className={`text-sm font-heading font-black ${stat.color}`}>{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Grupo info */}
+            {pi.tipo === 'grupo' && (
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+                  <span className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Grupo</span>
+                </div>
+                {grupo ? (
+                  <div className="p-3 space-y-2">
+                    <div className="font-bold text-on-surface text-sm">{grupo.nome}</div>
+                    <div className="space-y-1.5">
+                      {membros.map((m: any) => (
+                        <div key={m.aluno_id} className="flex items-center gap-2">
+                          {m.profiles?.avatar_url ? (
+                            <img src={m.profiles.avatar_url} className="w-6 h-6 rounded-full shrink-0" alt="" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                              <span className="text-[9px] font-black text-primary">{(m.profiles?.nome || 'A')[0].toUpperCase()}</span>
+                            </div>
+                          )}
+                          <span className="text-xs font-medium text-on-surface truncate flex-1">{m.profiles?.nome || 'Aluno'}</span>
+                          {m.lider && <span className="text-amber-500 text-[10px] font-black shrink-0">★ Líder</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3">
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                      <HugeiconsIcon icon={Alert01Icon} size={14} strokeWidth={2} />
+                      <p className="text-xs font-semibold">Aguardando alocação em grupo</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pasta do Google Drive (Mídias Digitais) */}
+            {isMidiasDigitais && (
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/20 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Pasta da Equipe</span>
+                  <GoogleDriveLogo className="w-4 h-4 shrink-0" />
+                </div>
+                <div className="p-3 space-y-2">
+                  {formMarca.drive_url?.trim() ? (
+                    <>
+                      <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                        Acesso rápido à pasta compartilhada da equipe no Google Drive para rascunhos e arquivos.
+                      </p>
+                      <a
+                        href={formMarca.drive_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-green-500/10"
+                      >
+                        <GoogleDriveLogo className="w-3.5 h-3.5" />
+                        Abrir Google Drive
+                      </a>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-on-surface-variant/80 leading-normal">
+                        Nenhum link do Google Drive cadastrado ainda.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('ficha')}
+                        className="w-full py-2 border border-dashed border-outline-variant hover:border-primary/50 text-on-surface-variant hover:text-primary font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5"
+                      >
+                        Configurar na Ficha da Marca
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* XP info */}
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <HugeiconsIcon icon={Award01Icon} size={16} strokeWidth={2} className="text-amber-600 dark:text-amber-400" />
+                <span className="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">XP Potencial</span>
+              </div>
+              <div className="text-2xl font-heading font-black text-amber-600 dark:text-amber-400">
+                {approvedCount * pi.xp_por_entrega} XP
+              </div>
+              <p className="text-[11px] text-amber-600/70 dark:text-amber-500/70 mt-0.5">
+                {approvedCount} aprovada{approvedCount !== 1 ? 's' : ''} × {pi.xp_por_entrega} XP
+              </p>
+              {approvedCount < entregas.length && (
+                <p className="text-[11px] text-amber-600/70 dark:text-amber-500/70 mt-1 border-t border-amber-200/50 dark:border-amber-700/30 pt-1">
+                  Potencial total: {entregas.length * pi.xp_por_entrega} XP
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {error && (
