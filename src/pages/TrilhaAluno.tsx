@@ -2579,7 +2579,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                               {user.name} {user.isSelf && '(Você)'}
                             </p>
                             <p className="text-[10px] text-on-surface-variant/80 font-bold uppercase tracking-wider">
-                              {position <= 3 ? 'Zona de Promoção' : 'Estável'}
+                              {position <= 5 ? 'Zona de Promoção' : 'Estável'}
                             </p>
                           </div>
                         </div>
@@ -2595,7 +2595,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl text-[11px] text-on-surface-variant/90 leading-relaxed font-sans font-medium flex items-center justify-center gap-2">
                   <HugeiconsIcon icon={FireIcon} size={14} className="text-orange-500 shrink-0" strokeWidth={2.5} />
                   <span>
-                    <strong>Fique no Top 3</strong> para subir de Liga no fim de semana e ganhar medalhas e conquistas exclusivas!
+                    <strong>Fique no Top 5</strong> para subir de Liga no fim de semana e ganhar medalhas e conquistas exclusivas!
                   </span>
                 </div>
               </div>

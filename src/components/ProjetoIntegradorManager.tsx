@@ -140,6 +140,46 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
     status: 'avaliada' as 'avaliada' | 'revisao',
   });
 
+  // Marca detalhes states for teacher
+  const [selectedMarcaDetalhes, setSelectedMarcaDetalhes] = useState<any | null>(null);
+  const [loadingSelectedMarca, setLoadingSelectedMarca] = useState(false);
+
+  const fetchSelectedMarcaDetails = async (projetoId: string, options: { alunoId?: string | null; grupoId?: string | null }) => {
+    try {
+      setLoadingSelectedMarca(true);
+      setSelectedMarcaDetalhes(null);
+      let query = supabase
+        .from('pi_marca_detalhes')
+        .select('*')
+        .eq('projeto_id', projetoId);
+      
+      if (options.grupoId) {
+        query = query.eq('grupo_id', options.grupoId);
+      } else if (options.alunoId) {
+        query = query.eq('aluno_id', options.alunoId);
+      } else {
+        setLoadingSelectedMarca(false);
+        return;
+      }
+
+      const { data, error } = await query.maybeSingle();
+      if (error) throw error;
+      setSelectedMarcaDetalhes(data);
+    } catch (err: any) {
+      console.error('Erro ao carregar detalhes da marca do aluno/grupo:', err);
+    } finally {
+      setLoadingSelectedMarca(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pi && selectedGrupo) {
+      fetchSelectedMarcaDetails(pi.id, { grupoId: selectedGrupo.id });
+    } else {
+      setSelectedMarcaDetalhes(null);
+    }
+  }, [selectedGrupo, pi]);
+
   // Fetch initial course PI
   const fetchPI = async () => {
     try {
@@ -571,13 +611,16 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
     }
   };
 
-  const handleOpenEvaluation = (sub: Submissao) => {
+  const handleOpenEvaluation = async (sub: Submissao) => {
     setSelectedSubmissao(sub);
     setEvaluationForm({
       nota: sub.nota !== null ? sub.nota.toString() : '',
       feedback_professor: sub.feedback_professor || '',
       status: (sub.status === 'revisao' ? 'revisao' : 'avaliada') as 'avaliada' | 'revisao',
     });
+    if (pi) {
+      await fetchSelectedMarcaDetails(pi.id, { alunoId: sub.aluno_id, grupoId: sub.grupo_id });
+    }
   };
 
   const handleSaveEvaluation = async () => {
@@ -604,6 +647,133 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
     } finally {
       setSaving(false);
     }
+  };
+
+  const renderMarcaDetailsSection = (marca: any) => {
+    if (loadingSelectedMarca) {
+      return (
+        <div className="flex justify-center py-4">
+          <div className="w-6 h-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+        </div>
+      );
+    }
+
+    if (!marca) {
+      return (
+        <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-4 text-center text-xs text-slate-400">
+          Nenhuma Ficha da Marca preenchida por este aluno ou grupo ainda.
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-slate-50 border border-slate-200/85 rounded-xl p-4 space-y-4 max-h-[450px] overflow-y-auto">
+        <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/60">
+          <h4 className="font-heading font-bold text-body-md text-primary">Ficha da Marca: {marca.nome_marca}</h4>
+          {marca.segmento && <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-0.5 rounded">{marca.segmento}</span>}
+        </div>
+
+        {marca.justificativa && (
+          <div className="space-y-1">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Justificativa</h5>
+            <p className="text-xs text-on-surface leading-relaxed">{marca.justificativa}</p>
+          </div>
+        )}
+
+        {Array.isArray(marca.canais_digitais) && marca.canais_digitais.some((c: any) => c.url) && (
+          <div className="space-y-1.5">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Presença Digital (Canais)</h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {marca.canais_digitais.filter((c: any) => c.url).map((c: any, i: number) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-100 px-2 py-1 rounded">
+                  <span className="font-semibold text-slate-700">{c.canal}:</span>
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate flex-1">{c.url}</a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {marca.publico_alvo && (
+          <div className="space-y-1">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Público-Alvo</h5>
+            <p className="text-xs text-on-surface leading-relaxed">{marca.publico_alvo}</p>
+          </div>
+        )}
+
+        {(marca.persona_nome || marca.persona_idade || marca.persona_dores || marca.persona_desejos || marca.persona_necessidades || marca.persona_comportamento) && (
+          <div className="bg-white border border-slate-200/60 rounded-lg p-3 space-y-2">
+            <h5 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-1 flex items-center justify-between">
+              <span>Persona</span>
+              {marca.persona_nome && <span className="text-primary">{marca.persona_nome} {marca.persona_idade ? `(${marca.persona_idade})` : ''}</span>}
+            </h5>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              {marca.persona_dores && (
+                <div><span className="font-semibold text-slate-600 block">Dores:</span><p className="text-slate-700 leading-normal">{marca.persona_dores}</p></div>
+              )}
+              {marca.persona_desejos && (
+                <div><span className="font-semibold text-slate-600 block">Desejos:</span><p className="text-slate-700 leading-normal">{marca.persona_desejos}</p></div>
+              )}
+              {marca.persona_necessidades && (
+                <div><span className="font-semibold text-slate-600 block">Necessidades:</span><p className="text-slate-700 leading-normal">{marca.persona_necessidades}</p></div>
+              )}
+              {marca.persona_comportamento && (
+                <div><span className="font-semibold text-slate-600 block">Comportamento Digital:</span><p className="text-slate-700 leading-normal">{marca.persona_comportamento}</p></div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(marca.pontos_fortes || marca.pontos_fracos || marca.oportunidades || marca.concorrentes) && (
+          <div className="space-y-2">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Diagnóstico & Concorrência</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              {marca.pontos_fortes && (
+                <div className="bg-green-50/40 border border-green-100/50 p-2.5 rounded-lg">
+                  <span className="font-bold text-green-700 block mb-0.5">Pontos Fortes:</span>
+                  <p className="text-slate-700 leading-normal">{marca.pontos_fortes}</p>
+                </div>
+              )}
+              {marca.pontos_fracos && (
+                <div className="bg-red-50/40 border border-red-100/50 p-2.5 rounded-lg">
+                  <span className="font-bold text-red-700 block mb-0.5">Pontos Fracos:</span>
+                  <p className="text-slate-700 leading-normal">{marca.pontos_fracos}</p>
+                </div>
+              )}
+              {marca.oportunidades && (
+                <div className="bg-blue-50/40 border border-blue-100/50 p-2.5 rounded-lg col-span-1 md:col-span-2">
+                  <span className="font-bold text-blue-700 block mb-0.5">Oportunidades:</span>
+                  <p className="text-slate-700 leading-normal">{marca.oportunidades}</p>
+                </div>
+              )}
+              {marca.concorrentes && (
+                <div className="bg-slate-100/60 border border-slate-200/50 p-2.5 rounded-lg col-span-1 md:col-span-2">
+                  <span className="font-bold text-slate-700 block mb-0.5">Concorrentes & Referências:</span>
+                  <p className="text-slate-700 leading-normal">{marca.concorrentes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(marca.palavras_chave || marca.frase_posicionamento || marca.tom_voz) && (
+          <div className="space-y-2 border-t border-slate-200/60 pt-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Posicionamento & Branding</h5>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              {marca.palavras_chave && (
+                <div><span className="font-semibold text-slate-600">Palavras-chave:</span> <span className="text-slate-700 font-medium italic">{marca.palavras_chave}</span></div>
+              )}
+              {marca.frase_posicionamento && (
+                <div><span className="font-semibold text-slate-600 block">Frase de Posicionamento:</span><p className="text-slate-700 leading-normal italic">"{marca.frase_posicionamento}"</p></div>
+              )}
+              {marca.tom_voz && (
+                <div><span className="font-semibold text-slate-600 block">Tom de Voz:</span><p className="text-slate-700 leading-normal">{marca.tom_voz}</p></div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -1032,6 +1202,12 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                             )}
                           </div>
                         )}
+
+                        {/* Ficha da Marca do Grupo */}
+                        <div className="space-y-2 pt-3 border-t border-slate-100">
+                          <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Ficha da Marca do Grupo</h4>
+                          {renderMarcaDetailsSection(selectedMarcaDetalhes)}
+                        </div>
                       </div>
                     ) : (
                       <div className="app-card-padded text-center text-slate-400">
@@ -1173,6 +1349,12 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                               </a>
                             </div>
                           )}
+                        </div>
+
+                        {/* Ficha da Marca do Aluno/Grupo */}
+                        <div className="space-y-2 pt-3 border-t border-slate-100">
+                          <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Ficha da Marca da Equipe</h4>
+                          {renderMarcaDetailsSection(selectedMarcaDetalhes)}
                         </div>
 
                         {/* Evaluation Form */}
