@@ -22,7 +22,8 @@ import {
   Calendar01Icon,
   Task01Icon,
   KeyboardIcon,
-  Chat01Icon
+  Chat01Icon,
+  WindowsNewIcon
 } from '@hugeicons/core-free-icons';
 import { TreinadorDigitacao } from './pages/TreinadorDigitacao';
 import { ListaAlunos } from './pages/ListaAlunos';
@@ -49,10 +50,11 @@ import { ArenaLiveAluno } from './pages/ArenaLiveAluno';
 import { StudentChatWidget } from './components/common/StudentChatWidget';
 import { ProjetoIntegrador } from './pages/ProjetoIntegrador';
 import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
+import { CursoWindows11 } from './pages/CursoWindows11';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador';
-type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
@@ -70,7 +72,17 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentProfileUserIdRef = useRef<string | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(() => {
+    const saved = sessionStorage.getItem('demo_session');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as Session;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [teacherView, setTeacherView] = useState<'content' | 'preview'>('content');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('dashboard');
@@ -237,6 +249,24 @@ function App() {
 
   const fetchUserProfile = async (userId: string) => {
     currentProfileUserIdRef.current = userId;
+    if (userId === 'mock-student-id') {
+      setProfileStatus('ativo');
+      setProfileRole('student');
+      setProfileLoaded(true);
+      
+      const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
+      if (justLoggedIn) {
+        sessionStorage.removeItem('just_logged_in');
+        setSelectedStudentId(null);
+        setSelectedChatStudentId(null);
+        setArenaActive(false);
+        setArenaRole(null);
+        setMobileMenuOpen(false);
+        setSidebarCollapsed(false);
+        navigate('/dashboard', { replace: true });
+      }
+      return;
+    }
     if (!profileRole) {
       setProfileLoaded(false);
     }
@@ -409,6 +439,7 @@ function App() {
         '/digitacao': 'digitacao',
         '/perfil': 'profile',
         '/projeto-integrador': 'projeto_integrador',
+        '/windows11': 'windows11',
       };
 
       const targetTab = tabMap[path];
@@ -448,6 +479,7 @@ function App() {
       arena_ranking: 'Ranking da Arena | Estudea',
       digitacao: 'Treino de Digitação | Estudea',
       projeto_integrador: 'Projeto Integrador | Estudea',
+      windows11: 'Curso Windows 11 | Estudea',
     };
     document.title = titles[activeUserTab] ?? 'Estudea';
   }, [activeUserTab, session, isAdmin, teacherView]);
@@ -672,21 +704,21 @@ function App() {
           </button>
 
           <button
+            onClick={() => { navigate('/projeto-integrador'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'projeto_integrador', sidebarCollapsed)}
+            title="Projeto Integrador"
+          >
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
+          </button>
+
+          <button
             onClick={() => { navigate('/conquistas'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'achievements', sidebarCollapsed)}
             title="Minhas Conquistas"
           >
             <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Minhas Conquistas</span>
-          </button>
-
-          <button
-            onClick={() => { navigate('/arena'); setMobileMenuOpen(false); }}
-            className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
-            title="Ranking da Arena"
-          >
-            <HugeiconsIcon icon={Trophy} size={20} strokeWidth={2} />
-            <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
           </button>
 
           <button
@@ -699,12 +731,21 @@ function App() {
           </button>
 
           <button
-            onClick={() => { navigate('/projeto-integrador'); setMobileMenuOpen(false); }}
-            className={getSidebarItemClass(activeUserTab === 'projeto_integrador', sidebarCollapsed)}
-            title="Projeto Integrador"
+            onClick={() => { navigate('/windows11'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'windows11', sidebarCollapsed)}
+            title="Curso Windows 11"
           >
-            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
-            <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
+            <HugeiconsIcon icon={WindowsNewIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Curso Windows 11</span>
+          </button>
+
+          <button
+            onClick={() => { navigate('/arena'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'arena_ranking', sidebarCollapsed)}
+            title="Ranking da Arena"
+          >
+            <HugeiconsIcon icon={Trophy} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
           </button>
 
           <button
@@ -1037,6 +1078,8 @@ function App() {
                 <ArenaRanking session={session} isAdmin={false} />
               ) : activeUserTab === 'digitacao' ? (
                 <TreinadorDigitacao session={session} />
+              ) : activeUserTab === 'windows11' ? (
+                <CursoWindows11 session={session} />
               ) : activeUserTab === 'projeto_integrador' ? (
                 <ProjetoIntegrador session={session} />
               ) : (
