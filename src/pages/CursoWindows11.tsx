@@ -125,7 +125,6 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
   // State for tracking completed lessons
   const [concluidas, setConcluidas] = useState<string[]>([]);
   const [selectedAula, setSelectedAula] = useState<AulaWindows>(aulasWindows11[0]);
-  const [celebrated, setCelebrated] = useState<boolean>(false);
 
   // Load progress from localStorage
   useEffect(() => {
@@ -135,10 +134,6 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
         const ids = JSON.parse(saved);
         if (Array.isArray(ids)) {
           setConcluidas(ids);
-          // Check if already completed and celebrated in this session
-          if (ids.length === aulasWindows11.length) {
-            setCelebrated(true);
-          }
         }
       } catch (e) {
         console.error('Erro ao ler progresso do Windows 11:', e);
@@ -163,9 +158,6 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
     // If just completed the final lesson (all 8) and hasn't celebrated yet
     if (newConcluidas.length === aulasWindows11.length && !isCompleted) {
       dispararCelebracao();
-      setCelebrated(true);
-    } else if (newConcluidas.length < aulasWindows11.length) {
-      setCelebrated(false);
     }
   };
 
@@ -251,7 +243,7 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
             </div>
 
             <div className="divide-y divide-outline-variant/20 max-h-[580px] overflow-y-auto bg-surface-container-lowest">
-              {aulasWindows11.map((aula, index) => {
+              {aulasWindows11.map((aula) => {
                 const isSelected = selectedAula.id === aula.id;
                 const isCompleted = concluidas.includes(aula.id);
 
