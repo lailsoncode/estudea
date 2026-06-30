@@ -1562,7 +1562,7 @@ export const CourseBuilder: React.FC = () => {
               realActId = tempIdToRealId[q.atividade_id!] || null;
             }
             return {
-              ...(q.id ? { id: q.id } : {}), // Preserve ID if it exists (upsert will update it)
+              id: q.id || crypto.randomUUID(),
               aula_id: aulaId,
               enunciado: q.enunciado.trim(),
               opcoes: q.opcoes,
