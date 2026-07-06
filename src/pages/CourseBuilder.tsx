@@ -13,12 +13,16 @@ import {
   CheckmarkCircle02Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  ArrowUp01Icon,
+  ArrowDown01Icon,
+  Menu01Icon,
   Cancel01Icon,
   SparklesIcon,
   NotebookIcon,
   Quiz01Icon,
   GameControllerIcon
 } from '@hugeicons/core-free-icons';
+
 
 // Types corresponding to our database tables
 interface Curso {
@@ -192,6 +196,11 @@ export const CourseBuilder: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Drag & Drop States
+  const [draggingLessonId, setDraggingLessonId] = useState<string | null>(null);
+  const [draggingModuleId, setDraggingModuleId] = useState<string | null>(null);
+
 
 
 
@@ -987,7 +996,113 @@ export const CourseBuilder: React.FC = () => {
     }
   };
 
+  // LESSON REORDER LOGIC
+  const saveLessonsOrder = async (updatedLessonsInModule: Aula[], moduloId: string) => {
+    setSaving(true);
+    try {
+      const allLessonsToUpdate: { id: string; ordem: number; numero_aula: number }[] = [];
+      let globalIndex = 1;
+
+      modulos.forEach(m => {
+        const moduleLessons = m.id === moduloId ? updatedLessonsInModule : (m.aulas || []);
+        moduleLessons.forEach(lesson => {
+          if (lesson.ordem !== globalIndex || lesson.numero_aula !== globalIndex) {
+            allLessonsToUpdate.push({
+              id: lesson.id,
+              ordem: globalIndex,
+              numero_aula: globalIndex
+            });
+          }
+          globalIndex++;
+        });
+      });
+
+      if (allLessonsToUpdate.length > 0) {
+        const updatePromises = allLessonsToUpdate.map(item => 
+          supabase
+            .from('aulas')
+            .update({ ordem: item.ordem, numero_aula: item.numero_aula })
+            .eq('id', item.id)
+        );
+        const results = await Promise.all(updatePromises);
+        const error = results.find(r => r.error)?.error;
+        if (error) throw error;
+      }
+
+      setSuccess('Ordem das aulas atualizada com sucesso!');
+      if (selectedCourse) {
+        fetchModulesAndLessons(selectedCourse.id);
+      }
+    } catch (err: any) {
+      console.error('Erro ao reordenar aulas:', err);
+      setError(err.message || 'Erro ao reordenar aulas.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMoveLesson = async (moduloId: string, currentIndex: number, direction: 'up' | 'down') => {
+    const targetModule = modulos.find(m => m.id === moduloId);
+    if (!targetModule || !targetModule.aulas) return;
+
+    const lessons = [...targetModule.aulas];
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= lessons.length) return;
+
+    const temp = lessons[currentIndex];
+    lessons[currentIndex] = lessons[targetIndex];
+    lessons[targetIndex] = temp;
+
+    await saveLessonsOrder(lessons, moduloId);
+  };
+
+  const handleDragStart = (e: React.DragEvent, lessonId: string, moduloId: string) => {
+    e.dataTransfer.setData('text/plain', lessonId);
+    setDraggingLessonId(lessonId);
+    setDraggingModuleId(moduloId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetModuloId: string) => {
+    if (draggingModuleId === targetModuloId) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetLessonId: string, targetModuloId: string) => {
+    e.preventDefault();
+    const sourceLessonId = e.dataTransfer.getData('text/plain');
+    if (!sourceLessonId || sourceLessonId === targetLessonId || draggingModuleId !== targetModuloId) {
+      setDraggingLessonId(null);
+      setDraggingModuleId(null);
+      return;
+    }
+
+    const targetModule = modulos.find(m => m.id === targetModuloId);
+    if (!targetModule || !targetModule.aulas) return;
+
+    const lessons = [...targetModule.aulas];
+    const sourceIndex = lessons.findIndex(l => l.id === sourceLessonId);
+    const targetIndex = lessons.findIndex(l => l.id === targetLessonId);
+
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const [removed] = lessons.splice(sourceIndex, 1);
+    lessons.splice(targetIndex, 0, removed);
+
+    await saveLessonsOrder(lessons, targetModuloId);
+    setDraggingLessonId(null);
+    setDraggingModuleId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingLessonId(null);
+    setDraggingModuleId(null);
+  };
+
   // LESSON NAVIGATION
+
   const handleOpenNewLesson = (modulo: Modulo) => {
     setSelectedModule(modulo);
     setSelectedLesson(null);
@@ -1839,7 +1954,7 @@ export const CourseBuilder: React.FC = () => {
 
             <div className="p-4 bg-white space-y-2">
                         {m.aulas && m.aulas.length > 0 ? (
-                          m.aulas.map((lesson) => {
+                          m.aulas.map((lesson, lessonIdx) => {
                             const hasAtividade = lesson.atividades && lesson.atividades.length > 0;
                             const atividade = hasAtividade ? lesson.atividades![0] : null;
 
@@ -1856,9 +1971,26 @@ export const CourseBuilder: React.FC = () => {
                             const typeLabel = activeLabels.join(' + ') || 'Texto';
 
                             return (
-                              <div key={lesson.id} className="space-y-1.5">
-                                <div className="flex items-center justify-between p-3 bg-slate-50 border border-transparent hover:border-slate-200 rounded-xl transition-all group/lesson">
+                              <div
+                                key={lesson.id}
+                                className="space-y-1.5"
+                                onDragOver={(e) => handleDragOver(e, m.id)}
+                                onDrop={(e) => handleDrop(e, lesson.id, m.id)}
+                              >
+                                <div
+                                  draggable={!saving}
+                                  onDragStart={(e) => handleDragStart(e, lesson.id, m.id)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`flex items-center justify-between p-3 bg-slate-50 border border-transparent hover:border-slate-200 rounded-xl transition-all group/lesson cursor-grab active:cursor-grabbing ${
+                                    draggingLessonId === lesson.id ? 'opacity-40 border-dashed border-primary bg-primary/5' : ''
+                                  }`}
+                                >
                                   <div className="flex items-center gap-3">
+                                    {/* Drag Handle */}
+                                    <div className="text-slate-300 group-hover/lesson:text-slate-400 cursor-grab active:cursor-grabbing shrink-0 transition-colors">
+                                      <HugeiconsIcon icon={Menu01Icon} size={16} />
+                                    </div>
+
                                     {/* Type icon */}
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
                                       hasVideo ? 'bg-blue-50 text-blue-600 border border-blue-100' :
@@ -1889,6 +2021,25 @@ export const CourseBuilder: React.FC = () => {
                                       {lesson.duracao || (hasVideo ? 'Vídeo' : 'Leitura')}
                                     </span>
                                     <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity">
+                                      {/* Move Up */}
+                                      <button
+                                        disabled={lessonIdx === 0 || saving}
+                                        onClick={() => handleMoveLesson(m.id, lessonIdx, 'up')}
+                                        className="p-1.5 text-slate-400 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-400 rounded-lg hover:bg-slate-200/50 transition-colors"
+                                        title="Mover para cima"
+                                      >
+                                        <HugeiconsIcon icon={ArrowUp01Icon} size={15} />
+                                      </button>
+                                      {/* Move Down */}
+                                      <button
+                                        disabled={lessonIdx === (m.aulas?.length ?? 0) - 1 || saving}
+                                        onClick={() => handleMoveLesson(m.id, lessonIdx, 'down')}
+                                        className="p-1.5 text-slate-400 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-400 rounded-lg hover:bg-slate-200/50 transition-colors"
+                                        title="Mover para baixo"
+                                      >
+                                        <HugeiconsIcon icon={ArrowDown01Icon} size={15} />
+                                      </button>
+
                                       <button
                                         onClick={() => handleOpenEditLesson(m, lesson)}
                                         className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-200/50 transition-colors"
