@@ -6,7 +6,44 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-type GeminiMode = 'lesson' | 'arena';
+type GeminiMode = 'lesson' | 'arena' | 'ptd';
+
+const ptdResponseSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    situacaoAprendizagem: { type: 'string', description: 'Relato objetivo, com no máximo 700 caracteres.' },
+    conhecimentos: { type: 'string', description: 'Conhecimentos em texto breve, com no máximo 700 caracteres.' },
+    habilidades: { type: 'string', description: 'Habilidades em texto breve, com no máximo 700 caracteres.' },
+    atitudesValores: { type: 'string', description: 'Atitudes e valores em texto breve, com no máximo 700 caracteres.' },
+    indicadores: { type: 'array', items: { type: 'string' } },
+    aulas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          titulo: { type: 'string' },
+          data: { type: 'string' },
+          inicio: { type: 'string' },
+          fim: { type: 'string' },
+          tipo: { type: 'string', enum: ['Presencial', 'Remota', 'Híbrida'] },
+          atividades: { type: 'string', description: 'Relato objetivo, com no máximo 350 caracteres.' },
+          odas: { type: 'string', description: 'Recursos e objetos de aprendizagem, com no máximo 350 caracteres.' },
+          registro: { type: 'string', description: 'Registro observável, com no máximo 350 caracteres.' },
+          marcasFormativas: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 3,
+            items: { type: 'string', enum: ['Domínio técnico-científico', 'Visão crítica', 'Criatividade e atitude empreendedora', 'Atitude sustentável', 'Colaboração e comunicação', 'Autonomia digital'] },
+          },
+        },
+        required: ['titulo', 'data', 'inicio', 'fim', 'tipo', 'atividades', 'odas', 'registro', 'marcasFormativas'],
+      },
+    },
+  },
+  required: ['situacaoAprendizagem', 'conhecimentos', 'habilidades', 'atitudesValores', 'indicadores', 'aulas'],
+};
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -15,6 +52,43 @@ const jsonResponse = (body: unknown, status = 200) =>
   });
 
 const getPrompt = (mode: GeminiMode, input: string) => {
+  if (mode === 'ptd') {
+    return `Você é um especialista em planejamento pedagógico por competências do Senac Brasil.
+Crie um Plano de Trabalho Docente (PTD) a partir da unidade curricular, turma e aulas fornecidas no JSON abaixo. Um documento de plano de curso pode acompanhar esta solicitação; trate-o como fonte prioritária para competências, indicadores, conhecimentos e termos técnicos.
+
+Dados da unidade:
+${input}
+
+Regras essenciais:
+1. Não invente dados institucionais, datas, carga horária, indicadores oficiais ou normas que não constem nos dados/documento. Quando uma data não for fornecida, deixe a string vazia.
+2. Escreva em português brasileiro, com linguagem objetiva e pronta para o professor revisar e copiar no ambiente do Senac.
+3. Seja breve. Cada campo geral deve ter no máximo 700 caracteres e cada campo de aula no máximo 350 caracteres. O professor precisa copiar relatos objetivos, não textos extensos.
+4. A situação de aprendizagem deve apresentar contexto, desafio, entregas e critérios de qualidade, conectada ao conteúdo das aulas.
+5. Para cada aula recebida, crie exatamente uma entrada em "aulas", na mesma ordem. Proponha atividades práticas coerentes, ODAs/recursos e um registro de participação/avaliação observável.
+6. Sugira de uma a três marcas formativas por aula entre: "Domínio técnico-científico", "Visão crítica", "Criatividade e atitude empreendedora", "Atitude sustentável", "Colaboração e comunicação", "Autonomia digital".
+7. Retorne somente JSON válido, sem markdown, obedecendo estritamente a esta estrutura:
+{
+  "situacaoAprendizagem": "",
+  "conhecimentos": "",
+  "habilidades": "",
+  "atitudesValores": "",
+  "indicadores": [""],
+  "aulas": [
+    {
+      "titulo": "",
+      "data": "YYYY-MM-DD ou vazio",
+      "inicio": "HH:MM ou vazio",
+      "fim": "HH:MM ou vazio",
+      "tipo": "Presencial | Remota | Híbrida",
+      "atividades": "",
+      "odas": "",
+      "registro": "",
+      "marcasFormativas": [""]
+    }
+  ]
+}`;
+  }
+
   if (mode === 'arena') {
     return `Você é o mestre da Arena Estudea, um quiz multiplayer em tempo real similar ao Kahoot.
 Seu objetivo é ler o material fornecido pelo professor e criar de 5 a 8 questões de múltipla escolha ou verdadeiro ou falso para a Arena competitiva.
@@ -96,7 +170,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-3.5-flash';
+  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-3.1-flash-lite';
 
   if (!supabaseUrl || !supabaseAnonKey || !geminiApiKey) {
     return jsonResponse({ error: 'server_not_configured' }, 500);
@@ -126,12 +200,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'forbidden' }, 403);
   }
 
-  const body = await req.json().catch(() => null) as { mode?: GeminiMode; input?: string } | null;
+  const body = await req.json().catch(() => null) as {
+    mode?: GeminiMode;
+    input?: string;
+    document?: { name?: string; mimeType?: string; data?: string };
+  } | null;
   const mode = body?.mode;
   const input = body?.input?.trim();
 
-  if ((mode !== 'lesson' && mode !== 'arena') || !input) {
+  if ((mode !== 'lesson' && mode !== 'arena' && mode !== 'ptd') || !input) {
     return jsonResponse({ error: 'invalid_payload' }, 400);
+  }
+
+  const document = body?.document;
+  if (document && (!document.data || !document.mimeType || document.data.length > 12_000_000)) {
+    return jsonResponse({ error: 'invalid_document' }, 400);
+  }
+
+  const parts: Array<Record<string, unknown>> = [{ text: getPrompt(mode, input) }];
+  if (document) {
+    parts.push({ inlineData: { mimeType: document.mimeType, data: document.data } });
   }
 
   const geminiResponse = await fetch(
@@ -140,8 +228,12 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: getPrompt(mode, input) }] }],
-        generationConfig: {
+        contents: [{ role: 'user', parts }],
+        generationConfig: mode === 'ptd' ? {
+          responseMimeType: 'application/json',
+          responseJsonSchema: ptdResponseSchema,
+          maxOutputTokens: 32768,
+        } : {
           responseMimeType: 'application/json',
           maxOutputTokens: mode === 'lesson' ? 8192 : 4096,
         },
@@ -157,9 +249,17 @@ Deno.serve(async (req) => {
     );
   }
 
-  const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const candidate = geminiJson?.candidates?.[0];
+  const text = candidate?.content?.parts
+    ?.filter((part: { thought?: boolean; text?: string }) => !part.thought && typeof part.text === 'string')
+    .map((part: { text?: string }) => part.text || '')
+    .join('');
   if (!text) {
     return jsonResponse({ error: 'empty_gemini_response' }, 502);
+  }
+
+  if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+    return jsonResponse({ error: `generation_incomplete_${candidate.finishReason}` }, 502);
   }
 
   return jsonResponse({ text });

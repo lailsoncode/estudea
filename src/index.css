@@ -61,6 +61,22 @@
   .app-icon-button {
     @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface;
   }
+
+  .app-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-label-md font-heading font-bold text-on-primary shadow-sm shadow-primary/15 transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-2.5 text-label-md font-heading font-semibold text-on-surface-variant transition-all hover:bg-surface-container-low hover:text-on-surface active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-field-label {
+    @apply text-sm font-semibold text-on-surface-variant;
+  }
+
+  .app-input {
+    @apply w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest px-3 py-2 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15;
+  }
 }
 
 body {

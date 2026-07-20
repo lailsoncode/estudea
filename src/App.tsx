@@ -37,6 +37,7 @@ import { usePendingCorrections } from './hooks/usePendingCorrections';
 import { LoginAluno } from './pages/LoginAluno';
 import { CadastroAluno } from './pages/CadastroAluno';
 import { CourseBuilder } from './pages/CourseBuilder';
+import { PlanoTrabalhoDocente } from './pages/PlanoTrabalhoDocente';
 import { GerenciadorTurmas } from './pages/GerenciadorTurmas';
 import { TrilhaAluno } from './pages/TrilhaAluno';
 import { CentralCorrecoes } from './pages/CentralCorrecoes';
@@ -53,7 +54,7 @@ import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
 import { CursoWindows11 } from './pages/CursoWindows11';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
@@ -408,6 +409,7 @@ function App() {
           '/admin/chat': 'chat',
           '/admin/perfil': 'settings',
           '/admin/projeto-integrador': 'projeto_integrador',
+          '/admin/ptd': 'ptd',
         };
 
         const targetTab = tabMap[path];
@@ -465,6 +467,7 @@ function App() {
       diario: 'Diário de Classe | Estudea',
       lessons: 'Liberação de Aulas | Estudea',
       projeto_integrador: 'Projeto Integrador | Estudea',
+      ptd: 'Plano de Trabalho Docente | Estudea',
     };
     document.title = titles[activeTeacherTab] ?? 'Estudea';
   }, [activeTeacherTab, session, isAdmin, teacherView]);
@@ -588,6 +591,15 @@ function App() {
           >
             <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Cursos</span>
+          </button>
+
+          <button
+            onClick={() => { navigate('/admin/ptd'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeTeacherTab === 'ptd', sidebarCollapsed)}
+            title="Plano de Trabalho Docente"
+          >
+            <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Plano de Trabalho Docente</span>
           </button>
 
           <button
@@ -822,6 +834,7 @@ function App() {
                   {activeTeacherTab === 'chat' && 'Chat com Alunos'}
                   {activeTeacherTab === 'lessons' && 'Liberação de Aulas'}
                   {activeTeacherTab === 'assignments' && 'Gerenciar Cursos'}
+                  {activeTeacherTab === 'ptd' && 'Plano de Trabalho Docente'}
                   {activeTeacherTab === 'projeto_integrador' && 'Projeto Integrador'}
                   {activeTeacherTab === 'turmas' && 'Gerenciar Turmas'}
                   {activeTeacherTab === 'corrections' && 'Corrigir Atividades'}
@@ -902,6 +915,7 @@ function App() {
                 )
               )}
               {activeTeacherTab === 'assignments' && <CourseBuilder />}
+              {activeTeacherTab === 'ptd' && <PlanoTrabalhoDocente teacherId={session.user.id} />}
               {activeTeacherTab === 'projeto_integrador' && <ProjetoIntegradorProfessor />}
               {activeTeacherTab === 'turmas' && (
                 <GerenciadorTurmas
@@ -940,7 +954,8 @@ function App() {
                       diario: '/admin/diario',
                       lessons: '/admin/lessons',
                       chat: '/admin/chat',
-                      projeto_integrador: '/admin/projeto-integrador'
+                      projeto_integrador: '/admin/projeto-integrador',
+                      ptd: '/admin/ptd'
                     };
                     navigate(pathMap[tab]);
                   }}
