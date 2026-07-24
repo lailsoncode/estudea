@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.sessoes_digitacao (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   aluno_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  licao_id INTEGER NOT NULL CHECK (licao_id BETWEEN 1 AND 10),
+  licao_id INTEGER NOT NULL CHECK (licao_id >= 1),
   wpm INTEGER NOT NULL DEFAULT 0,
   acuracia NUMERIC(5,2) NOT NULL DEFAULT 0,
   duracao_segundos INTEGER NOT NULL DEFAULT 0,

@@ -901,19 +901,33 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   }, [nivelAtivo, licaoAtiva]);
 
   const fetchProgressos = async () => {
-    const { data } = await supabase
+    if (!session?.user?.id) return;
+    const { data, error } = await supabase
       .from('sessoes_digitacao')
       .select('licao_id, wpm, acuracia')
       .eq('aluno_id', session.user.id)
       .order('created_at', { ascending: false });
-    if (!data) return;
+    if (error || !data) return;
     const mapa: Record<number, ProgressoLicao> = {};
     for (const row of data) {
-      if (!mapa[row.licao_id] || row.wpm > mapa[row.licao_id].melhor_wpm) {
-        mapa[row.licao_id] = {
-          licao_id: row.licao_id, melhor_wpm: row.wpm,
-          melhor_acuracia: row.acuracia, concluida: row.acuracia >= 85,
+      const licaoId = row.licao_id;
+      const wpm = Number(row.wpm) || 0;
+      const acuracia = Number(row.acuracia) || 0;
+      const isAcuraciaOk = acuracia >= 85;
+
+      if (!mapa[licaoId]) {
+        mapa[licaoId] = {
+          licao_id: licaoId,
+          melhor_wpm: wpm,
+          melhor_acuracia: acuracia,
+          concluida: isAcuraciaOk,
         };
+      } else {
+        mapa[licaoId].melhor_wpm = Math.max(mapa[licaoId].melhor_wpm, wpm);
+        mapa[licaoId].melhor_acuracia = Math.max(mapa[licaoId].melhor_acuracia, acuracia);
+        if (isAcuraciaOk) {
+          mapa[licaoId].concluida = true;
+        }
       }
     }
     setProgressos(Object.values(mapa));
@@ -998,6 +1012,23 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
     const wpm = Math.round((words / duracao) * 60);
     setConcluido(true);
     setResultado({ wpm, acuracia, duracao, erros: novosErros.size });
+
+    if (acuracia >= 85 && licaoAtiva) {
+      setProgressos(prev => {
+        const lId = licaoAtiva.id;
+        const exists = prev.some(p => p.licao_id === lId);
+        if (!exists) {
+          return [...prev, { licao_id: lId, melhor_wpm: wpm, melhor_acuracia: acuracia, concluida: true }];
+        }
+        return prev.map(p => p.licao_id === lId ? {
+          ...p,
+          melhor_wpm: Math.max(p.melhor_wpm, wpm),
+          melhor_acuracia: Math.max(p.melhor_acuracia, acuracia),
+          concluida: true
+        } : p);
+      });
+    }
+
     salvarSessao(wpm, acuracia, duracao);
   };
 
@@ -1005,11 +1036,16 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
     if (!session?.user?.id || !licaoAtiva) return;
     setSalvando(true);
     try {
-      await supabase.from('sessoes_digitacao').insert({
+      const { error } = await supabase.from('sessoes_digitacao').insert({
         aluno_id: session.user.id, licao_id: licaoAtiva.id,
         wpm, acuracia, duracao_segundos: duracao,
       });
+      if (error) {
+        console.error('Erro ao salvar sessão de digitação:', error);
+      }
       await fetchProgressos();
+    } catch (err) {
+      console.error('Erro inesperado ao salvar sessão:', err);
     } finally { setSalvando(false); }
   };
 
