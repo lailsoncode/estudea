@@ -742,7 +742,7 @@ export const CourseBuilder: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch Modules
+      // 1. Fetch Modules for THIS specific course only
       const { data: mods, error: modError } = await supabase
         .from('modulos')
         .select('*')
@@ -750,7 +750,14 @@ export const CourseBuilder: React.FC = () => {
         .order('ordem', { ascending: true });
       if (modError) throw modError;
 
-      // Fetch Lessons
+      if (!mods || mods.length === 0) {
+        setModulos([]);
+        return;
+      }
+
+      const modIds = mods.map(m => m.id);
+
+      // 2. Fetch Lessons strictly linked to THIS course's modules
       const { data: les, error: lesError } = await supabase
         .from('aulas')
         .select(`
@@ -758,11 +765,12 @@ export const CourseBuilder: React.FC = () => {
           atividades(*),
           questoes(*)
         `)
+        .in('modulo_id', modIds)
         .order('ordem', { ascending: true });
       if (lesError) throw lesError;
 
       const lessonsList = les || [];
-      const modulesList = (mods || []).map(m => ({
+      const modulesList = mods.map(m => ({
         ...m,
         aulas: lessonsList.filter(l => l.modulo_id === m.id)
       }));
@@ -778,6 +786,9 @@ export const CourseBuilder: React.FC = () => {
 
   const handleOpenCourse = (curso: Curso) => {
     setSelectedCourse(curso);
+    setSelectedModule(null);
+    setSelectedLesson(null);
+    setModulos([]);
     fetchModulesAndLessons(curso.id);
     setView('builder');
   };
@@ -1143,6 +1154,11 @@ export const CourseBuilder: React.FC = () => {
   };
 
   const handleOpenEditLesson = async (modulo: Modulo, lesson: Aula) => {
+    if (selectedCourse && modulo.curso_id && modulo.curso_id !== selectedCourse.id) {
+      console.warn('Conflito de curso detectado:', modulo.curso_id, selectedCourse.id);
+      setError('Aviso: O módulo selecionado não pertence ao curso ativo.');
+      return;
+    }
     setSelectedModule(modulo);
     setSelectedLesson(lesson);
     setQuizSubTab('standard');
@@ -1489,6 +1505,11 @@ export const CourseBuilder: React.FC = () => {
       return;
     }
 
+    if (selectedModule.curso_id && selectedCourse && selectedModule.curso_id !== selectedCourse.id) {
+      setError('Erro de consistência: O módulo selecionado não pertence ao curso ativo.');
+      return;
+    }
+
     if (!activeTypes.video && !activeTypes.texto && !activeTypes.quiz && !activeTypes.arquivo && !(lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) {
       setError('Por favor, selecione pelo menos um tipo de conteúdo.');
       return;
@@ -1706,10 +1727,13 @@ export const CourseBuilder: React.FC = () => {
       }
 
       setSuccess('Aula e conteúdos salvos com sucesso!');
+      setSelectedLesson(null);
       setTimeout(() => {
         setView('builder');
-        fetchModulesAndLessons(selectedCourse.id);
-      }, 1000);
+        if (selectedCourse) {
+          fetchModulesAndLessons(selectedCourse.id);
+        }
+      }, 500);
 
     } catch (err: any) {
       console.error('Erro ao salvar aula/material:', err);
@@ -2146,9 +2170,9 @@ export const CourseBuilder: React.FC = () => {
           <div className="app-page-header app-page-header-row">
             <div className="space-y-1">
               <div className="flex items-center gap-1 text-on-surface-variant text-label-sm">
-                <span className="cursor-pointer hover:text-primary" onClick={() => setView('courses')}>Cursos</span>
+                <span className="cursor-pointer hover:text-primary" onClick={() => { setView('courses'); setSelectedCourse(null); setSelectedModule(null); setSelectedLesson(null); setModulos([]); }}>Cursos</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
-                <span className="cursor-pointer hover:text-primary" onClick={() => setView('builder')}>{selectedCourse.titulo}</span>
+                <span className="cursor-pointer hover:text-primary" onClick={() => { setView('builder'); setSelectedLesson(null); }}>{selectedCourse.titulo}</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                 <span className="text-slate-400 font-medium line-clamp-1 max-w-[150px]">{selectedModule.titulo}</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
@@ -2159,7 +2183,7 @@ export const CourseBuilder: React.FC = () => {
               </h2>
             </div>
             <button
-              onClick={() => setView('builder')}
+              onClick={() => { setView('builder'); setSelectedLesson(null); }}
               className="app-secondary-action"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={18} />
