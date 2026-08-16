@@ -35,6 +35,8 @@ interface StudentProfile {
   anotacoes?: string | null;
   aulas_concluidas?: number;
   total_aulas?: number;
+  situacao_final?: 'cursando' | 'aprovado' | 'reprovado' | 'desistente' | null;
+  data_conclusao?: string | null;
 }
 
 interface AutonomiaData {
@@ -297,7 +299,9 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
           turma_nome: tName,
           anotacoes: profileData.anotacoes || '',
           aulas_concluidas: completedAulasCount,
-          total_aulas: totalAulasCount
+          total_aulas: totalAulasCount,
+          situacao_final: profileData.situacao_final || 'cursando',
+          data_conclusao: profileData.data_conclusao
         });
 
         setNotes(profileData.anotacoes || '');
@@ -602,6 +606,22 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                     <span>{profile.turma_nome || 'Sem Turma'}</span>
                   </div>
+
+                  {profile.situacao_final && profile.situacao_final !== 'cursando' && (
+                    <div className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wide border ${
+                      profile.situacao_final === 'aprovado'
+                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                        : profile.situacao_final === 'reprovado'
+                        ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                        : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                    }`}>
+                      <span>
+                        {profile.situacao_final === 'aprovado' && '🎓 Aprovado(a) no Curso'}
+                        {profile.situacao_final === 'reprovado' && '⚠️ Reprovado(a)'}
+                        {profile.situacao_final === 'desistente' && '📋 Desistente'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

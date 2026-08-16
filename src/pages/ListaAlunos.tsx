@@ -34,6 +34,7 @@ interface Student {
   media_digitacao: number;
   ofensiva_atual: number;
   turma_id?: string | null;
+  situacao_final?: 'cursando' | 'aprovado' | 'reprovado' | 'desistente' | null;
 }
 
 interface Turma {
@@ -193,7 +194,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
       // 2. Fetch student profiles in this class
       let query = supabase
         .from('profiles')
-        .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual, turma_id')
+        .select('id, nome, email, avatar_url, progresso_geral, frequencia, autonomia_digital, status_risco, media_digitacao, ofensiva_atual, turma_id, situacao_final')
         .eq('role', 'student');
 
       if (turmaId === 'sem_turma') {
@@ -238,7 +239,8 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
           status_risco: (p.status_risco || 'No Caminho') as 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco',
           media_digitacao: p.media_digitacao || 0,
           ofensiva_atual: p.ofensiva_atual || 0,
-          turma_id: p.turma_id
+          turma_id: p.turma_id,
+          situacao_final: p.situacao_final || 'cursando'
         }));
         setStudents(formattedStudents);
       } else {
@@ -451,14 +453,20 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
     }
   };
 
-  // Filter students based on search and risk status
+  // Filter students based on search and status
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
       student.nome.toLowerCase().includes(search.toLowerCase()) ||
       student.email.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
-      statusFilter === 'todos' || student.status_risco === statusFilter;
+      statusFilter === 'todos' ||
+      student.status_risco === statusFilter ||
+      student.situacao_final === statusFilter.toLowerCase() ||
+      (statusFilter === 'Aprovados' && student.situacao_final === 'aprovado') ||
+      (statusFilter === 'Reprovados' && student.situacao_final === 'reprovado') ||
+      (statusFilter === 'Desistentes' && student.situacao_final === 'desistente') ||
+      (statusFilter === 'Cursando' && (!student.situacao_final || student.situacao_final === 'cursando'));
 
     return matchesSearch && matchesStatus;
   });
@@ -718,8 +726,40 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
               </span>
             </button>
             {showFilterDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-outline-variant/40 rounded-xl shadow-lg py-1.5 z-20">
-                {['todos', 'Excelente', 'No Caminho', 'Alerta Médio', 'Em Risco'].map((status) => (
+              <div className="absolute right-0 mt-2 w-52 bg-white border border-outline-variant/40 rounded-xl shadow-lg py-1.5 z-20 max-h-72 overflow-y-auto">
+                <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-slate-400">Geral</div>
+                <button
+                  onClick={() => { setStatusFilter('todos'); setCurrentPage(1); setShowFilterDropdown(false); }}
+                  className={`w-full text-left px-4 py-1.5 text-xs font-semibold hover:bg-slate-50 transition-colors ${statusFilter === 'todos' ? 'text-primary bg-primary/5' : 'text-on-surface-variant'}`}
+                >
+                  Todos os Alunos
+                </button>
+
+                <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-slate-400 border-t border-slate-100 mt-1 pt-1.5">Situação Acadêmica</div>
+                {[
+                  { id: 'Aprovados', label: 'Aprovados', color: 'text-emerald-600' },
+                  { id: 'Reprovados', label: 'Reprovados', color: 'text-rose-600' },
+                  { id: 'Desistentes', label: 'Desistentes', color: 'text-amber-600' },
+                  { id: 'Cursando', label: 'Cursando', color: 'text-primary' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setStatusFilter(item.id);
+                      setCurrentPage(1);
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-1.5 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center justify-between ${
+                      statusFilter === item.id ? 'text-primary bg-primary/5 font-bold' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${item.color.replace('text-', 'bg-')}`} />
+                  </button>
+                ))}
+
+                <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-slate-400 border-t border-slate-100 mt-1 pt-1.5">Status de Risco</div>
+                {['Excelente', 'No Caminho', 'Alerta Médio', 'Em Risco'].map((status) => (
                   <button
                     key={status}
                     onClick={() => {
@@ -727,11 +767,11 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                       setCurrentPage(1);
                       setShowFilterDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-slate-50 transition-colors ${
+                    className={`w-full text-left px-4 py-1.5 text-xs font-semibold hover:bg-slate-50 transition-colors ${
                       statusFilter === status ? 'text-primary bg-primary/5' : 'text-on-surface-variant'
                     }`}
                   >
-                    {status === 'todos' ? 'Todos os Status' : status}
+                    {status}
                   </button>
                 ))}
               </div>
@@ -846,6 +886,24 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({ onSelectStudent }) => 
                               </span>
                             )}
                           </div>
+
+                          {/* Situação Acadêmica */}
+                          {student.situacao_final && student.situacao_final !== 'cursando' && (
+                            <div className="flex items-center justify-between text-xs font-semibold border-b border-slate-100/40 pb-2">
+                              <span className="text-on-surface-variant/60">Resultado Final</span>
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                student.situacao_final === 'aprovado'
+                                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                  : student.situacao_final === 'reprovado'
+                                  ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                  : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                              }`}>
+                                {student.situacao_final === 'aprovado' && 'Aprovado(a)'}
+                                {student.situacao_final === 'reprovado' && 'Reprovado(a)'}
+                                {student.situacao_final === 'desistente' && 'Desistente'}
+                              </span>
+                            </div>
+                          )}
 
                           {/* Status de Risco */}
                           <div className="flex items-center justify-between text-xs font-semibold border-b border-slate-100/40 pb-2">

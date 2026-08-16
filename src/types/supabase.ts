@@ -16,6 +16,9 @@ export type Database = {
           codigo_acesso: string;
           created_at: string;
           curso_id: string | null;
+          status: 'em_andamento' | 'concluida' | 'arquivada' | null;
+          finalizada_em: string | null;
+          observacao_encerramento: string | null;
         };
         Insert: {
           id?: string;
@@ -23,6 +26,9 @@ export type Database = {
           codigo_acesso: string;
           created_at?: string;
           curso_id?: string | null;
+          status?: 'em_andamento' | 'concluida' | 'arquivada' | null;
+          finalizada_em?: string | null;
+          observacao_encerramento?: string | null;
         };
         Update: {
           id?: string;
@@ -30,32 +36,68 @@ export type Database = {
           codigo_acesso?: string;
           created_at?: string;
           curso_id?: string | null;
+          status?: 'em_andamento' | 'concluida' | 'arquivada' | null;
+          finalizada_em?: string | null;
+          observacao_encerramento?: string | null;
         };
       };
       profiles: {
         Row: {
           id: string;
           nome: string | null;
+          email: string | null;
           role: 'student' | 'teacher' | 'admin' | null;
           turma_id: string | null;
           updated_at: string;
           status: 'ativo' | 'bloqueado' | null;
+          situacao_final: 'cursando' | 'aprovado' | 'reprovado' | 'desistente' | null;
+          data_conclusao: string | null;
+          nota_final: number | null;
+          observacao_conclusao: string | null;
+          progresso_geral: number | null;
+          frequencia: number | null;
+          autonomia_digital: 'S' | 'P' | 'N' | null;
+          status_risco: 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco' | null;
+          media_digitacao: number | null;
+          ofensiva_atual: number | null;
         };
         Insert: {
           id: string;
           nome?: string | null;
+          email?: string | null;
           role?: 'student' | 'teacher' | 'admin' | null;
           turma_id?: string | null;
           updated_at?: string;
           status?: 'ativo' | 'bloqueado' | null;
+          situacao_final?: 'cursando' | 'aprovado' | 'reprovado' | 'desistente' | null;
+          data_conclusao?: string | null;
+          nota_final?: number | null;
+          observacao_conclusao?: string | null;
+          progresso_geral?: number | null;
+          frequencia?: number | null;
+          autonomia_digital?: 'S' | 'P' | 'N' | null;
+          status_risco?: 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco' | null;
+          media_digitacao?: number | null;
+          ofensiva_atual?: number | null;
         };
         Update: {
           id?: string;
           nome?: string | null;
+          email?: string | null;
           role?: 'student' | 'teacher' | 'admin' | null;
           turma_id?: string | null;
           updated_at?: string;
           status?: 'ativo' | 'bloqueado' | null;
+          situacao_final?: 'cursando' | 'aprovado' | 'reprovado' | 'desistente' | null;
+          data_conclusao?: string | null;
+          nota_final?: number | null;
+          observacao_conclusao?: string | null;
+          progresso_geral?: number | null;
+          frequencia?: number | null;
+          autonomia_digital?: 'S' | 'P' | 'N' | null;
+          status_risco?: 'Excelente' | 'No Caminho' | 'Alerta Médio' | 'Em Risco' | null;
+          media_digitacao?: number | null;
+          ofensiva_atual?: number | null;
         };
       };
       cursos: {

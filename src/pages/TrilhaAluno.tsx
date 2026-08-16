@@ -560,6 +560,30 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
       }
     }
 
+    // Pre-fill standard lesson quiz if already submitted
+    if (selectedAula) {
+      const standardQuizEntrega = entregas.find(e => e.aula_id === selectedAula.id && !e.atividade_id);
+      if (standardQuizEntrega) {
+        try {
+          const parsed = JSON.parse(standardQuizEntrega.resposta);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.respostas) {
+              setQuizAnswers(parsed.respostas);
+            }
+            if (typeof parsed.score === 'number') {
+              setQuizScore(parsed.score);
+            }
+            if (typeof parsed.passed === 'boolean') {
+              setQuizPassed(parsed.passed);
+            }
+            setQuizSubmitted(true);
+          }
+        } catch (e) {
+          console.error('Erro ao fazer parse da entrega de quiz da aula:', e);
+        }
+      }
+    }
+
     // Pre-fill activity if already submitted
     if (selectedAula && selectedAula.atividades && selectedAula.atividades.length > 0) {
       const newResponses: Record<string, string> = {};
@@ -575,6 +599,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
               if (parsed && parsed.respostas) {
                 Object.assign(newAnswers, parsed.respostas);
               }
+              if (parsed && typeof parsed.score === 'number') {
+                setQuizScore(parsed.score);
+              }
+              if (parsed && typeof parsed.passed === 'boolean') {
+                setQuizPassed(parsed.passed);
+              }
+              setQuizSubmitted(true);
             } catch (e) {
               console.error('Erro ao fazer parse da resposta do quiz:', e);
             }
@@ -792,10 +823,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     setQuizPassed(passed);
     setQuizSubmitted(true);
 
-    if (passed) {
-      // Automatically complete the lesson
-      await handleToggleCompletion(selectedAula.id, true);
-    }
+    // Always mark the lesson as completed upon answering the quiz
+    await handleToggleCompletion(selectedAula.id, true);
 
     // Rede de segurança: Se a aula tem uma atividade vinculada do tipo quiz,
     // e o aluno por algum motivo submeteu o Quiz tradicional da Aula (Tab 3),
@@ -825,6 +854,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
             })
             .eq('id', existingEntrega.id);
           if (updateError) throw updateError;
+          setEntregas(prev => prev.map(e => e.id === existingEntrega.id ? { ...e, resposta: answerJson } : e));
         } else {
           const { data: insertData, error: insertError } = await supabase
             .from('entregas_atividades')
@@ -1011,16 +1041,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
         setEntregas(freshEntregas);
       }
 
-      // Automatically complete the lesson in progress map if all activities are delivered
+      // Automatically complete the lesson in progress map when activity/quiz is delivered
       if (selectedAula && !isLessonCompleted(selectedAula.id)) {
-        const allActs = selectedAula.atividades || [];
-        const currentDeliveries = freshEntregas || entregas;
-        const allSubmitted = allActs.every(act => 
-          currentDeliveries.some(e => e.atividade_id === act.id)
-        );
-        if (allSubmitted) {
-          await handleToggleCompletion(selectedAula.id, true);
-        }
+        await handleToggleCompletion(selectedAula.id, true);
       }
 
       setIsRedoingActivity(prev => ({ ...prev, [atividadeId]: false }));
@@ -1375,6 +1398,51 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
               </div>
             </div>
           </section>
+
+          {/* Academic Situation / Finalized Class Banner */}
+          {profile?.situacao_final && profile.situacao_final !== 'cursando' && (
+            <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in duration-300 ${
+              profile.situacao_final === 'aprovado'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
+                : profile.situacao_final === 'reprovado'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+            }`}>
+              <div className="flex items-center gap-3.5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  profile.situacao_final === 'aprovado'
+                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
+                    : profile.situacao_final === 'reprovado'
+                    ? 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20'
+                    : 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20'
+                }`}>
+                  <HugeiconsIcon icon={Award01Icon} size={26} strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-base leading-tight">
+                    {profile.situacao_final === 'aprovado' && '🎉 Parabéns! Você foi Aprovado(a) no Curso!'}
+                    {profile.situacao_final === 'reprovado' && 'Aviso de Conclusão de Turma: Reprovado(a)'}
+                    {profile.situacao_final === 'desistente' && 'Aviso de Conclusão de Turma: Desistente'}
+                  </h3>
+                  <p className="text-xs opacity-90 mt-0.5">
+                    {profile.situacao_final === 'aprovado' && 'Sua dedicação deu resultado! A turma foi finalizada e sua aprovação foi registrada na ata oficial.'}
+                    {profile.situacao_final === 'reprovado' && 'A turma foi finalizada. Para dúvidas sobre recuperação ou novas oportunidades, procure o seu professor ou coordenação.'}
+                    {profile.situacao_final === 'desistente' && 'A turma foi concluída. Caso queira retomar seus estudos em um novo período, procure a secretaria.'}
+                  </p>
+                </div>
+              </div>
+
+              {profile.situacao_final === 'aprovado' && (
+                <button
+                  type="button"
+                  onClick={() => dispararCelebracao()}
+                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-heading font-bold text-xs shadow-xs transition-colors shrink-0"
+                >
+                  Comemorar! 🎊
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Main Content & Sidebar Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -3386,14 +3454,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                 </div>
                               ) : (
                                 <div className="space-y-2">
-                                  <div className="w-16 h-16 rounded-full bg-error-container/20 border border-error/20 flex items-center justify-center text-error mx-auto shadow-sm">
-                                    <HugeiconsIcon icon={Alert01Icon} size={32} />
+                                  <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
+                                    <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
                                   </div>
-                                  <h4 className="app-section-title text-error">Não foi dessa vez</h4>
+                                  <h4 className="app-section-title text-on-surface font-bold">Quiz Respondido!</h4>
                                   <p className="text-on-surface-variant text-label-md">
-                                    Seu aproveitamento: <span className="font-bold text-error font-mono text-body-lg">{quizScore}%</span> (Nota mínima: {selectedAula.nota_aprovacao}%)
+                                    Seu aproveitamento: <span className="font-bold text-on-surface font-mono text-body-lg">{quizScore}%</span> (Nota de referência: {selectedAula.nota_aprovacao}%)
                                   </p>
-                                  <p className="text-label-sm text-on-surface-variant/80">Revise o material teórico e tente novamente.</p>
+                                  <p className="text-label-sm text-emerald-600 font-semibold flex items-center justify-center gap-1">
+                                    <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={3} />
+                                    Esta aula foi registrada como concluída com sucesso!
+                                  </p>
                                   <button
                                     onClick={() => {
                                       setQuizAnswers({});
@@ -3403,7 +3474,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                     }}
                                     className="mt-3 px-5 py-2 bg-secondary text-on-secondary font-bold font-heading rounded-lg hover:bg-secondary-container transition-all"
                                   >
-                                    Tentar Novamente
+                                    Tentar Novamente para Melhorar Nota
                                   </button>
                                 </div>
                               )}
