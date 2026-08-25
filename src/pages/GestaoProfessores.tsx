@@ -10,7 +10,10 @@ import {
   Award01Icon,
   BookOpen01Icon,
   Cancel01Icon,
-  CheckmarkCircle02Icon
+  CheckmarkCircle02Icon,
+  Settings01Icon,
+  AccessIcon,
+  Copy01Icon
 } from '@hugeicons/core-free-icons';
 
 interface ProfessorData {
@@ -32,6 +35,14 @@ export const GestaoProfessores: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'todos' | 'teacher' | 'admin'>('todos');
 
+  // Teacher Access Key State
+  const [teacherKey, setTeacherKey] = useState<string>('SENAC-DOCENTE-2026');
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [newKeyInput, setNewKeyInput] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
   // Modal State - Promote / Change Role
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProfessorData | null>(null);
@@ -49,7 +60,18 @@ export const GestaoProfessores: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch all teacher/admin profiles
+      // 1. Fetch teacher registration key from configuracoes_sistema
+      const { data: keyData } = await supabase
+        .from('configuracoes_sistema')
+        .select('valor')
+        .eq('chave', 'chave_docente_cadastro')
+        .maybeSingle();
+
+      if (keyData?.valor) {
+        setTeacherKey(keyData.valor);
+      }
+
+      // 2. Fetch all teacher/admin profiles
       const { data: profs, error: profErr } = await supabase
         .from('profiles')
         .select('*')
@@ -58,12 +80,12 @@ export const GestaoProfessores: React.FC = () => {
 
       if (profErr) throw profErr;
 
-      // 2. Fetch all turmas with assigned professors
+      // 3. Fetch all turmas with assigned professors
       const { data: turmasData } = await supabase
         .from('turmas')
         .select('id, nome, codigo_acesso, professor_id');
 
-      // 3. Fetch student counts per turma
+      // 4. Fetch student counts per turma
       const { data: studentsData } = await supabase
         .from('profiles')
         .select('id, turma_id')
@@ -137,6 +159,56 @@ export const GestaoProfessores: React.FC = () => {
     }
   };
 
+  const handleOpenKeyModal = () => {
+    setNewKeyInput(teacherKey);
+    setShowKeyModal(true);
+  };
+
+  const handleSaveTeacherKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyInput.trim()) {
+      setError('A chave de acesso docente não pode ficar em branco.');
+      return;
+    }
+    setSavingKey(true);
+    setError(null);
+    try {
+      const keyToSave = newKeyInput.trim().toUpperCase();
+      const { error: updErr } = await supabase
+        .from('configuracoes_sistema')
+        .upsert({
+          chave: 'chave_docente_cadastro',
+          valor: keyToSave,
+          descricao: 'Chave institucional para auto-cadastro de novos professores',
+          updated_at: new Date().toISOString()
+        });
+
+      if (updErr) throw updErr;
+
+      setTeacherKey(keyToSave);
+      setSuccess(`Chave de acesso docente personalizada com sucesso para "${keyToSave}"!`);
+      setShowKeyModal(false);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao atualizar chave docente.');
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText(teacherKey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  const handleCopyInviteMessage = () => {
+    const signupUrl = `${window.location.origin}/cadastro-professor`;
+    const message = `Olá, Professor(a)!\nVocê foi convidado(a) para lecionar na plataforma Estudea Senac.\n\nPara criar sua conta docente, acesse:\n🔗 ${signupUrl}\n\n🔑 Chave de Acesso Docente: ${teacherKey}\n\nSeja bem-vindo(a) à equipe!`;
+    navigator.clipboard.writeText(message);
+    setCopiedInvite(true);
+    setTimeout(() => setCopiedInvite(false), 2500);
+  };
+
   const filteredProfessores = useMemo(() => {
     return professores.filter(p => {
       const nameMatch = (p.nome || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -171,15 +243,58 @@ export const GestaoProfessores: React.FC = () => {
       <div className="app-page-header app-page-header-row">
         <div>
           <h2 className="app-title">Gestão da Equipe Docente</h2>
-          <p className="app-subtitle">Gerencie os professores da instituição, acompanhe turmas atribuídas e configure permissões pedagógicas.</p>
+          <p className="app-subtitle">Gerencie os professores da instituição, acompanhe turmas atribuídas e configure a chave de acesso docente.</p>
         </div>
-        <button
-          onClick={() => setShowInviteModal(true)}
-          className="app-primary-action"
-        >
-          <HugeiconsIcon icon={AddCircleIcon} size={20} />
-          Convidar Professor
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleOpenKeyModal}
+            className="app-secondary-action"
+            title="Configurar Chave de Acesso Docente"
+          >
+            <HugeiconsIcon icon={AccessIcon} size={18} />
+            <span>Configurar Chave Docente</span>
+          </button>
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="app-primary-action"
+          >
+            <HugeiconsIcon icon={AddCircleIcon} size={20} />
+            <span>Convidar Professor</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Institutional Key Quick Banner */}
+      <div className="bg-gradient-to-r from-primary/10 via-surface-container to-secondary/10 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+            <HugeiconsIcon icon={AccessIcon} size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chave de Auto-Cadastro Docente:</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="font-mono font-extrabold text-body-lg text-primary tracking-wider">{teacherKey}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Ativa</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleCopyKey}
+            className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container text-xs font-bold text-on-surface flex items-center justify-center gap-1.5 transition-all"
+          >
+            <HugeiconsIcon icon={copiedKey ? Tick01Icon : Copy01Icon} size={14} className={copiedKey ? 'text-emerald-500' : ''} />
+            <span>{copiedKey ? 'Chave Copiada!' : 'Copiar Chave'}</span>
+          </button>
+          <button
+            onClick={handleOpenKeyModal}
+            className="px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-xs font-bold text-primary flex items-center gap-1.5 transition-all"
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={14} />
+            <span>Alterar</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -356,6 +471,62 @@ export const GestaoProfessores: React.FC = () => {
         </div>
       )}
 
+      {/* Modal: Configure Teacher Key */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-container-lowest dark:bg-slate-900 w-full max-w-md border border-outline-variant/30 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden font-sans">
+            <div className="p-5 border-b border-outline-variant/30 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-body-lg font-heading font-extrabold text-on-surface flex items-center gap-2">
+                <HugeiconsIcon icon={AccessIcon} size={20} className="text-primary" />
+                Chave de Acesso Docente
+              </h3>
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTeacherKey} className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-label-sm font-bold text-on-surface block">
+                  Defina a Nova Chave de Auto-Cadastro
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newKeyInput}
+                  onChange={(e) => setNewKeyInput(e.target.value.toUpperCase())}
+                  placeholder="Ex: SENAC-2026 ou DOCENTE-AQUIDABAN"
+                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-body-md font-mono tracking-wider font-bold uppercase text-on-surface"
+                />
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Qualquer novo usuário que inserir esta chave na página de cadastro docente terá sua conta criada automaticamente com o papel de <strong>Professor</strong>.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-outline-variant/30">
+                <button
+                  type="button"
+                  onClick={() => setShowKeyModal(false)}
+                  className="px-4 py-2 border border-outline-variant/40 text-on-surface rounded-xl hover:bg-surface-container font-heading font-semibold text-label-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingKey}
+                  className="px-5 py-2 bg-primary text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1.5"
+                >
+                  {savingKey ? 'Salvando...' : 'Salvar Nova Chave'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Change Role */}
       {showRoleModal && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -443,7 +614,7 @@ export const GestaoProfessores: React.FC = () => {
             <div className="p-5 border-b border-outline-variant/30 dark:border-slate-800 flex items-center justify-between">
               <h3 className="text-body-lg font-heading font-extrabold text-on-surface flex items-center gap-2">
                 <HugeiconsIcon icon={UserGroupIcon} size={20} className="text-primary" />
-                Como Adicionar Novos Professores
+                Convidar Novo Professor
               </h3>
               <button
                 onClick={() => setShowInviteModal(false)}
@@ -454,28 +625,37 @@ export const GestaoProfessores: React.FC = () => {
             </div>
 
             <div className="p-5 space-y-4 text-xs text-on-surface-variant leading-relaxed">
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-2 text-on-surface">
-                <p className="font-bold text-primary flex items-center gap-1.5">
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
-                  Fluxo de Onboarding Docente
+              <div className="p-3.5 bg-surface-container-low dark:bg-slate-800/80 border border-outline-variant/30 rounded-xl space-y-2">
+                <p className="font-bold text-on-surface text-label-sm flex items-center gap-1.5">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-primary" />
+                  Dados de Acesso Docente
                 </p>
-                <p>
-                  1. O novo professor pode se cadastrar normalmente com seu e-mail institucional.
-                </p>
-                <p>
-                  2. O Administrador pode clicar em <strong>"Gerenciar Permissões"</strong> no perfil do usuário e alterar seu papel para <strong>"Professor"</strong> ou <strong>"Administrador"</strong>.
-                </p>
-                <p>
-                  3. Uma vez promovido, o professor já poderá criar e gerenciar suas próprias turmas e conteúdos!
-                </p>
+                <div className="space-y-1.5 text-on-surface">
+                  <p><strong>Link de Cadastro:</strong> <span className="font-mono text-primary text-[11px] break-all">{window.location.origin}/cadastro-professor</span></p>
+                  <p><strong>Chave Institucional:</strong> <span className="font-mono font-bold text-secondary text-sm">{teacherKey}</span></p>
+                </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1 text-on-surface">
+                <p className="font-bold text-primary">Como funciona?</p>
+                <p>O professor acessa o link, insere seus dados e a chave institucional acima para obter acesso docente imediato.</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-outline-variant/30">
                 <button
-                  onClick={() => setShowInviteModal(false)}
-                  className="px-5 py-2 bg-primary text-on-primary rounded-xl font-heading font-bold text-label-sm"
+                  type="button"
+                  onClick={handleCopyInviteMessage}
+                  className="flex-1 py-2.5 px-3 bg-secondary hover:bg-secondary/90 text-on-secondary rounded-xl font-heading font-bold text-label-sm flex items-center justify-center gap-1.5 transition-all"
                 >
-                  Entendi
+                  <HugeiconsIcon icon={copiedInvite ? Tick01Icon : Copy01Icon} size={16} />
+                  <span>{copiedInvite ? 'Convite Copiado!' : 'Copiar Mensagem de Convite'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(false)}
+                  className="py-2.5 px-4 border border-outline-variant/40 text-on-surface rounded-xl font-heading font-semibold text-label-sm hover:bg-surface-container"
+                >
+                  Fechar
                 </button>
               </div>
             </div>

@@ -36,6 +36,7 @@ import { supabase } from './lib/supabaseClient';
 import { usePendingCorrections } from './hooks/usePendingCorrections';
 import { LoginAluno } from './pages/LoginAluno';
 import { CadastroAluno } from './pages/CadastroAluno';
+import { CadastroProfessor } from './pages/CadastroProfessor';
 import { CourseBuilder } from './pages/CourseBuilder';
 import { PlanoTrabalhoDocente } from './pages/PlanoTrabalhoDocente';
 import { GerenciadorTurmas } from './pages/GerenciadorTurmas';
@@ -74,20 +75,12 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentProfileUserIdRef = useRef<string | null>(null);
-  const [session, setSession] = useState<Session | null>(() => {
-    const saved = sessionStorage.getItem('demo_session');
-    if (saved) {
-      try {
-        return JSON.parse(saved) as Session;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
-  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
+  const [session, setSession] = useState<Session | null>(null);
+  const [authView, setAuthView] = useState<'login' | 'signup' | 'teacher_signup'>('login');
   const [teacherView, setTeacherView] = useState<'content' | 'preview'>('content');
   const [activeUserTab, setActiveUserTab] = useState<UserTab>('dashboard');
+  const [selectedAulaId, setSelectedAulaId] = useState<string | null>(null);
+  const [selectedModuloId, setSelectedModuloId] = useState<string | null>(null);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
@@ -251,24 +244,6 @@ function App() {
 
   const fetchUserProfile = async (userId: string) => {
     currentProfileUserIdRef.current = userId;
-    if (userId === 'mock-student-id') {
-      setProfileStatus('ativo');
-      setProfileRole('student');
-      setProfileLoaded(true);
-      
-      const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
-      if (justLoggedIn) {
-        sessionStorage.removeItem('just_logged_in');
-        setSelectedStudentId(null);
-        setSelectedChatStudentId(null);
-        setArenaActive(false);
-        setArenaRole(null);
-        setMobileMenuOpen(false);
-        setSidebarCollapsed(false);
-        navigate('/dashboard', { replace: true });
-      }
-      return;
-    }
     if (!profileRole) {
       setProfileLoaded(false);
     }
@@ -357,7 +332,9 @@ function App() {
 
     // 1. Not Authenticated Flow
     if (!session) {
-      if (path === '/signup') {
+      if (path === '/cadastro-professor' || path === '/signup-professor') {
+        setAuthView('teacher_signup');
+      } else if (path === '/signup' || path === '/cadastro') {
         setAuthView('signup');
       } else {
         setAuthView('login');
@@ -398,16 +375,22 @@ function App() {
       } else {
         const tabMap: Record<string, TeacherTab> = {
           '/admin': 'overview',
+          '/admin/': 'overview',
           '/admin/overview': 'overview',
           '/admin/alunos': 'progress',
           '/admin/diario': 'diario',
           '/admin/lessons': 'lessons',
+          '/admin/aulas': 'lessons',
           '/admin/correcoes': 'corrections',
           '/admin/course-builder': 'assignments',
+          '/admin/cursos': 'assignments',
           '/admin/turmas': 'turmas',
           '/admin/professores': 'professores',
+          '/admin/equipe': 'professores',
           '/admin/materiais': 'materials',
           '/admin/arena-ranking': 'arena_ranking',
+          '/admin/arena': 'arena_ranking',
+          '/admin/ranking': 'arena_ranking',
           '/admin/chat': 'chat',
           '/admin/perfil': 'settings',
           '/admin/projeto-integrador': 'projeto_integrador',
@@ -435,11 +418,32 @@ function App() {
         return;
       }
 
+      if (path.startsWith('/aulas/')) {
+        const aulaId = path.substring('/aulas/'.length);
+        setActiveUserTab('dashboard');
+        setSelectedAulaId(aulaId || null);
+        setSelectedModuloId(null);
+        return;
+      }
+
+      if (path.startsWith('/modulos/')) {
+        const moduloId = path.substring('/modulos/'.length);
+        setActiveUserTab('dashboard');
+        setSelectedModuloId(moduloId || null);
+        setSelectedAulaId(null);
+        return;
+      }
+
+      setSelectedAulaId(null);
+      setSelectedModuloId(null);
+
       const tabMap: Record<string, UserTab> = {
         '/': 'dashboard',
         '/dashboard': 'dashboard',
+        '/aulas': 'dashboard',
         '/conquistas': 'achievements',
         '/arena': 'arena_ranking',
+        '/ranking': 'arena_ranking',
         '/digitacao': 'digitacao',
         '/perfil': 'profile',
         '/projeto-integrador': 'projeto_integrador',
@@ -464,6 +468,9 @@ function App() {
       corrections: 'Corrigir Atividades | Estudea',
       assignments: 'Gerenciar Cursos | Estudea',
       turmas: 'Gerenciar Turmas | Estudea',
+      professores: 'Equipe Docente | Estudea',
+      materials: 'Materiais de Apoio | Estudea',
+      chat: 'Chat com Alunos | Estudea',
       settings: 'Minha Conta | Estudea',
       arena_ranking: 'Ranking da Arena | Estudea',
       diario: 'Diário de Classe | Estudea',
@@ -507,11 +514,15 @@ function App() {
       }`}>
       <div className="overflow-y-auto flex-1">
         <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-          <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm" />
+          <div
+            onClick={() => { navigate('/admin/overview'); setMobileMenuOpen(false); }}
+            className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-all select-none"
+            title="Ir para o Início (Visão Geral)"
+          >
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm group-hover:scale-105 transition-transform" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
-              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
-              <p className="text-[11px] text-on-surface-variant mt-0.5">Painel do Professor</p>
+              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none group-hover:text-primary transition-colors">Estudea</h1>
+              <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">Painel do Professor</p>
             </div>
           </div>
           <button
@@ -699,10 +710,14 @@ function App() {
       }`}>
       <div>
         <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-          <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm" />
+          <div
+            onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
+            className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-all select-none"
+            title="Ir para o Início (Minhas Aulas)"
+          >
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm group-hover:scale-105 transition-transform" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
-              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
+              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none group-hover:text-primary transition-colors">Estudea</h1>
               <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
             </div>
           </div>
@@ -1026,6 +1041,7 @@ function App() {
                   {activeUserTab === 'arena_ranking' && 'Ranking da Arena'}
                   {activeUserTab === 'digitacao' && 'Treino de Digitação'}
                   {activeUserTab === 'projeto_integrador' && 'Projeto Integrador'}
+                  {activeUserTab === 'windows11' && 'Curso Windows 11'}
                 </h3>
               </div>
             </div>
@@ -1099,6 +1115,12 @@ function App() {
                   session={session}
                   isAdmin={isAdmin}
                   initialViewMode="achievements"
+                  initialAulaId={selectedAulaId}
+                  initialModuloId={selectedModuloId}
+                  onNavigateToAula={(aulaId) => navigate(`/aulas/${aulaId}`)}
+                  onNavigateToModulo={(moduloId) => navigate(`/modulos/${moduloId}`)}
+                  onNavigateToDashboard={() => navigate('/dashboard')}
+                  onNavigateToAchievements={() => navigate('/conquistas')}
                   onStartArena={() => {
                     setArenaActive(true);
                     setArenaRole('aluno');
@@ -1118,6 +1140,12 @@ function App() {
                   session={session}
                   isAdmin={isAdmin}
                   initialViewMode="trail"
+                  initialAulaId={selectedAulaId}
+                  initialModuloId={selectedModuloId}
+                  onNavigateToAula={(aulaId) => navigate(`/aulas/${aulaId}`)}
+                  onNavigateToModulo={(moduloId) => navigate(`/modulos/${moduloId}`)}
+                  onNavigateToDashboard={() => navigate('/dashboard')}
+                  onNavigateToAchievements={() => navigate('/conquistas')}
                   onStartArena={() => {
                     setArenaActive(true);
                     setArenaRole('aluno');
@@ -1151,17 +1179,50 @@ function App() {
       <div className="absolute bottom-10 left-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
 
       <main className="w-full max-w-md p-4 z-10">
-        {authView === 'login' ? (
+        {authView === 'login' && (
           <LoginAluno
-            onNavigateToSignup={() => navigate('/signup')}
+            onNavigateToSignup={() => {
+              setAuthView('signup');
+              navigate('/signup');
+            }}
+            onNavigateToTeacherSignup={() => {
+              setAuthView('teacher_signup');
+              navigate('/cadastro-professor');
+            }}
             onAuthSuccess={() => {
               sessionStorage.setItem('just_logged_in', 'true');
             }}
           />
-        ) : (
+        )}
+        {authView === 'signup' && (
           <CadastroAluno
-            onNavigateToLogin={() => navigate('/login')}
-            onAuthSuccess={() => navigate('/login')}
+            onNavigateToLogin={() => {
+              setAuthView('login');
+              navigate('/login');
+            }}
+            onNavigateToTeacherSignup={() => {
+              setAuthView('teacher_signup');
+              navigate('/cadastro-professor');
+            }}
+            onAuthSuccess={() => {
+              setAuthView('login');
+              navigate('/login');
+            }}
+          />
+        )}
+        {authView === 'teacher_signup' && (
+          <CadastroProfessor
+            onNavigateToLogin={() => {
+              setAuthView('login');
+              navigate('/login');
+            }}
+            onNavigateToStudentSignup={() => {
+              setAuthView('signup');
+              navigate('/signup');
+            }}
+            onAuthSuccess={() => {
+              sessionStorage.setItem('just_logged_in', 'true');
+            }}
           />
         )}
       </main>

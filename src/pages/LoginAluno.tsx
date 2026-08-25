@@ -14,11 +14,13 @@ import {
 
 interface LoginAlunoProps {
   onNavigateToSignup: () => void;
+  onNavigateToTeacherSignup?: () => void;
   onAuthSuccess: () => void;
 }
 
 export const LoginAluno: React.FC<LoginAlunoProps> = ({
   onNavigateToSignup,
+  onNavigateToTeacherSignup,
   onAuthSuccess
 }) => {
   const [email, setEmail] = useState('');
@@ -160,40 +162,27 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
       </form>
 
       {/* Switch Screen Link */}
-      <div className="text-center pt-2">
+      <div className="text-center pt-2 space-y-2 border-t border-outline-variant/20 mt-3">
         <p className="text-label-md text-on-surface-variant">
           Não possui uma conta?{' '}
           <button
             onClick={onNavigateToSignup}
-            className="text-primary font-bold hover:underline focus:outline-none"
+            className="text-primary font-bold hover:underline focus:outline-none cursor-pointer"
           >
-            Cadastrar-se agora
+            Cadastrar como Aluno
           </button>
         </p>
-      </div>
-
-      {/* Demo Mode Button for local verification */}
-      <div className="text-center pt-2 border-t border-outline-variant/30 mt-4">
-        <button
-          type="button"
-          onClick={() => {
-            const mockSession = {
-              user: {
-                id: 'mock-student-id',
-                email: 'aluno.demo@estudea.com',
-                user_metadata: {
-                  nome: 'Aluno Demo'
-                }
-              }
-            };
-            sessionStorage.setItem('demo_session', JSON.stringify(mockSession));
-            sessionStorage.setItem('just_logged_in', 'true');
-            window.location.reload();
-          }}
-          className="text-label-sm font-semibold text-secondary hover:underline py-1.5 cursor-pointer"
-        >
-          Entrar no Modo de Demonstração (Sem Banco)
-        </button>
+        {onNavigateToTeacherSignup && (
+          <p className="text-xs text-on-surface-variant">
+            É professor ou instrutor?{' '}
+            <button
+              onClick={onNavigateToTeacherSignup}
+              className="text-secondary font-bold hover:underline focus:outline-none cursor-pointer"
+            >
+              Cadastre-se como Docente
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

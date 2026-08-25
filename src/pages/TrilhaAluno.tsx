@@ -114,6 +114,12 @@ interface TrilhaAlunoProps {
   session: any;
   isAdmin: boolean;
   initialViewMode?: 'trail' | 'achievements';
+  initialAulaId?: string | null;
+  initialModuloId?: string | null;
+  onNavigateToAula?: (aulaId: string) => void;
+  onNavigateToModulo?: (moduloId: string) => void;
+  onNavigateToDashboard?: () => void;
+  onNavigateToAchievements?: () => void;
   onStartArena: () => void;
 }
 
@@ -215,7 +221,18 @@ const RocketModuleIcon = () => (
   <HugeiconsIcon icon={Rocket01Icon} size={28} strokeWidth={2} className="text-green-600" />
 );
 
-export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, initialViewMode = 'trail', onStartArena }) => {
+export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
+  session,
+  isAdmin,
+  initialViewMode = 'trail',
+  initialAulaId,
+  initialModuloId,
+  onNavigateToAula,
+  onNavigateToModulo,
+  onNavigateToDashboard,
+  onNavigateToAchievements,
+  onStartArena
+}) => {
   const userId = session?.user?.id;
   const userName = session?.user?.user_metadata?.nome || session?.user?.email?.split('@')[0] || 'Estudante';
 
@@ -520,14 +537,74 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
     fetchData();
   }, [userId]);
 
-  // Sync view state when initialViewMode changes (e.g., clicking dashboard or achievements in the sidebar)
+  // Sync view state when initialAulaId, initialModuloId or initialViewMode changes
   useEffect(() => {
-    if (initialViewMode === 'achievements') {
+    if (initialAulaId && aulas.length > 0) {
+      const targetAula = aulas.find(a => a.id === initialAulaId);
+      if (targetAula) {
+        setSelectedAula(targetAula);
+        setView('lesson');
+        const parentMod = modulos.find(m => m.id === targetAula.modulo_id);
+        if (parentMod) setSelectedModulo(parentMod);
+      }
+    } else if (initialModuloId && modulos.length > 0) {
+      const targetMod = modulos.find(m => m.id === initialModuloId);
+      if (targetMod) {
+        setSelectedModulo(targetMod);
+        setView('module_trail');
+        setSelectedAula(null);
+      }
+    } else if (initialViewMode === 'achievements') {
       setView('achievements');
+      setSelectedAula(null);
+      setSelectedModulo(null);
+    } else if (!initialAulaId && !initialModuloId) {
+      setView('dashboard');
+      setSelectedAula(null);
+      setSelectedModulo(null);
+    }
+  }, [initialAulaId, initialModuloId, initialViewMode, aulas, modulos]);
+
+  const handleOpenAula = (aula: Aula) => {
+    setSelectedAula(aula);
+    const parentMod = modulos.find(m => m.id === aula.modulo_id);
+    if (parentMod) setSelectedModulo(parentMod);
+    if (onNavigateToAula) {
+      onNavigateToAula(aula.id);
+    } else {
+      setView('lesson');
+    }
+  };
+
+  const handleOpenModulo = (modulo: Modulo) => {
+    setSelectedModulo(modulo);
+    setSelectedAula(null);
+    if (onNavigateToModulo) {
+      onNavigateToModulo(modulo.id);
+    } else {
+      setView('module_trail');
+    }
+  };
+
+  const handleGoToDashboard = () => {
+    setSelectedAula(null);
+    setSelectedModulo(null);
+    if (onNavigateToDashboard) {
+      onNavigateToDashboard();
     } else {
       setView('dashboard');
     }
-  }, [initialViewMode]);
+  };
+
+  const handleGoToAchievements = () => {
+    setSelectedAula(null);
+    setSelectedModulo(null);
+    if (onNavigateToAchievements) {
+      onNavigateToAchievements();
+    } else {
+      setView('achievements');
+    }
+  };
 
   // Reset interactive states when lesson changes
   useEffect(() => {
@@ -1454,14 +1531,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
               {resumeLesson && (
                 <section>
                   <div 
-                    onClick={() => {
-                      const moduloOfLesson = modulos.find(m => m.id === resumeLesson.modulo_id);
-                      if (moduloOfLesson) {
-                        setSelectedModulo(moduloOfLesson);
-                      }
-                      setSelectedAula(resumeLesson);
-                      setView('lesson');
-                    }}
+                    onClick={() => handleOpenAula(resumeLesson)}
                     className="app-card-padded hover-lift relative overflow-hidden group min-h-[180px] cursor-pointer"
                   >
                     <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent z-0"></div>
@@ -1486,12 +1556,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const moduloOfLesson = modulos.find(m => m.id === resumeLesson.modulo_id);
-                            if (moduloOfLesson) {
-                              setSelectedModulo(moduloOfLesson);
-                            }
-                            setSelectedAula(resumeLesson);
-                            setView('lesson');
+                            handleOpenAula(resumeLesson);
                           }}
                           className="app-primary-action"
                         >
@@ -1509,8 +1574,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="app-section-title">Conquistas</h2>
                   <button 
-                    onClick={() => setView('achievements')}
-                    className="text-primary font-medium text-label-sm hover:underline"
+                    onClick={handleGoToAchievements}
+                    className="text-primary font-medium text-label-sm hover:underline cursor-pointer"
                   >
                     Ver todas
                   </button>
@@ -1574,8 +1639,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                           key={modulo.id} 
                           onClick={() => {
                             if (modulo.status !== 'BLOQUEADO') {
-                              setSelectedModulo(modulo);
-                              setView('module_trail');
+                              handleOpenModulo(modulo);
                             }
                           }}
                           className={`app-card-padded transition-all ${
@@ -1607,9 +1671,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedModulo(modulo);
-                                        setSelectedAula(modulo.nextLesson!);
-                                        setView('lesson');
+                                        handleOpenAula(modulo.nextLesson!);
                                       }}
                                       className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline text-left cursor-pointer"
                                     >
@@ -1706,9 +1768,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                       disabled={!unlocked}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedModulo(modulo);
-                                        setSelectedAula(aula);
-                                        setView('lesson');
+                                        handleOpenAula(aula);
                                       }}
                                       className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all ${
                                         unlocked
@@ -1938,7 +1998,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setView('dashboard')}
+                onClick={handleGoToDashboard}
                 className="app-icon-button bg-surface hover:bg-surface-container border border-outline-variant/30 rounded-xl"
                 title="Voltar para o Dashboard"
               >
@@ -2002,10 +2062,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
 
                 return (
                   <div 
-                    onClick={() => {
-                      setSelectedAula(targetLesson);
-                      setView('lesson');
-                    }}
+                    onClick={() => handleOpenAula(targetLesson)}
                     className="app-card-padded hover-lift relative overflow-hidden group min-h-[160px] cursor-pointer"
                   >
                     <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-secondary/10 to-transparent z-0"></div>
@@ -2029,8 +2086,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedAula(targetLesson);
-                            setView('lesson');
+                            handleOpenAula(targetLesson);
                           }}
                           className="app-primary-action"
                           style={{
@@ -2269,7 +2325,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setView('dashboard')}
+                onClick={handleGoToDashboard}
                 className="app-icon-button"
                 title="Voltar para a Trilha"
               >
@@ -2286,7 +2342,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
             
             {/* Back to Trail Action Button */}
             <button
-              onClick={() => setView('dashboard')}
+              onClick={handleGoToDashboard}
               className="app-secondary-action w-full md:w-auto"
             >
               <HugeiconsIcon icon={MapsIcon} size={18} />
@@ -2681,7 +2737,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
           <div className="app-page-header app-page-header-row">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
-                onClick={() => setView(selectedModulo ? 'module_trail' : 'dashboard')}
+                onClick={() => {
+                  if (selectedModulo) {
+                    handleOpenModulo(selectedModulo);
+                  } else {
+                    handleGoToDashboard();
+                  }
+                }}
                 className="app-secondary-action"
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
@@ -2744,9 +2806,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                             return (
                               <div key={aula.id} className="space-y-1">
                                 <button
-                                  onClick={() => {
-                                    setSelectedAula(aula);
-                                  }}
+                                  onClick={() => handleOpenAula(aula)}
                                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all border ${
                                     isSelected
                                       ? 'bg-primary/5 text-primary border-primary/30 font-semibold shadow-sm'
@@ -3037,10 +3097,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                       </div>
                       <button
                         onClick={() => {
-                          setSelectedAula(null);
-                          setView(selectedModulo ? 'module_trail' : 'dashboard');
+                          if (selectedModulo) {
+                            handleOpenModulo(selectedModulo);
+                          } else {
+                            handleGoToDashboard();
+                          }
                         }}
-                        className="px-6 py-2.5 bg-surface border border-outline-variant/40 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-semibold text-label-md rounded-xl transition-all flex items-center gap-2"
+                        className="px-6 py-2.5 bg-surface border border-outline-variant/40 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-semibold text-label-md rounded-xl transition-all flex items-center gap-2 cursor-pointer"
                       >
                         <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
                         Voltar para a Trilha

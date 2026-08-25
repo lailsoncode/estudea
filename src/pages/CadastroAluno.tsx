@@ -16,11 +16,13 @@ import {
 
 interface CadastroAlunoProps {
   onNavigateToLogin: () => void;
+  onNavigateToTeacherSignup?: () => void;
   onAuthSuccess: () => void;
 }
 
 export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
   onNavigateToLogin,
+  onNavigateToTeacherSignup,
   onAuthSuccess
 }) => {
   const [fullName, setFullName] = useState('');
@@ -183,12 +185,33 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
       <div className="text-center space-y-3">
         <img src={logoIcon} alt="Estudea Logo" className="w-16 h-16 rounded-2xl mx-auto object-contain shadow-sm" />
         <h3 className="text-headline-lg font-heading font-extrabold text-on-background">
-          Criar Conta
+          Cadastro de Aluno
         </h3>
         <p className="text-on-surface-variant text-label-md">
-          Preencha os dados abaixo para se cadastrar na turma.
+          Preencha os dados abaixo e o código da sua turma.
         </p>
       </div>
+
+      {/* Role Switcher Tab */}
+      {onNavigateToTeacherSignup && (
+        <div className="grid grid-cols-2 gap-1 p-1 bg-surface-container-low dark:bg-slate-800 rounded-xl border border-outline-variant/30 text-xs font-bold">
+          <button
+            type="button"
+            className="py-2 rounded-lg bg-primary text-on-primary shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-default"
+          >
+            <HugeiconsIcon icon={UserIcon} size={14} />
+            Sou Aluno
+          </button>
+          <button
+            type="button"
+            onClick={onNavigateToTeacherSignup}
+            className="py-2 rounded-lg text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          >
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
+            Sou Professor
+          </button>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -336,16 +359,27 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
       </form>
 
       {/* Switch Screen Link */}
-      <div className="text-center pt-2">
+      <div className="text-center pt-2 space-y-2 border-t border-outline-variant/20 mt-3">
         <p className="text-label-md text-on-surface-variant">
           Já possui uma conta?{' '}
           <button
             onClick={onNavigateToLogin}
-            className="text-primary font-bold hover:underline focus:outline-none"
+            className="text-primary font-bold hover:underline focus:outline-none cursor-pointer"
           >
             Fazer login
           </button>
         </p>
+        {onNavigateToTeacherSignup && (
+          <p className="text-xs text-on-surface-variant">
+            É professor ou instrutor?{' '}
+            <button
+              onClick={onNavigateToTeacherSignup}
+              className="text-secondary font-bold hover:underline focus:outline-none cursor-pointer"
+            >
+              Cadastre-se como Docente
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
