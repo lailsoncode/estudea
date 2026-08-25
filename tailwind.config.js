@@ -61,9 +61,11 @@ export default {
         'tertiary-fixed': withOpacity('--color-tertiary-fixed'),
         'tertiary-fixed-dim': withOpacity('--color-tertiary-fixed-dim'),
         'on-tertiary-fixed': withOpacity('--color-on-tertiary-fixed'),
-        'on-tertiary-fixed-variant': withOpacity('--color-on-tertiary-fixed-variant'),
         background: withOpacity('--color-background'),
         'on-background': withOpacity('--color-on-background'),
+        'senac-blue': withOpacity('--color-senac-blue'),
+        'senac-orange': withOpacity('--color-senac-orange'),
+        'senac-orange-light': withOpacity('--color-senac-orange-light'),
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

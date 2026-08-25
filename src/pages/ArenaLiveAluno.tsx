@@ -276,7 +276,7 @@ export const ArenaLiveAluno: React.FC<ArenaLiveAlunoProps> = ({ session, onClose
           
           {/* LOBBY STATE */}
           {gameStatus === 'lobby' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 animate-fade-in bg-radial-at-t from-indigo-950 via-slate-950 to-black">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 animate-fade-in bg-radial-at-t from-[#002b54] via-slate-950 to-black">
               <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary animate-bounce">
                 <HugeiconsIcon icon={UserCircleIcon} size={28} strokeWidth={2} />
               </div>

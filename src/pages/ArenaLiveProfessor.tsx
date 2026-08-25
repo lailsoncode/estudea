@@ -554,7 +554,7 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
           
           {/* LOBBY STATE */}
           {gameStatus === 'lobby' && (
-            <div className={`flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-fade-in transition-all duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-radial-at-t from-indigo-950 via-slate-950 to-black'}`}>
+            <div className={`flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-fade-in transition-all duration-300 ${projectorMode ? 'bg-slate-100' : 'bg-radial-at-t from-[#002b54] via-slate-950 to-black'}`}>
               <div className="space-y-2">
                 <p className={`text-sm font-semibold uppercase tracking-widest ${projectorMode ? 'text-slate-600' : 'text-slate-400'}`}>Entre no painel do aluno e digite o PIN:</p>
                 <h2 className={`text-7xl font-heading font-black tracking-widest drop-shadow-sm select-all ${projectorMode ? 'text-primary' : 'text-primary-fixed-dim'}`}>{pin}</h2>

@@ -168,12 +168,12 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
     <div className="app-page animate-fade-in pb-12">
       {/* Header com estilo Mica / Windows 11 Glassmorphism */}
       <div className="app-page-header glass-card relative overflow-hidden">
-        {/* Background gradient decorativo estilo Windows 11 Bloom */}
-        <div className="absolute -top-10 -right-10 w-44 h-44 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Background gradient decorativo */}
+        <div className="absolute -top-10 -right-10 w-44 h-44 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full blur-3xl pointer-events-none" />
         
         <div className="app-page-header-row relative z-10">
           <div className="space-y-1">
-            <span className="app-eyebrow flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+            <span className="app-eyebrow flex items-center gap-1.5 text-primary">
               <HugeiconsIcon icon={Award01Icon} size={14} className="animate-pulse" />
               Curso de Informática Básica
             </span>
@@ -195,7 +195,7 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
             {/* Barra de Progresso */}
             <div className="w-full bg-surface-container-high rounded-full h-2.5 overflow-hidden relative">
               <div
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>

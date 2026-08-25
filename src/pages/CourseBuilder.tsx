@@ -20,9 +20,9 @@ import {
   SparklesIcon,
   NotebookIcon,
   Quiz01Icon,
-  GameControllerIcon
+  GameControllerIcon,
+  Copy01Icon
 } from '@hugeicons/core-free-icons';
-
 
 // Types corresponding to our database tables
 interface Curso {
@@ -34,6 +34,9 @@ interface Curso {
   nivel: string | null;
   duracao: string | null;
   created_at: string;
+  criado_por?: string | null;
+  is_public?: boolean;
+  criado_por_nome?: string;
 }
 
 const CATEGORIAS_PADRAO = [
@@ -699,6 +702,10 @@ export const CourseBuilder: React.FC = () => {
     arquivo: false
   });
 
+  // Multi-professor filtering & authoring
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [courseTabFilter, setCourseTabFilter] = useState<'todos' | 'meus' | 'compartilhados'>('todos');
+
   // Load Cursos on Mount
   useEffect(() => {
     fetchCursos();
@@ -724,15 +731,149 @@ export const CourseBuilder: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) setCurrentUserId(session.user.id);
+
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, nome, email');
+      const profMap = new Map((profs || []).map(p => [p.id, p.nome || p.email || 'Instrutor']));
+
       const { data, error } = await supabase
         .from('cursos')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setCursos(data || []);
+
+      const formatted = (data || []).map(c => ({
+        ...c,
+        criado_por_nome: c.criado_por ? (profMap.get(c.criado_por) || 'Institucional') : 'Institucional'
+      }));
+
+      setCursos(formatted);
     } catch (err: any) {
       console.error('Erro ao buscar cursos:', err);
       setError(err.message || 'Erro ao carregar cursos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloneCourse = async (courseToClone: Curso, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Deseja duplicar o curso "${courseToClone.titulo}" para a sua autoria?`)) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || currentUserId;
+
+      // 1. Insert new cloned course
+      const { data: newCourse, error: cErr } = await supabase
+        .from('cursos')
+        .insert({
+          titulo: `${courseToClone.titulo} (Cópia)`,
+          descricao: courseToClone.descricao,
+          imagem_capa: courseToClone.imagem_capa,
+          categoria: courseToClone.categoria,
+          nivel: courseToClone.nivel,
+          duracao: courseToClone.duracao,
+          criado_por: userId,
+          is_public: true
+        })
+        .select()
+        .single();
+      if (cErr) throw cErr;
+
+      // 2. Fetch original modules
+      const { data: originalMods } = await supabase
+        .from('modulos')
+        .select('*')
+        .eq('curso_id', courseToClone.id)
+        .order('ordem', { ascending: true });
+
+      if (originalMods && originalMods.length > 0) {
+        for (const mod of originalMods) {
+          // Insert cloned module
+          const { data: newMod, error: mErr } = await supabase
+            .from('modulos')
+            .insert({
+              curso_id: newCourse.id,
+              titulo: mod.titulo,
+              ordem: mod.ordem
+            })
+            .select()
+            .single();
+          if (mErr) continue;
+
+          // Fetch original lessons for this module
+          const { data: originalLessons } = await supabase
+            .from('aulas')
+            .select('*, atividades(*), questoes(*)')
+            .eq('modulo_id', mod.id)
+            .order('ordem', { ascending: true });
+
+          if (originalLessons && originalLessons.length > 0) {
+            for (const lesson of originalLessons) {
+              const { data: newLesson, error: lErr } = await supabase
+                .from('aulas')
+                .insert({
+                  modulo_id: newMod.id,
+                  numero_aula: lesson.numero_aula,
+                  titulo: lesson.titulo,
+                  conteudo: lesson.conteudo,
+                  tipo: lesson.tipo,
+                  duracao: lesson.duracao,
+                  ordem: lesson.ordem,
+                  video_url: lesson.video_url,
+                  arquivo_url: lesson.arquivo_url,
+                  pontos: lesson.pontos,
+                  nota_aprovacao: lesson.nota_aprovacao,
+                  obrigatorio: lesson.obrigatorio,
+                  embaralhar_questoes: lesson.embaralhar_questoes,
+                  permite_arena: lesson.permite_arena,
+                  tempo_limite: lesson.tempo_limite
+                })
+                .select()
+                .single();
+              if (lErr) continue;
+
+              // Clone activities
+              if (lesson.atividades && lesson.atividades.length > 0) {
+                const actsToInsert = lesson.atividades.map((a: any) => ({
+                  aula_id: newLesson.id,
+                  enunciado: a.enunciado,
+                  tipo_entrega: a.tipo_entrega,
+                  pontua: a.pontua ?? true,
+                  permite_refazer: a.permite_refazer ?? true,
+                  atividade_quiz_proprio: a.atividade_quiz_proprio ?? false,
+                  material_url: a.material_url
+                }));
+                await supabase.from('atividades').insert(actsToInsert);
+              }
+
+              // Clone questions
+              if (lesson.questoes && lesson.questoes.length > 0) {
+                const qToInsert = lesson.questoes.map((q: any) => ({
+                  aula_id: newLesson.id,
+                  enunciado: q.enunciado,
+                  opcoes: q.opcoes,
+                  resposta_correta: q.resposta_correta,
+                  ordem: q.ordem,
+                  tipo: q.tipo || 'multipla_escolha',
+                  para_arena: q.para_arena ?? false
+                }));
+                await supabase.from('questoes').insert(qToInsert);
+              }
+            }
+          }
+        }
+      }
+
+      setSuccess(`Curso "${courseToClone.titulo}" duplicado com sucesso para a sua autoria!`);
+      fetchCursos();
+    } catch (err: any) {
+      setError(err.message || 'Erro ao duplicar o curso.');
     } finally {
       setLoading(false);
     }
@@ -826,7 +967,7 @@ export const CourseBuilder: React.FC = () => {
     try {
       if (!courseForm.titulo.trim()) throw new Error('O título do curso é obrigatório.');
 
-      const fields = {
+      const fields: any = {
         titulo: courseForm.titulo.trim(),
         descricao: courseForm.descricao.trim() || null,
         imagem_capa: courseForm.imagem_capa || null,
@@ -849,7 +990,10 @@ export const CourseBuilder: React.FC = () => {
         setSuccess('Curso atualizado com sucesso!');
         setSelectedCourse(data); // update details immediately in view
       } else {
-        // Insert
+        // Insert with authoring
+        fields.criado_por = currentUserId;
+        fields.is_public = true;
+
         const { data, error } = await supabase
           .from('cursos')
           .insert(fields)
@@ -1778,6 +1922,40 @@ export const CourseBuilder: React.FC = () => {
             </button>
           </div>
 
+          {/* Course Tabs Filter */}
+          <div className="flex items-center gap-2 p-1 bg-surface-container-low dark:bg-slate-800/80 rounded-xl border border-outline-variant/30 text-xs w-fit">
+            <button
+              onClick={() => setCourseTabFilter('todos')}
+              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+                courseTabFilter === 'todos'
+                  ? 'bg-white dark:bg-slate-700 text-on-surface shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              Todos ({cursos.length})
+            </button>
+            <button
+              onClick={() => setCourseTabFilter('meus')}
+              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+                courseTabFilter === 'meus'
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
+            >
+              Meus Cursos ({cursos.filter(c => c.criado_por === currentUserId).length})
+            </button>
+            <button
+              onClick={() => setCourseTabFilter('compartilhados')}
+              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+                courseTabFilter === 'compartilhados'
+                  ? 'bg-secondary text-on-secondary shadow-xs'
+                  : 'text-on-surface-variant hover:text-secondary'
+              }`}
+            >
+              Biblioteca Compartilhada ({cursos.filter(c => c.criado_por !== currentUserId || !c.criado_por).length})
+            </button>
+          </div>
+
           {loading ? (
             <p className="text-center text-slate-500 py-12">Carregando cursos...</p>
           ) : cursos.length === 0 ? (
@@ -1794,15 +1972,21 @@ export const CourseBuilder: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cursos.map(c => (
+              {cursos
+                .filter(c => {
+                  if (courseTabFilter === 'meus') return c.criado_por === currentUserId;
+                  if (courseTabFilter === 'compartilhados') return c.criado_por !== currentUserId || !c.criado_por;
+                  return true;
+                })
+                .map(c => (
                 <div
                   key={c.id}
                   onClick={() => handleOpenCourse(c)}
-                  className="bg-white border border-slate-200 hover:border-primary/40 rounded-2xl overflow-hidden shadow-level-1 hover:shadow-level-2 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+                  className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/30 hover:border-primary/40 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
                 >
                   <div>
                     {/* Cover Photo */}
-                    <div className="w-full h-40 bg-slate-100 overflow-hidden relative border-b border-slate-100">
+                    <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-b border-outline-variant/20">
                       <img
                         src={c.imagem_capa || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAtFIMvkZnyEfatqV4viqIQ0qouFfUsJFbC047wwUyKILQPYzvsK0uPEnyeHRBj7thqqT5pUBZs-hPqMChs2xyFalhqbF89Qt4YqROVx_lATJeZjsjgTRp6e4wWqQ9ByL5xdT1O9rVr51uW58HcPkBKc6vjuxE42HVBFtUd95tIDwhUEaCi5fBdaAqo7pgM4uORSEB3vOTuflxF9REKz_rlWJDzJU-q6MF0KI25Tl4xALwMnEYC--UAeWWcwOmYCbgYCs1Ns1tVD4'}
                         alt={c.titulo}
@@ -1816,8 +2000,8 @@ export const CourseBuilder: React.FC = () => {
                     {/* Metadata */}
                     <div className="p-5 space-y-2">
                       <div className="flex justify-between items-center text-label-sm text-primary">
-                        <span className="bg-primary/5 px-2.5 py-0.5 rounded border border-primary/10 font-bold">{c.categoria}</span>
-                        <span className="text-slate-400 font-medium">{c.duracao}</span>
+                        <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded border border-primary/20 font-bold">{c.categoria}</span>
+                        <span className="text-on-surface-variant font-medium">{c.duracao}</span>
                       </div>
                       <h3 className="font-heading font-extrabold text-body-lg text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
                         {c.titulo}
@@ -1825,22 +2009,39 @@ export const CourseBuilder: React.FC = () => {
                       <p className="text-on-surface-variant text-label-sm line-clamp-2 leading-relaxed">
                         {c.descricao || 'Sem descrição fornecida.'}
                       </p>
+                      
+                      <div className="pt-2 text-[11px] font-semibold text-secondary flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                        {c.criado_por === currentUserId ? 'Criado por Você' : `Autor: Prof. ${c.criado_por_nome || 'Institucional'}`}
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions footer */}
-                  <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <div className="px-5 py-4 border-t border-outline-variant/20 bg-surface-container-low dark:bg-slate-800/50 flex items-center justify-between">
                     <span className="text-primary font-heading font-bold text-label-md flex items-center gap-1 group-hover:translate-x-1 transition-all">
                       Organizar Grade
                       <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
                     </span>
-                    <button
-                      onClick={(e) => handleDeleteCourse(c.id, e)}
-                      className="p-2 text-slate-400 hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
-                      title="Excluir Curso"
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={18} />
-                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => handleCloneCourse(c, e)}
+                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors flex items-center gap-1 text-[11px] font-bold"
+                        title="Duplicar / Clonar Curso"
+                      >
+                        <HugeiconsIcon icon={Copy01Icon} size={16} />
+                        <span className="hidden sm:inline">Duplicar</span>
+                      </button>
+
+                      <button
+                        onClick={(e) => handleDeleteCourse(c.id, e)}
+                        className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
+                        title="Excluir Curso"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2197,18 +2398,18 @@ export const CourseBuilder: React.FC = () => {
             <div className="flex-1 space-y-6">
               
               {/* AI Assistant Card */}
-              <section className="app-card-padded bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 dark:from-indigo-950/45 dark:via-slate-900/60 dark:to-purple-950/45 border-indigo-100/80 dark:border-indigo-900/40 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-indigo-100/50 dark:border-indigo-900/30 pb-3">
-                  <h3 className="font-heading font-extrabold text-body-lg text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
-                    <HugeiconsIcon icon={SparklesIcon} size={22} className="text-indigo-600 dark:text-indigo-400 animate-pulse" />
+              <section className="app-card-padded bg-gradient-to-br from-primary/10 via-surface to-secondary/10 dark:from-primary/15 dark:via-surface-container-lowest dark:to-secondary/15 border border-primary/20 dark:border-primary/20 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
+                  <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
+                    <HugeiconsIcon icon={SparklesIcon} size={22} className="text-primary animate-pulse" />
                     Assistente de Criação com IA
                   </h3>
-                  <span className="text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/40">
+                  <span className="text-[10px] font-extrabold uppercase bg-primary/15 text-primary px-2 py-0.5 rounded border border-primary/20">
                     Gemini Ativo
                   </span>
                 </div>
 
-                <p className="text-label-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-label-sm text-on-surface-variant leading-relaxed">
                   Digite ou cole instruções para que a inteligência artificial configure a aula automaticamente. Ela criará o título, descrição, conteúdo teórico, materiais complementares (links/PDFs) e questionários!
                 </p>
 
@@ -2223,18 +2424,18 @@ export const CourseBuilder: React.FC = () => {
                     }}
                     rows={4}
                     disabled={aiLoading}
-                    className="w-full px-4 py-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white dark:bg-slate-950 focus:border-indigo-500 dark:focus:border-indigo-400 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-body-md"
+                    className="w-full px-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none transition-all text-body-md"
                   />
 
                   {aiError && (
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/35 rounded-xl text-label-sm text-red-600 dark:text-red-300 font-medium leading-relaxed flex items-center gap-2">
+                    <div className="p-3 bg-error-container/30 border border-error/20 rounded-xl text-label-sm text-error font-medium leading-relaxed flex items-center gap-2">
                       <HugeiconsIcon icon={Alert01Icon} size={16} strokeWidth={2} className="shrink-0" />
                       <span>{aiError}</span>
                     </div>
                   )}
 
                   {aiSuccess && (
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/35 rounded-xl text-label-sm text-emerald-700 dark:text-emerald-300 font-semibold leading-relaxed flex items-center gap-2">
+                    <div className="p-3 bg-emerald-50/20 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl text-label-sm text-emerald-600 dark:text-emerald-300 font-semibold leading-relaxed flex items-center gap-2">
                       <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} className="shrink-0" />
                       <span>{aiSuccess}</span>
                     </div>
@@ -2245,7 +2446,7 @@ export const CourseBuilder: React.FC = () => {
                       type="button"
                       onClick={handleGenerateWithAI}
                       disabled={aiLoading || !aiPrompt.trim()}
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 disabled:opacity-50 text-white font-heading font-bold text-label-sm rounded-xl shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5"
+                      className="app-primary-action"
                     >
                       {aiLoading ? (
                         <>
@@ -2831,11 +3032,11 @@ export const CourseBuilder: React.FC = () => {
                               </label>
 
                               {isQuiz && (
-                                <div className="p-4 bg-indigo-50/50 border border-indigo-150 rounded-xl space-y-3">
+                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
                                   <label className="flex items-center justify-between cursor-pointer group gap-4">
                                     <div className="flex flex-col text-left">
-                                      <span className="text-label-md text-slate-600 group-hover:text-primary transition-colors font-bold">Questionário Exclusivo</span>
-                                      <span className="text-label-sm text-slate-400 mt-0.5">Se marcado, o questionário terá perguntas específicas para esta atividade (em vez de compartilhar as do quiz principal da aula)</span>
+                                      <span className="text-label-md text-on-surface group-hover:text-primary transition-colors font-bold">Questionário Exclusivo</span>
+                                      <span className="text-label-sm text-on-surface-variant mt-0.5">Se marcado, o questionário terá perguntas específicas para esta atividade (em vez de compartilhar as do quiz principal da aula)</span>
                                     </div>
                                     <input
                                       type="checkbox"
@@ -2864,11 +3065,11 @@ export const CourseBuilder: React.FC = () => {
                                           setQuizSubTab('standard');
                                         }
                                       }}
-                                      className="w-10 h-6 bg-slate-200 checked:bg-indigo-500 rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                      className="w-10 h-6 bg-slate-200 checked:bg-primary rounded-full appearance-none relative before:content-[''] before:absolute before:top-[1px] before:left-[1px] before:w-5 before:h-5 before:rounded-full before:bg-white before:transition-all checked:before:translate-x-4 border border-slate-300 transition-colors cursor-pointer shrink-0"
                                     />
                                   </label>
 
-                                  <p className="text-[11px] text-indigo-650 italic font-medium leading-relaxed bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100">
+                                  <p className="text-[11px] text-primary italic font-medium leading-relaxed bg-primary/10 p-2.5 rounded-xl border border-primary/20">
                                     {act.atividade_quiz_proprio 
                                       ? 'ℹ As questões cadastradas na aba "Questões da Atividade" abaixo serão utilizadas exclusivamente para esta atividade.'
                                       : 'ℹ As questões cadastradas na aba "Questões do Quiz" abaixo serão utilizadas para esta atividade.'}
@@ -2948,8 +3149,8 @@ export const CourseBuilder: React.FC = () => {
                           onClick={() => setQuizSubTab('arena')}
                           className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] flex items-center gap-1.5 ${
                             quizSubTab === 'arena'
-                              ? 'border-indigo-500 text-indigo-500'
-                              : 'border-transparent text-slate-400 hover:text-slate-600'
+                              ? 'border-secondary text-secondary'
+                              : 'border-transparent text-on-surface-variant hover:text-on-surface'
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
@@ -2966,8 +3167,8 @@ export const CourseBuilder: React.FC = () => {
                         onClick={() => setQuizSubTab(`atividade_${act.tempId}`)}
                         className={`px-5 py-3 font-heading font-bold text-label-md transition-all border-b-2 -mb-[1px] flex items-center gap-1.5 ${
                           quizSubTab === `atividade_${act.tempId}`
-                            ? 'border-pink-500 text-pink-500'
-                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                            ? 'border-secondary text-secondary'
+                            : 'border-transparent text-on-surface-variant hover:text-on-surface'
                         }`}
                       >
                         <span className="flex items-center gap-1.5">
@@ -2979,10 +3180,10 @@ export const CourseBuilder: React.FC = () => {
                   </div>
 
                   {quizSubTab === 'standard' ? (
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <div className="flex justify-between items-center pb-2 border-b border-outline-variant/30">
                       <div>
                         <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Questões do Quiz</h3>
-                        <p className="text-label-sm text-slate-400 mt-1">Defina perguntas e respostas corretas para o progresso do aluno no estudo individual.</p>
+                        <p className="text-label-sm text-on-surface-variant mt-1">Defina perguntas e respostas corretas para o progresso do aluno no estudo individual.</p>
                       </div>
                       <button
                         type="button"
@@ -2994,20 +3195,20 @@ export const CourseBuilder: React.FC = () => {
                       </button>
                     </div>
                   ) : quizSubTab === 'arena' ? (
-                    <div className="space-y-4 pb-2 border-b border-slate-100">
+                    <div className="space-y-4 pb-2 border-b border-outline-variant/30">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                         <div>
-                          <h3 className="font-heading font-extrabold text-body-lg text-indigo-500 flex items-center gap-1.5">
+                          <h3 className="font-heading font-extrabold text-body-lg text-secondary flex items-center gap-1.5">
                             Questões da Arena Estudea
                           </h3>
-                          <p className="text-label-sm text-slate-400 mt-1">
+                          <p className="text-label-sm text-on-surface-variant mt-1">
                             Perguntas rápidas elaboradas especialmente para a competição multiplayer ao vivo.
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={handleAddQuestion}
-                          className="px-4 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
+                          className="px-4 py-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 text-secondary font-heading font-bold text-label-sm flex items-center gap-1.5 transition-all"
                         >
                           <HugeiconsIcon icon={AddCircleIcon} size={18} />
                           Nova Questão Arena
@@ -3015,26 +3216,26 @@ export const CourseBuilder: React.FC = () => {
                       </div>
                       
                       {/* AI material generator block */}
-                      <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-3">
+                      <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-2xl space-y-3">
                         <div className="flex items-center gap-2">
-                          <HugeiconsIcon icon={SparklesIcon} size={18} className="text-indigo-500" />
-                          <span className="font-heading font-bold text-label-md text-indigo-650">Gerar com Inteligência Artificial</span>
+                          <HugeiconsIcon icon={SparklesIcon} size={18} className="text-secondary" />
+                          <span className="font-heading font-bold text-label-md text-secondary">Gerar com Inteligência Artificial</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                        <p className="text-[11px] text-on-surface-variant leading-relaxed">
                           Cole materiais de leitura, conceitos-chave, resumos da aula ou slides abaixo e a IA criará as questões rápidas da Arena automaticamente.
                         </p>
                         <textarea
                           value={aiMaterial}
                           onChange={(e) => setAiMaterial(e.target.value)}
                           placeholder="Cole aqui o material de leitura, notas de aula, slides ou referências teóricas..."
-                          className="w-full h-24 p-3 bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 rounded-xl text-body-md outline-none transition-all resize-y text-slate-800"
+                          className="w-full h-24 p-3 bg-surface-container-lowest border border-outline-variant/60 focus:border-secondary focus:ring-1 focus:ring-secondary/20 rounded-xl text-body-md outline-none transition-all resize-y text-on-surface"
                         />
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
                             onClick={handleGenerateArenaQuestionsWithAI}
                             disabled={aiGeneratingArena}
-                            className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-350 text-white font-heading font-bold text-label-sm rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            className="px-5 py-2.5 bg-secondary hover:bg-secondary/90 disabled:opacity-50 text-on-secondary font-heading font-bold text-label-sm rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
                           >
                             {aiGeneratingArena ? (
                               <>

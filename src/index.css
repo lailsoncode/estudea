@@ -196,7 +196,13 @@ body {
     @apply bg-surface border border-outline-variant/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200;
   }
   .btn-primary {
-    @apply px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2;
+    @apply px-6 py-3 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2;
+  }
+  .gradient-senac {
+    background: linear-gradient(135deg, rgb(var(--color-senac-blue)) 0%, rgb(var(--color-senac-orange)) 100%);
+  }
+  .gradient-senac-soft {
+    background: linear-gradient(135deg, rgba(0, 74, 141, 0.08) 0%, rgba(247, 148, 30, 0.08) 100%);
   }
 }
 
@@ -408,7 +414,7 @@ body {
   border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
-/* Blue / Indigo / Primary status */
+/* Blue / Primary status (Azul Senac) */
 .dark .bg-blue-50,
 .dark .bg-indigo-50,
 .dark .bg-blue-100,
@@ -417,7 +423,7 @@ body {
 .dark [class*="bg-indigo-50/"],
 .dark [class*="bg-blue-100/"],
 .dark [class*="bg-indigo-100/"] {
-  background-color: rgba(99, 102, 241, 0.15) !important;
+  background-color: rgba(0, 74, 141, 0.22) !important;
 }
 .dark .hover\:bg-blue-50:hover,
 .dark .hover\:bg-indigo-50:hover,
@@ -427,14 +433,13 @@ body {
 .dark [class*="hover:bg-indigo-50/"]:hover,
 .dark [class*="hover:bg-blue-100/"]:hover,
 .dark [class*="hover:bg-indigo-100/"]:hover {
-  background-color: rgba(99, 102, 241, 0.25) !important;
+  background-color: rgba(0, 74, 141, 0.35) !important;
 }
 .dark .text-blue-700,
 .dark .text-indigo-700,
 .dark .text-blue-600,
-.dark .text-indigo-600,
-.dark .text-primary {
-  color: rgb(165, 180, 252) !important;
+.dark .text-indigo-600 {
+  color: rgb(56, 142, 224) !important;
 }
 .dark .border-blue-100,
 .dark .border-indigo-100,
@@ -444,32 +449,32 @@ body {
 .dark [class*="border-indigo-100/"],
 .dark [class*="border-blue-200/"],
 .dark [class*="border-indigo-200/"] {
-  border-color: rgba(99, 102, 241, 0.3) !important;
+  border-color: rgba(56, 142, 224, 0.35) !important;
 }
 
-/* Purple / Violet status */
-.dark .bg-purple-50,
-.dark .bg-purple-100,
-.dark [class*="bg-purple-50/"],
-.dark [class*="bg-purple-100/"] {
-  background-color: rgba(168, 85, 247, 0.15) !important;
+/* Orange / Highlight status (Laranja Senac) */
+.dark .bg-orange-50,
+.dark .bg-orange-100,
+.dark [class*="bg-orange-50/"],
+.dark [class*="bg-orange-100/"] {
+  background-color: rgba(247, 148, 30, 0.2) !important;
 }
-.dark .hover\:bg-purple-50:hover,
-.dark .hover\:bg-purple-100:hover,
-.dark [class*="hover:bg-purple-50/"]:hover,
-.dark [class*="hover:bg-purple-100/"]:hover {
-  background-color: rgba(168, 85, 247, 0.25) !important;
+.dark .hover\:bg-orange-50:hover,
+.dark .hover\:bg-orange-100:hover,
+.dark [class*="hover:bg-orange-50/"]:hover,
+.dark [class*="hover:bg-orange-100/"]:hover {
+  background-color: rgba(247, 148, 30, 0.32) !important;
 }
-.dark .text-purple-700,
-.dark .text-purple-800,
-.dark .text-purple-600 {
-  color: rgb(216, 180, 254) !important;
+.dark .text-orange-700,
+.dark .text-orange-800,
+.dark .text-orange-600 {
+  color: rgb(253, 193, 128) !important;
 }
-.dark .border-purple-100,
-.dark .border-purple-200,
-.dark [class*="border-purple-100/"],
-.dark [class*="border-purple-200/"] {
-  border-color: rgba(168, 85, 247, 0.3) !important;
+.dark .border-orange-100,
+.dark .border-orange-200,
+.dark [class*="border-orange-100/"],
+.dark [class*="border-orange-200/"] {
+  border-color: rgba(247, 148, 30, 0.35) !important;
 }
 
 /* Rose / Pink status */
@@ -545,31 +550,6 @@ body {
 .dark [class*="border-cyan-100/"],
 .dark [class*="border-cyan-200/"] {
   border-color: rgba(6, 182, 212, 0.3) !important;
-}
-
-/* Orange status */
-.dark .bg-orange-50,
-.dark .bg-orange-100,
-.dark [class*="bg-orange-50/"],
-.dark [class*="bg-orange-100/"] {
-  background-color: rgba(249, 115, 22, 0.15) !important;
-}
-.dark .hover\:bg-orange-50:hover,
-.dark .hover\:bg-orange-100:hover,
-.dark [class*="hover:bg-orange-50/"]:hover,
-.dark [class*="hover:bg-orange-100/"]:hover {
-  background-color: rgba(249, 115, 22, 0.25) !important;
-}
-.dark .text-orange-700,
-.dark .text-orange-800,
-.dark .text-orange-600 {
-  color: rgb(251, 146, 60) !important;
-}
-.dark .border-orange-100,
-.dark .border-orange-200,
-.dark [class*="border-orange-100/"],
-.dark [class*="border-orange-200/"] {
-  border-color: rgba(249, 115, 22, 0.3) !important;
 }
 
 

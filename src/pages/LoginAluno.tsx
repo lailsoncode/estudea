@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import logoIcon from '../assets/logo.png';
+import logoIcon from '../assets/logo-compact.png';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Mail01Icon,

@@ -14,7 +14,6 @@ import {
   Clock01Icon,
   FileAttachmentIcon,
   Edit01Icon,
-  StarIcon,
   ChartHistogramIcon,
   Cancel01Icon,
   Rocket01Icon,
@@ -659,7 +658,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
       number: '04',
       title: 'Posicionamento e Identidade Digital',
       subtitle: 'Palavras-chave, frase de posicionamento e tom de voz',
-      color: 'from-green-600 to-teal-600',
+      color: 'from-primary to-secondary',
     },
   ];
 
@@ -667,30 +666,30 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
     <div className="px-4 py-6 space-y-5">
 
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-950 to-indigo-950 border border-violet-800/30 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#002b54] via-slate-900 to-[#3b1c00] border border-primary/30 shadow-xl">
         {/* Decorative blobs */}
-        <div className="absolute -top-10 -left-10 w-56 h-56 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 right-10 w-40 h-40 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-10 -left-10 w-56 h-56 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-10 right-10 w-40 h-40 bg-secondary/15 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 px-5 py-4">
           {/* Main row: icon + title + stats */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
               <HugeiconsIcon icon={Rocket01Icon} size={18} strokeWidth={2} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-widest text-violet-400 leading-none mb-0.5">Projeto Integrador</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary-fixed-dim leading-none mb-0.5">Projeto Integrador</div>
               <h1 className="font-heading font-black text-base text-white leading-tight truncate">{pi.titulo}</h1>
             </div>
             {/* Inline stats */}
             <div className="flex items-center gap-2 shrink-0">
               <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center min-w-[52px]">
                 <div className="text-base font-heading font-black text-white leading-none">{completedCount}/{entregas.length}</div>
-                <div className="text-[9px] text-violet-300 font-bold uppercase tracking-widest mt-0.5">Enviadas</div>
+                <div className="text-[9px] text-primary-fixed-dim font-bold uppercase tracking-widest mt-0.5">Enviadas</div>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-center min-w-[52px]">
                 <div className="text-base font-heading font-black text-amber-400 leading-none">{approvedCount}</div>
-                <div className="text-[9px] text-violet-300 font-bold uppercase tracking-widest mt-0.5">Aprovadas</div>
+                <div className="text-[9px] text-primary-fixed-dim font-bold uppercase tracking-widest mt-0.5">Aprovadas</div>
               </div>
             </div>
           </div>
@@ -699,7 +698,7 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
           <div className="mt-3 flex items-center gap-3">
             <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-violet-400 to-indigo-400 rounded-full transition-all duration-700"
+                className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -708,18 +707,18 @@ export const ProjetoIntegrador: React.FC<ProjetoIntegradorProps> = ({ session })
 
           {/* Meta chips */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-indigo-200 font-semibold">
+            <span className="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-primary-fixed-dim font-semibold">
               <HugeiconsIcon icon={Award01Icon} size={11} strokeWidth={2} />
               {pi.xp_por_entrega} XP por aprovação
             </span>
-            <span className="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-indigo-200 font-semibold">
+            <span className="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-[11px] text-primary-fixed-dim font-semibold">
               <HugeiconsIcon icon={UserGroupIcon} size={11} strokeWidth={2} />
               {pi.tipo === 'grupo' ? 'Em Grupo' : 'Individual'}
             </span>
             {pi.tipo === 'grupo' && grupo && (
-              <span className="inline-flex items-center gap-1 bg-violet-500/20 border border-violet-400/30 rounded-full px-2.5 py-0.5 text-[11px] text-violet-200 font-bold">
-                <HugeiconsIcon icon={StarIcon} size={11} strokeWidth={2} />
-                {grupo.nome}
+              <span className="inline-flex items-center gap-1 bg-primary/20 border border-primary/30 rounded-full px-2.5 py-0.5 text-[11px] text-primary-fixed-dim font-bold">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={11} strokeWidth={2} />
+                Grupo: {grupo.nome}
               </span>
             )}
           </div>

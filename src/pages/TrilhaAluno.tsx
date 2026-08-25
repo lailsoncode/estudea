@@ -1390,7 +1390,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                   className="h-full rounded-full transition-all duration-500 ease-out" 
                   style={{ 
                     width: `${percentComplete}%`,
-                    background: 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)' 
+                    background: 'linear-gradient(90deg, #004A8D 0%, #F7941E 100%)' 
                   }}
                 >
                   <div className="shimmer-bg"></div>
@@ -2316,20 +2316,20 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
             </div>
 
             {/* XP Total Card */}
-            <div className="bg-gradient-to-br from-purple-500/10 via-indigo-500/5 to-transparent border border-purple-500/20 rounded-3xl p-6 relative overflow-hidden group shadow-sm">
-              <div className="absolute right-4 bottom-2 text-purple-500/10 group-hover:scale-110 transition-transform duration-300">
+            <div className="bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent border border-secondary/20 rounded-3xl p-6 relative overflow-hidden group shadow-sm">
+              <div className="absolute right-4 bottom-2 text-secondary/10 group-hover:scale-110 transition-transform duration-300">
                 <HugeiconsIcon icon={Rocket01Icon} size={96} strokeWidth={1} />
               </div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
                   <HugeiconsIcon icon={Rocket01Icon} size={22} strokeWidth={2} />
                 </div>
-                <span className="font-heading font-extrabold text-label-md text-purple-700 dark:text-purple-300 uppercase tracking-wider">Pontuação (XP)</span>
+                <span className="font-heading font-extrabold text-label-md text-secondary uppercase tracking-wider">Pontuação (XP)</span>
               </div>
-              <div className="text-5xl font-heading font-black text-purple-600 dark:text-purple-400">
+              <div className="text-5xl font-heading font-black text-secondary">
                 {(completedAulasCount * 50) + ((profile?.maior_ofensiva || 0) * 20)} <span className="text-body-lg font-bold">XP</span>
               </div>
-              <p className="text-sm text-purple-700/80 dark:text-purple-400/80 font-semibold mt-2">
+              <p className="text-sm text-secondary/80 font-semibold mt-2">
                 Você ganha 50 XP por aula e 20 XP por dia de ofensiva!
               </p>
             </div>
@@ -3511,14 +3511,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                               <div className="space-y-4">
                                 {/* Support material download link */}
                                 {atividade.material_url && (
-                                  <div className="p-4 bg-indigo-50/15 dark:bg-indigo-950/15 border border-indigo-150/50 dark:border-indigo-900/35 rounded-xl flex items-center justify-between gap-3 text-body-md animate-in slide-in-from-top-1">
-                                    <div className="flex items-center gap-2.5 text-indigo-700 dark:text-indigo-300 min-w-0">
-                                      <HugeiconsIcon icon={Attachment01Icon} size={20} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between gap-3 text-body-md animate-in slide-in-from-top-1">
+                                    <div className="flex items-center gap-2.5 text-primary min-w-0">
+                                      <HugeiconsIcon icon={Attachment01Icon} size={20} className="shrink-0 text-primary" />
                                       <div className="min-w-0">
-                                        <p className="font-heading font-bold text-indigo-900 dark:text-indigo-200 leading-tight">
+                                        <p className="font-heading font-bold text-on-surface leading-tight">
                                           Material de Apoio da Atividade
                                         </p>
-                                        <p className="text-[11px] text-indigo-700/80 dark:text-indigo-400/80 truncate mt-0.5 max-w-md">
+                                        <p className="text-[11px] text-on-surface-variant truncate mt-0.5 max-w-md">
                                           {atividade.material_url}
                                         </p>
                                       </div>
@@ -3527,7 +3527,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({ session, isAdmin, init
                                       href={atividade.material_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white font-heading font-bold text-[11px] rounded-lg shadow-sm transition-all hover:-translate-y-0.5 shrink-0 flex items-center gap-1.5"
+                                      className="app-primary-action !py-2 !px-3.5 !text-[11px] shrink-0 flex items-center gap-1.5"
                                     >
                                       <HugeiconsIcon icon={Download01Icon} size={14} />
                                       Acessar / Baixar

@@ -38,41 +38,48 @@
   --color-outline-variant: 226 232 240;
 
   /* =============================================
-     CORES — Primária (Indigo/Azul)
+     CORES INSTITUCIONAIS — Senac
      ============================================= */
-  --color-primary: 79 70 229;
+  --color-senac-blue: 0 74 141;          /* #004A8D - Azul Senac (Pantone 288 C) */
+  --color-senac-orange: 247 148 30;      /* #F7941E - Laranja Senac (Pantone 144 C) */
+  --color-senac-orange-light: 253 193 128; /* #FDC180 - Laranja Claro (Pantone 149) */
+
+  /* =============================================
+     CORES — Primária (Azul Senac)
+     ============================================= */
+  --color-primary: 0 74 141;             /* #004A8D */
   --color-on-primary: 255 255 255;
-  --color-primary-container: 129 140 248;
-  --color-on-primary-container: 224 231 255;
-  --color-inverse-primary: 199 210 254;
-  --color-primary-fixed: 224 231 255;
-  --color-primary-fixed-dim: 199 210 254;
-  --color-on-primary-fixed: 49 46 129;
-  --color-on-primary-fixed-variant: 67 56 202;
+  --color-primary-container: 219 234 254; /* blue-100 */
+  --color-on-primary-container: 0 43 85;
+  --color-inverse-primary: 147 197 253;
+  --color-primary-fixed: 219 234 254;
+  --color-primary-fixed-dim: 147 197 253;
+  --color-on-primary-fixed: 0 43 85;
+  --color-on-primary-fixed-variant: 0 74 141;
 
   /* =============================================
-     CORES — Secundária (Escuro/Roxo)
+     CORES — Secundária (Laranja Senac)
      ============================================= */
-  --color-secondary: 15 23 42;
+  --color-secondary: 247 148 30;         /* #F7941E */
   --color-on-secondary: 255 255 255;
-  --color-secondary-container: 30 41 59;
-  --color-on-secondary-container: 248 250 252;
-  --color-secondary-fixed: 241 245 249;
-  --color-secondary-fixed-dim: 203 213 225;
-  --color-on-secondary-fixed: 15 23 42;
-  --color-on-secondary-fixed-variant: 30 41 59;
+  --color-secondary-container: 254 237 214;
+  --color-on-secondary-container: 124 58 2;
+  --color-secondary-fixed: 254 237 214;
+  --color-secondary-fixed-dim: 253 193 128;
+  --color-on-secondary-fixed: 124 58 2;
+  --color-on-secondary-fixed-variant: 154 52 18;
 
   /* =============================================
-     CORES — Terciária (Teal)
+     CORES — Terciária (Laranja-Claro Senac)
      ============================================= */
-  --color-tertiary: 13 148 136;
+  --color-tertiary: 235 145 50;
   --color-on-tertiary: 255 255 255;
-  --color-tertiary-container: 20 184 166;
-  --color-on-tertiary-container: 204 251 241;
-  --color-tertiary-fixed: 204 251 241;
-  --color-tertiary-fixed-dim: 153 246 228;
-  --color-on-tertiary-fixed: 17 94 89;
-  --color-on-tertiary-fixed-variant: 19 78 74;
+  --color-tertiary-container: 253 193 128; /* #FDC180 */
+  --color-on-tertiary-container: 124 58 2;
+  --color-tertiary-fixed: 254 240 222;
+  --color-tertiary-fixed-dim: 253 193 128;
+  --color-on-tertiary-fixed: 124 58 2;
+  --color-on-tertiary-fixed-variant: 154 52 18;
 
   /* =============================================
      CORES — Erro
@@ -87,18 +94,25 @@
      ============================================= */
   --color-background: 248 250 252;
   --color-on-background: 15 23 42;
-  --color-surface-tint: 79 70 229;
+  --color-surface-tint: 0 74 141;
 }
 
 .dark {
+  /* =============================================
+     CORES INSTITUCIONAIS — Senac (Modo Escuro)
+     ============================================= */
+  --color-senac-blue: 38 138 230;
+  --color-senac-orange: 247 148 30;
+  --color-senac-orange-light: 253 193 128;
+
   /* =============================================
      CORES — Superfícies (Modo Escuro Premium)
      ============================================= */
   --color-surface: 15 23 42; /* slate-900 */
   --color-surface-dim: 30 41 59; /* slate-800 */
   --color-surface-bright: 30 41 59;
-  --color-surface-container-lowest: 11 17 31; /* slate-950-ish */
-  --color-surface-container-low: 24 34 54; /* slate-900-ish */
+  --color-surface-container-lowest: 11 17 31; /* slate-950 */
+  --color-surface-container-low: 24 34 54;
   --color-surface-container: 30 41 59;
   --color-surface-container-high: 51 65 85; /* slate-700 */
   --color-surface-container-highest: 71 85 105; /* slate-600 */
@@ -119,41 +133,41 @@
   --color-outline-variant: 51 65 85; /* slate-700 */
 
   /* =============================================
-     CORES — Primária (Indigo vibrante)
+     CORES — Primária (Azul Senac Modo Escuro)
      ============================================= */
-  --color-primary: 99 102 241; /* indigo-500 */
+  --color-primary: 38 138 230;           /* Azul Senac calibrado para contraste */
   --color-on-primary: 255 255 255;
-  --color-primary-container: 49 46 129; /* indigo-900 */
-  --color-on-primary-container: 224 231 255;
-  --color-inverse-primary: 79 70 229;
-  --color-primary-fixed: 49 46 129;
-  --color-primary-fixed-dim: 67 56 202;
-  --color-on-primary-fixed: 224 231 255;
-  --color-on-primary-fixed-variant: 199 210 254;
+  --color-primary-container: 0 54 105;   /* Azul Senac profundo */
+  --color-on-primary-container: 219 234 254;
+  --color-inverse-primary: 0 74 141;
+  --color-primary-fixed: 0 54 105;
+  --color-primary-fixed-dim: 0 74 141;
+  --color-on-primary-fixed: 219 234 254;
+  --color-on-primary-fixed-variant: 147 197 253;
 
   /* =============================================
-     CORES — Secundária (Cinza claro)
+     CORES — Secundária (Laranja Senac Modo Escuro)
      ============================================= */
-  --color-secondary: 248 250 252;
-  --color-on-secondary: 15 23 42;
-  --color-secondary-container: 51 65 85;
-  --color-on-secondary-container: 248 250 252;
-  --color-secondary-fixed: 30 41 59;
-  --color-secondary-fixed-dim: 51 65 85;
-  --color-on-secondary-fixed: 241 245 249;
-  --color-on-secondary-fixed-variant: 203 213 225;
+  --color-secondary: 247 148 30;         /* #F7941E */
+  --color-on-secondary: 255 255 255;
+  --color-secondary-container: 124 58 2;
+  --color-on-secondary-container: 254 237 214;
+  --color-secondary-fixed: 124 58 2;
+  --color-secondary-fixed-dim: 154 52 18;
+  --color-on-secondary-fixed: 254 237 214;
+  --color-on-secondary-fixed-variant: 253 193 128;
 
   /* =============================================
-     CORES — Terciária (Teal vibrante)
+     CORES — Terciária (Laranja-Claro Modo Escuro)
      ============================================= */
-  --color-tertiary: 20 184 166; /* teal-500 */
-  --color-on-tertiary: 15 23 42;
-  --color-tertiary-container: 17 94 89;
-  --color-on-tertiary-container: 204 251 241;
-  --color-tertiary-fixed: 17 94 89;
-  --color-tertiary-fixed-dim: 19 78 74;
-  --color-on-tertiary-fixed: 204 251 241;
-  --color-on-tertiary-fixed-variant: 153 246 228;
+  --color-tertiary: 253 193 128;         /* #FDC180 */
+  --color-on-tertiary: 45 20 0;
+  --color-tertiary-container: 92 45 0;
+  --color-on-tertiary-container: 254 220 180;
+  --color-tertiary-fixed: 92 45 0;
+  --color-tertiary-fixed-dim: 124 58 2;
+  --color-on-tertiary-fixed: 254 220 180;
+  --color-on-tertiary-fixed-variant: 253 193 128;
 
   /* =============================================
      CORES — Erro
@@ -168,7 +182,7 @@
      ============================================= */
   --color-background: 11 15 25; /* slate-950 */
   --color-on-background: 248 250 252;
-  --color-surface-tint: 129 140 248;
+  --color-surface-tint: 38 138 230;
 }
 
 :root {

@@ -22,12 +22,22 @@ interface Curso {
   titulo: string;
 }
 
+interface Professor {
+  id: string;
+  nome: string | null;
+  email: string | null;
+  role?: string | null;
+  avatar_url?: string | null;
+}
+
 interface Turma {
   id: string;
   nome: string;
   codigo_acesso: string;
   curso_id: string | null;
   created_at: string;
+  professor_id?: string | null;
+  professor_nome?: string;
   curso_titulo?: string;
   total_alunos?: number;
   status?: 'em_andamento' | 'concluida' | 'arquivada' | null;
@@ -49,13 +59,15 @@ interface Aluno {
 }
 
 interface GerenciadorTurmasProps {
+  session?: any;
   onSelectStudent?: (id: string, section?: 'chat' | 'ficha') => void;
 }
 
-export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectStudent }) => {
+export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, onSelectStudent }) => {
   // Data lists
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [professores, setProfessores] = useState<Professor[]>([]);
   const [selectedTurma, setSelectedTurma] = useState<Turma | null>(null);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
 
@@ -65,6 +77,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todas' | 'em_andamento' | 'concluida'>('todas');
+  const [professorFilter, setProfessorFilter] = useState<string>('todos');
   const [searchTurma, setSearchTurma] = useState('');
 
   // Modal State - Class creation/edit
@@ -73,7 +86,8 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
   const [classForm, setClassForm] = useState({
     nome: '',
     codigo_acesso: '',
-    curso_id: ''
+    curso_id: '',
+    professor_id: ''
   });
 
   // Modal State - Finalizar Turma / Ata
@@ -85,13 +99,21 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [session]);
 
   const fetchInitialData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch Courses
+      // 1. Fetch Professors
+      const { data: profsData } = await supabase
+        .from('profiles')
+        .select('id, nome, email, role, avatar_url')
+        .in('role', ['teacher', 'admin'])
+        .order('nome', { ascending: true });
+      setProfessores(profsData || []);
+
+      // 2. Fetch Courses
       const { data: coursesData, error: coursesError } = await supabase
         .from('cursos')
         .select('id, titulo')
@@ -99,8 +121,8 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
       if (coursesError) throw coursesError;
       setCursos(coursesData || []);
 
-      // 2. Fetch classes
-      await fetchTurmasList(coursesData || []);
+      // 4. Fetch classes
+      await fetchTurmasList(coursesData || [], profsData || []);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar dados iniciais.');
     } finally {
@@ -108,7 +130,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
     }
   };
 
-  const fetchTurmasList = async (coursesList: Curso[]) => {
+  const fetchTurmasList = async (coursesList: Curso[], profsList: Professor[]) => {
     try {
       const { data: turmasData, error: turmasError } = await supabase
         .from('turmas')
@@ -123,12 +145,15 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
         .eq('role', 'student');
       if (profilesError) throw profilesError;
 
+      const profMap = new Map(profsList.map(p => [p.id, p.nome || p.email || 'Instrutor']));
+
       const formatted = (turmasData || []).map(t => {
         const course = coursesList.find(c => c.id === t.curso_id);
         const studentsInClass = (profilesData || []).filter(p => p.turma_id === t.id).length;
         return {
           ...t,
           curso_titulo: course ? course.titulo : 'Sem Curso Vinculado',
+          professor_nome: t.professor_id ? (profMap.get(t.professor_id) || 'Não atribuído') : 'Não atribuído',
           total_alunos: studentsInClass
         };
       });
@@ -168,7 +193,8 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
     setClassForm({
       nome: '',
       codigo_acesso: code,
-      curso_id: ''
+      curso_id: '',
+      professor_id: session?.user?.id || (professores[0]?.id || '')
     });
     setShowClassModal(true);
   };
@@ -178,7 +204,8 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
     setClassForm({
       nome: turma.nome,
       codigo_acesso: turma.codigo_acesso,
-      curso_id: turma.curso_id || ''
+      curso_id: turma.curso_id || '',
+      professor_id: turma.professor_id || session?.user?.id || ''
     });
     setShowClassModal(true);
   };
@@ -198,7 +225,8 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
       const payload = {
         nome: classForm.nome.trim(),
         codigo_acesso: classForm.codigo_acesso,
-        curso_id: classForm.curso_id || null
+        curso_id: classForm.curso_id || null,
+        professor_id: classForm.professor_id || session?.user?.id || null
       };
 
       if (editingTurma) {
@@ -325,14 +353,20 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
     return turmas.filter(t => {
       const matchesSearch = t.nome.toLowerCase().includes(searchTurma.toLowerCase()) ||
         t.codigo_acesso.includes(searchTurma) ||
-        (t.curso_titulo && t.curso_titulo.toLowerCase().includes(searchTurma.toLowerCase()));
+        (t.curso_titulo && t.curso_titulo.toLowerCase().includes(searchTurma.toLowerCase())) ||
+        (t.professor_nome && t.professor_nome.toLowerCase().includes(searchTurma.toLowerCase()));
 
       const isConcluida = t.status === 'concluida';
-      if (statusFilter === 'em_andamento') return matchesSearch && !isConcluida;
-      if (statusFilter === 'concluida') return matchesSearch && isConcluida;
-      return matchesSearch;
+      const matchesStatus = statusFilter === 'todas' || (statusFilter === 'em_andamento' ? !isConcluida : isConcluida);
+
+      let matchesProf = true;
+      if (professorFilter !== 'todos') {
+        matchesProf = t.professor_id === professorFilter;
+      }
+
+      return matchesSearch && matchesStatus && matchesProf;
     });
-  }, [turmas, statusFilter, searchTurma]);
+  }, [turmas, statusFilter, searchTurma, professorFilter]);
 
   // Selected class stats for banner
   const classResultsSummary = useMemo(() => {
@@ -366,7 +400,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
       <div className="app-page-header app-page-header-row">
         <div>
           <h2 className="app-title">Administração e Finalização de Turmas</h2>
-          <p className="app-subtitle">Gerencie códigos de acesso, acompanhe enturmação e finalize turmas marcando alunos aprovados, reprovados e desistentes com emissão de ata.</p>
+          <p className="app-subtitle">Gerencie códigos de acesso, atribua professores responsáveis e acompanhe enturmação.</p>
         </div>
         <button
           onClick={handleOpenCreateClass}
@@ -382,11 +416,30 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
         {/* Left Columns: Classes List */}
         <div className="xl:col-span-1 space-y-4">
           <div className="flex items-center justify-between pb-1">
-            <h3 className="app-section-title">Minhas Turmas</h3>
+            <h3 className="app-section-title">Turmas</h3>
             <span className="text-label-sm font-semibold bg-primary/5 text-primary border border-primary/10 px-2.5 py-1 rounded-full">
               {filteredTurmas.length} {filteredTurmas.length === 1 ? 'Turma' : 'Turmas'}
             </span>
           </div>
+
+          {/* Professor Filter (Available for Admin or Multi-teacher environments) */}
+          {professores.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider shrink-0">Professor:</label>
+              <select
+                value={professorFilter}
+                onChange={(e) => setProfessorFilter(e.target.value)}
+                className="w-full text-xs font-semibold py-1.5 px-3 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary"
+              >
+                <option value="todos">Todos os Professores ({turmas.length})</option>
+                {professores.map(p => (
+                  <option key={p.id} value={p.id}>
+                    Prof. {p.nome || p.email} ({turmas.filter(t => t.professor_id === p.id).length})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Status Filter Tabs */}
           <div className="flex items-center gap-1.5 p-1 bg-surface-container-low dark:bg-slate-800/80 rounded-xl border border-outline-variant/30 text-xs">
@@ -415,11 +468,11 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
               onClick={() => setStatusFilter('concluida')}
               className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center flex items-center justify-center gap-1 ${
                 statusFilter === 'concluida'
-                  ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-xs'
-                  : 'text-on-surface-variant hover:text-purple-600'
+                  ? 'bg-primary/15 text-primary border border-primary/20 shadow-xs'
+                  : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Concluídas
             </button>
           </div>
@@ -431,7 +484,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
               type="text"
               value={searchTurma}
               onChange={(e) => setSearchTurma(e.target.value)}
-              placeholder="Filtrar turmas por nome, código ou curso..."
+              placeholder="Filtrar turmas por nome, código, curso ou professor..."
               className="w-full pl-9 pr-3 py-2 rounded-xl bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant/30 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary"
             />
           </div>
@@ -474,7 +527,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             isConcluida
-                              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                              ? 'bg-primary/10 text-primary border-primary/20'
                               : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                           }`}>
                             {isConcluida ? 'Concluída' : 'Ativa'}
@@ -484,10 +537,15 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                           </span>
                         </div>
                       </div>
-                      <p className="text-label-sm text-on-surface-variant flex items-center gap-1">
-                        <HugeiconsIcon icon={BookOpen01Icon} size={14} className="shrink-0" />
-                        <span className="truncate">{t.curso_titulo}</span>
-                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
+                        <p className="flex items-center gap-1 min-w-0">
+                          <HugeiconsIcon icon={BookOpen01Icon} size={14} className="shrink-0 text-primary" />
+                          <span className="truncate">{t.curso_titulo}</span>
+                        </p>
+                        <span className="text-[11px] font-bold text-secondary shrink-0">
+                          • Prof. {t.professor_nome}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between border-t border-outline-variant/20 dark:border-slate-700/60 pt-3 text-xs">
@@ -501,7 +559,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                           onClick={(e) => { e.stopPropagation(); handleOpenFinalizarTurma(t); }}
                           className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 font-bold text-[11px] ${
                             isConcluida
-                              ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-500/10'
+                              ? 'text-primary hover:bg-primary/10'
                               : 'text-primary hover:bg-primary/10'
                           }`}
                           title={isConcluida ? 'Ver Ata de Conclusão' : 'Finalizar Turma / Gerar Ata'}
@@ -545,7 +603,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                     <h3 className="font-heading font-extrabold text-body-lg text-on-surface">{selectedTurma.nome}</h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
                       selectedTurma.status === 'concluida'
-                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                        ? 'bg-primary/10 text-primary border-primary/20'
                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                     }`}>
                       {selectedTurma.status === 'concluida' ? 'Turma Concluída' : 'Turma em Andamento'}
@@ -560,11 +618,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                   {/* Finalizar / Ata Master Button */}
                   <button
                     onClick={() => handleOpenFinalizarTurma(selectedTurma)}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-heading font-bold text-xs shadow-xs transition-all ${
-                      selectedTurma.status === 'concluida'
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20'
-                        : 'bg-primary hover:bg-primary/90 text-on-primary shadow-primary/20'
-                    }`}
+                    className="app-primary-action !text-xs !py-2.5"
                   >
                     <HugeiconsIcon icon={Award01Icon} size={17} />
                     {selectedTurma.status === 'concluida' ? 'Ver Ata / Resultados' : 'Finalizar Turma / Gerar Ata'}
@@ -574,23 +628,23 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
 
               {/* Concluded Class Results Banner */}
               {selectedTurma.status === 'concluida' && classResultsSummary && (
-                <div className="p-4 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 space-y-3">
+                <div className="p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} className="text-purple-600 dark:text-purple-400" />
-                      <h4 className="font-heading font-bold text-sm text-purple-900 dark:text-purple-200">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} className="text-primary" />
+                      <h4 className="font-heading font-bold text-sm text-on-surface">
                         Resultados Finais da Turma
                       </h4>
                     </div>
                     {selectedTurma.finalizada_em && (
-                      <span className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">
+                      <span className="text-[11px] text-on-surface-variant font-medium">
                         Concluída em {new Date(selectedTurma.finalizada_em).toLocaleDateString('pt-BR')}
                       </span>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-purple-200/50 dark:border-slate-700">
+                    <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30">
                       <span className="text-on-surface-variant text-[10px] uppercase font-bold block">Aprovados</span>
                       <strong className="text-emerald-600 dark:text-emerald-400 text-base">{classResultsSummary.aprovados}</strong>
                     </div>
@@ -790,6 +844,23 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ onSelectSt
                   ))}
                 </select>
               </div>
+
+              {professores.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-label-sm font-bold text-on-surface">Professor Responsável</label>
+                  <select
+                    value={classForm.professor_id}
+                    onChange={(e) => setClassForm({ ...classForm, professor_id: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-label-md text-on-surface"
+                  >
+                    {professores.map(p => (
+                      <option key={p.id} value={p.id}>
+                        Prof. {p.nome || p.email} ({p.role === 'admin' ? 'Coordenação/Admin' : 'Docente'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/30">
                 <button

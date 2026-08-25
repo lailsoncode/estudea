@@ -52,9 +52,10 @@ import { StudentChatWidget } from './components/common/StudentChatWidget';
 import { ProjetoIntegrador } from './pages/ProjetoIntegrador';
 import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
 import { CursoWindows11 } from './pages/CursoWindows11';
+import { GestaoProfessores } from './pages/GestaoProfessores';
 import logoIcon from './assets/logo-compact.png';
 
-type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
+type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'professores' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
@@ -404,6 +405,7 @@ function App() {
           '/admin/correcoes': 'corrections',
           '/admin/course-builder': 'assignments',
           '/admin/turmas': 'turmas',
+          '/admin/professores': 'professores',
           '/admin/materiais': 'materials',
           '/admin/arena-ranking': 'arena_ranking',
           '/admin/chat': 'chat',
@@ -506,7 +508,7 @@ function App() {
       <div className="overflow-y-auto flex-1">
         <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 rounded-xl object-contain shrink-0 shadow-sm" />
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
               <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
               <p className="text-[11px] text-on-surface-variant mt-0.5">Painel do Professor</p>
@@ -620,6 +622,17 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Gerenciar Turmas</span>
           </button>
 
+          {profileRole === 'admin' && (
+            <button
+              onClick={() => { navigate('/admin/professores'); setMobileMenuOpen(false); }}
+              className={getSidebarItemClass(activeTeacherTab === 'professores', sidebarCollapsed)}
+              title="Equipe Docente"
+            >
+              <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
+              <span className={getSidebarLabelClass(sidebarCollapsed)}>Equipe Docente</span>
+            </button>
+          )}
+
           <button
             onClick={() => { navigate('/admin/arena-ranking'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
@@ -687,7 +700,7 @@ function App() {
       <div>
         <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
           <div className="flex items-center gap-3">
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 rounded-xl object-contain shrink-0 shadow-sm" />
+            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm" />
             <div className={getSidebarLabelClass(sidebarCollapsed)}>
               <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none">Estudea</h1>
               <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
@@ -919,6 +932,7 @@ function App() {
               {activeTeacherTab === 'projeto_integrador' && <ProjetoIntegradorProfessor />}
               {activeTeacherTab === 'turmas' && (
                 <GerenciadorTurmas
+                  session={session}
                   onSelectStudent={(id, section) => {
                     if (section === 'chat') {
                       navigate(`/admin/chat/${id}`);
@@ -937,6 +951,7 @@ function App() {
               )}
               {activeTeacherTab === 'lessons' && <DashboardProfessor />}
               {activeTeacherTab === 'materials' && <MateriaisApoio />}
+              {activeTeacherTab === 'professores' && <GestaoProfessores />}
               {activeTeacherTab === 'arena_ranking' && <ArenaRanking session={session} isAdmin={true} />}
 
               {activeTeacherTab === 'overview' && (
@@ -948,6 +963,7 @@ function App() {
                       corrections: '/admin/correcoes',
                       assignments: '/admin/course-builder',
                       turmas: '/admin/turmas',
+                      professores: '/admin/professores',
                       settings: '/admin/perfil',
                       materials: '/admin/materiais',
                       arena_ranking: '/admin/arena-ranking',

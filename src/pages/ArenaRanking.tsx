@@ -236,9 +236,9 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
     <div className="min-h-full bg-background text-on-background font-sans">
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 border border-indigo-800/30 shadow-2xl">
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-[#002b54] via-slate-900 to-[#3b1c00] border border-primary/30 shadow-2xl">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 px-6 py-8 sm:px-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -251,7 +251,7 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
                   <h1 className="font-heading font-black text-2xl text-white leading-tight">
                     Ranking da Arena
                   </h1>
-                  <p className="text-indigo-300 text-sm font-medium">
+                  <p className="text-primary-fixed-dim text-sm font-medium">
                     Hall da Fama · Competição Multiplayer
                   </p>
                 </div>
@@ -262,7 +262,7 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
             {!isAdmin && myEntry && myRank && (
               <div className="bg-white/5 border border-white/10 backdrop-blur rounded-xl px-5 py-3 flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-xs text-indigo-300 font-bold uppercase tracking-widest">Minha Posição</div>
+                  <div className="text-xs text-primary-fixed-dim font-bold uppercase tracking-widest">Minha Posição</div>
                   <div className={`text-3xl font-heading font-black mt-0.5 ${
                     myRank === 1 ? 'text-yellow-400' :
                     myRank === 2 ? 'text-slate-300' :
@@ -273,14 +273,14 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
                 </div>
                 <div className="h-10 w-px bg-white/10" />
                 <div className="text-center">
-                  <div className="text-xs text-indigo-300 font-bold uppercase tracking-widest">Pts Totais</div>
+                  <div className="text-xs text-primary-fixed-dim font-bold uppercase tracking-widest">Pts Totais</div>
                   <div className="text-xl font-heading font-black text-white mt-0.5">
                     {myEntry.total_score_sum.toLocaleString()}
                   </div>
                 </div>
                 <div className="h-10 w-px bg-white/10" />
                 <div className="text-center">
-                  <div className="text-xs text-indigo-300 font-bold uppercase tracking-widest">Partidas</div>
+                  <div className="text-xs text-primary-fixed-dim font-bold uppercase tracking-widest">Partidas</div>
                   <div className="text-xl font-heading font-black text-white mt-0.5">
                     {myEntry.partidas}
                   </div>
@@ -725,7 +725,7 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
             onClick={e => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="px-6 py-5 bg-gradient-to-r from-indigo-950 to-purple-950 border-b border-outline-variant/20">
+            <div className="px-6 py-5 bg-gradient-to-r from-[#002b54] to-slate-950 border-b border-outline-variant/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
@@ -735,7 +735,7 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
                     <div className="font-heading font-black text-lg text-white">
                       {selectedPlayer.nickname}
                     </div>
-                    <div className="text-indigo-300 text-xs font-medium mt-0.5">
+                    <div className="text-primary-fixed-dim text-xs font-medium mt-0.5">
                       Histórico de Partidas
                     </div>
                   </div>
@@ -757,8 +757,8 @@ export const ArenaRanking: React.FC<ArenaRankingProps> = ({ session, isAdmin = f
                   { label: 'Vitórias', value: selectedPlayer.win_count, icon: Trophy },
                 ].map(stat => (
                   <div key={stat.label} className="text-center bg-white/5 rounded-xl py-2 px-1">
-                    <HugeiconsIcon icon={stat.icon} size={14} strokeWidth={2} className="text-indigo-300 mx-auto mb-1" />
-                    <div className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider">{stat.label}</div>
+                    <HugeiconsIcon icon={stat.icon} size={14} strokeWidth={2} className="text-primary-fixed-dim mx-auto mb-1" />
+                    <div className="text-[10px] text-primary-fixed-dim font-bold uppercase tracking-wider">{stat.label}</div>
                     <div className="font-heading font-black text-white text-sm mt-0.5">{stat.value}</div>
                   </div>
                 ))}

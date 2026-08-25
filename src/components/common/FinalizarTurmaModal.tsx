@@ -404,7 +404,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                 </h3>
                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border ${
                   isAlreadyConcluded
-                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                    ? 'bg-primary/10 text-primary border-primary/20'
                     : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                 }`}>
                   {isAlreadyConcluded ? 'Turma Concluída' : 'Em Andamento'}
