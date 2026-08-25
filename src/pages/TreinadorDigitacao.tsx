@@ -864,7 +864,47 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
 
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const activeCharRef = useRef<HTMLSpanElement>(null);
   const textoAlvo = licaoAtiva ? licaoAtiva.textos[textoIndex] : '';
+
+  // Structured word segments with global character indices for perfect non-locking wrapping
+  const wordsData = useMemo(() => {
+    if (!textoAlvo) return [];
+    const rawWords = textoAlvo.split(' ');
+    let globalIdx = 0;
+    return rawWords.map((word, wIdx) => {
+      const chars = word.split('').map((char) => {
+        const item = { char, index: globalIdx };
+        globalIdx++;
+        return item;
+      });
+      // Add space separator for all words except the last
+      if (wIdx < rawWords.length - 1) {
+        chars.push({ char: ' ', index: globalIdx });
+        globalIdx++;
+      }
+      return { word, chars };
+    });
+  }, [textoAlvo]);
+
+  // Smooth rolling auto-scroll to keep current typing line centered
+  useEffect(() => {
+    if (activeCharRef.current && textContainerRef.current) {
+      const charEl = activeCharRef.current;
+      const container = textContainerRef.current;
+      const charOffsetTop = charEl.offsetTop;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+
+      if (charOffsetTop - containerScrollTop > containerHeight * 0.6 || charOffsetTop - containerScrollTop < 20) {
+        container.scrollTo({
+          top: Math.max(0, charOffsetTop - 35),
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [digitado.length]);
 
   useEffect(() => {
     if (session?.user?.id) fetchProgressos();
@@ -1040,36 +1080,56 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
     iniciarLicao(licaoAtiva, nextIdx);
   };
 
-  // Keyboard typing input handler
+  // Keyboard typing input handler with robust backspace & error handling
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (concluido) return;
     const val = e.target.value;
     
+    // Prevent typing beyond the target text length
+    if (val.length > textoAlvo.length) return;
+
     if (!iniciado && val.length > 0) {
       setIniciado(true);
       setStartTime(Date.now());
     }
 
-    const lastCharIdx = val.length - 1;
-    if (lastCharIdx >= 0 && lastCharIdx < textoAlvo.length) {
-      const charDigitado = val[lastCharIdx];
-      const charEsperado = textoAlvo[lastCharIdx];
-      const isError = charDigitado !== charEsperado;
+    // Handle Backspace: remove cleared character error states
+    if (val.length < digitado.length) {
+      setErros(prev => {
+        const next = new Set(prev);
+        for (let i = val.length; i < digitado.length; i++) {
+          next.delete(i);
+        }
+        return next;
+      });
+      setDigitado(val);
+      return;
+    }
 
-      if (isError) {
-        setErros(prev => new Set(prev).add(lastCharIdx));
-        setComboCount(0);
-        if (soundEnabled) playSynthesizedSound(soundProfile, true, volume);
-      } else {
-        setComboCount(prev => {
-          const next = prev + 1;
-          setMaxCombo(m => Math.max(m, next));
-          return next;
-        });
-        if (soundEnabled) playSynthesizedSound(soundProfile, false, volume);
+    // Evaluate newly typed characters
+    const newErros = new Set(erros);
+    let hasNewError = false;
+
+    for (let i = digitado.length; i < val.length; i++) {
+      if (val[i] !== textoAlvo[i]) {
+        newErros.add(i);
+        hasNewError = true;
       }
     }
 
+    if (hasNewError) {
+      setComboCount(0);
+      if (soundEnabled) playSynthesizedSound(soundProfile, true, volume);
+    } else if (val.length > digitado.length) {
+      setComboCount(prev => {
+        const next = prev + (val.length - digitado.length);
+        setMaxCombo(m => Math.max(m, next));
+        return next;
+      });
+      if (soundEnabled) playSynthesizedSound(soundProfile, false, volume);
+    }
+
+    setErros(newErros);
     setDigitado(val);
 
     // Finished text check
@@ -1461,7 +1521,7 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
           )}
 
           {/* ——————————————————————————————
-              TYPING PROMPT BOX (MONKEYTYPE STYLE)
+              TYPING PROMPT BOX (MONKEYTYPE STYLE COM ROLAGEM SUAVE)
              —————————————————————————————— */}
           <div
             onClick={() => inputRef.current?.focus()}
@@ -1481,42 +1541,53 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
               spellCheck={false}
             />
 
-            {/* Prompt Text Stream */}
+            {/* Prompt Text Stream with Word Wrapping and Smooth Line Scrolling */}
             <div
-              className={`font-mono tracking-wider leading-relaxed select-none transition-all ${
+              ref={textContainerRef}
+              className={`font-mono tracking-wider leading-relaxed select-none transition-all max-h-[140px] sm:max-h-[160px] overflow-y-auto scrollbar-none flex flex-wrap content-start ${
                 fontSize === 'sm' ? 'text-base sm:text-lg' : fontSize === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
               }`}
+              style={{ scrollBehavior: 'smooth' }}
             >
-              {textoAlvo.split('').map((char, idx) => {
-                const isTyped = idx < digitado.length;
-                const isCurrent = idx === digitado.length;
-                const isError = erros.has(idx);
-                const isTypedCorrect = isTyped && !isError;
+              {wordsData.map((wordObj, wIdx) => (
+                <span key={wIdx} className="inline-flex mr-3 mb-2 whitespace-nowrap">
+                  {wordObj.chars.map((charObj) => {
+                    const idx = charObj.index;
+                    const isTyped = idx < digitado.length;
+                    const isCurrent = idx === digitado.length;
+                    const isError = erros.has(idx);
+                    const isTypedCorrect = isTyped && !isError;
 
-                let charClass = 'text-on-surface-variant/35 dark:text-slate-600';
-                if (isTypedCorrect) {
-                  charClass = 'text-primary dark:text-sky-400 font-bold';
-                } else if (isTyped && isError) {
-                  charClass = 'text-error dark:text-rose-400 bg-error/15 rounded font-bold underline decoration-wavy';
-                }
+                    let charClass = 'text-on-surface-variant/35 dark:text-slate-600';
+                    if (isTypedCorrect) {
+                      charClass = 'text-primary dark:text-sky-400 font-bold';
+                    } else if (isTyped && isError) {
+                      charClass = 'text-error dark:text-rose-400 bg-error/15 rounded font-bold underline decoration-wavy';
+                    }
 
-                return (
-                  <span key={idx} className={`relative transition-colors duration-100 ${charClass}`}>
-                    {/* Glowing Smooth Caret */}
-                    {isCurrent && (
-                      <span className="absolute -left-0.5 top-0 bottom-0 w-0.5 bg-primary dark:bg-sky-400 animate-pulse rounded-full shadow-[0_0_8px_rgba(2,132,199,0.8)] z-20">
-                        {!iniciado && (
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-sans font-bold rounded-lg whitespace-nowrap shadow-lg animate-bounce">
-                            Comece a digitar!
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                    return (
+                      <span
+                        key={idx}
+                        ref={isCurrent ? activeCharRef : null}
+                        className={`relative transition-colors duration-100 ${charClass}`}
+                      >
+                        {/* Glowing Smooth Caret */}
+                        {isCurrent && (
+                          <span className="absolute -left-0.5 top-0 bottom-0 w-0.5 bg-primary dark:bg-sky-400 animate-pulse rounded-full shadow-[0_0_8px_rgba(2,132,199,0.8)] z-20">
+                            {!iniciado && (
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-sans font-bold rounded-lg whitespace-nowrap shadow-lg animate-bounce">
+                                Comece a digitar!
+                                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                              </span>
+                            )}
                           </span>
                         )}
+                        {charObj.char === ' ' ? '\u00A0' : charObj.char}
                       </span>
-                    )}
-                    {char === ' ' ? '\u00A0' : char}
-                  </span>
-                );
-              })}
+                    );
+                  })}
+                </span>
+              ))}
             </div>
 
             {/* Progress Bar under text */}

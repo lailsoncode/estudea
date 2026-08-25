@@ -23,9 +23,11 @@ import {
   Task01Icon,
   KeyboardIcon,
   Chat01Icon,
-  WindowsNewIcon
+  WindowsNewIcon,
+  Cursor01Icon
 } from '@hugeicons/core-free-icons';
 import { TreinadorDigitacao } from './pages/TreinadorDigitacao';
+import { TreinadorMouse } from './pages/TreinadorMouse';
 import { ListaAlunos } from './pages/ListaAlunos';
 import { CentralAcompanhamento } from './pages/CentralAcompanhamento';
 import { DiarioClasse } from './pages/DiarioClasse';
@@ -57,7 +59,7 @@ import { GestaoProfessores } from './pages/GestaoProfessores';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'professores' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
-type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'projeto_integrador' | 'windows11';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'mouse' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
@@ -445,6 +447,8 @@ function App() {
         '/arena': 'arena_ranking',
         '/ranking': 'arena_ranking',
         '/digitacao': 'digitacao',
+        '/treino-mouse': 'mouse',
+        '/mouse': 'mouse',
         '/perfil': 'profile',
         '/projeto-integrador': 'projeto_integrador',
         '/windows11': 'windows11',
@@ -768,6 +772,15 @@ function App() {
           >
             <HugeiconsIcon icon={KeyboardIcon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Treino de Digitação</span>
+          </button>
+
+          <button
+            onClick={() => { navigate('/treino-mouse'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'mouse', sidebarCollapsed)}
+            title="Treino de Mouse"
+          >
+            <HugeiconsIcon icon={Cursor01Icon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Treino de Mouse</span>
           </button>
 
           <button
@@ -1131,6 +1144,8 @@ function App() {
                 <ArenaRanking session={session} isAdmin={false} />
               ) : activeUserTab === 'digitacao' ? (
                 <TreinadorDigitacao session={session} />
+              ) : activeUserTab === 'mouse' ? (
+                <TreinadorMouse session={session} />
               ) : activeUserTab === 'windows11' ? (
                 <CursoWindows11 session={session} />
               ) : activeUserTab === 'projeto_integrador' ? (
