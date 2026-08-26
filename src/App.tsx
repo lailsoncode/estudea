@@ -24,10 +24,12 @@ import {
   KeyboardIcon,
   Chat01Icon,
   WindowsNewIcon,
-  Cursor01Icon
+  Cursor01Icon,
+  CheckListIcon
 } from '@hugeicons/core-free-icons';
 import { TreinadorDigitacao } from './pages/TreinadorDigitacao';
 import { TreinadorMouse } from './pages/TreinadorMouse';
+import { KanbanAluno } from './pages/KanbanAluno';
 import { ListaAlunos } from './pages/ListaAlunos';
 import { CentralAcompanhamento } from './pages/CentralAcompanhamento';
 import { DiarioClasse } from './pages/DiarioClasse';
@@ -59,7 +61,7 @@ import { GestaoProfessores } from './pages/GestaoProfessores';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'professores' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
-type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'mouse' | 'projeto_integrador' | 'windows11';
+type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'mouse' | 'kanban' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
   `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
@@ -449,6 +451,8 @@ function App() {
         '/digitacao': 'digitacao',
         '/treino-mouse': 'mouse',
         '/mouse': 'mouse',
+        '/kanban': 'kanban',
+        '/meu-kanban': 'kanban',
         '/perfil': 'profile',
         '/projeto-integrador': 'projeto_integrador',
         '/windows11': 'windows11',
@@ -754,6 +758,15 @@ function App() {
           >
             <HugeiconsIcon icon={Task01Icon} size={20} strokeWidth={2} />
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
+          </button>
+
+          <button
+            onClick={() => { navigate('/kanban'); setMobileMenuOpen(false); }}
+            className={getSidebarItemClass(activeUserTab === 'kanban', sidebarCollapsed)}
+            title="Meu Kanban"
+          >
+            <HugeiconsIcon icon={CheckListIcon} size={20} strokeWidth={2} />
+            <span className={getSidebarLabelClass(sidebarCollapsed)}>Meu Kanban</span>
           </button>
 
           <button
@@ -1146,6 +1159,8 @@ function App() {
                 <TreinadorDigitacao session={session} />
               ) : activeUserTab === 'mouse' ? (
                 <TreinadorMouse session={session} />
+              ) : activeUserTab === 'kanban' ? (
+                <KanbanAluno session={session} />
               ) : activeUserTab === 'windows11' ? (
                 <CursoWindows11 session={session} />
               ) : activeUserTab === 'projeto_integrador' ? (
