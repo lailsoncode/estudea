@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -17,7 +18,7 @@ import {
 } from '@hugeicons/core-free-icons';
 
 interface KanbanAlunoProps {
-  session: any;
+  session: Session;
 }
 
 export interface KanbanChecklistItem {
@@ -59,7 +60,7 @@ const COLUNAS: ColunaDef[] = [
     titulo: 'A Fazer',
     subtitulo: 'Para Iniciar',
     icone: '📌',
-    corBorda: 'border-sky-500/30 dark:border-sky-500/20',
+    corBorda: 'border-sky-500/50 dark:border-sky-400/40',
     corBadge: 'bg-sky-500 text-white',
     corBg: 'bg-sky-500/5',
     corTexto: 'text-sky-700 dark:text-sky-400'
@@ -69,7 +70,7 @@ const COLUNAS: ColunaDef[] = [
     titulo: 'Em Andamento',
     subtitulo: 'Estudando Agora',
     icone: '⚡',
-    corBorda: 'border-amber-500/30 dark:border-amber-500/20',
+    corBorda: 'border-amber-500/50 dark:border-amber-400/40',
     corBadge: 'bg-amber-500 text-white',
     corBg: 'bg-amber-500/5',
     corTexto: 'text-amber-700 dark:text-amber-400'
@@ -79,7 +80,7 @@ const COLUNAS: ColunaDef[] = [
     titulo: 'Dúvidas & Revisão',
     subtitulo: 'Aguardando Ajuda',
     icone: '❓',
-    corBorda: 'border-purple-500/30 dark:border-purple-500/20',
+    corBorda: 'border-purple-500/50 dark:border-purple-400/40',
     corBadge: 'bg-purple-500 text-white',
     corBg: 'bg-purple-500/5',
     corTexto: 'text-purple-700 dark:text-purple-400'
@@ -89,7 +90,7 @@ const COLUNAS: ColunaDef[] = [
     titulo: 'Concluído',
     subtitulo: 'Finalizado com Sucesso',
     icone: '✅',
-    corBorda: 'border-emerald-500/30 dark:border-emerald-500/20',
+    corBorda: 'border-emerald-500/50 dark:border-emerald-400/40',
     corBadge: 'bg-emerald-500 text-white',
     corBg: 'bg-emerald-500/5',
     corTexto: 'text-emerald-700 dark:text-emerald-400'
@@ -97,19 +98,19 @@ const COLUNAS: ColunaDef[] = [
 ];
 
 const PRIORIDADES = {
-  baixa: { label: 'Baixa', cor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-500' },
-  media: { label: 'Média', cor: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30', dot: 'bg-sky-500' },
-  alta: { label: 'Alta', cor: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30', dot: 'bg-orange-500' },
-  urgente: { label: 'Urgente', cor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30', dot: 'bg-rose-500 animate-pulse' }
+  baixa: { label: 'Baixa', cor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/40', dot: 'bg-emerald-500' },
+  media: { label: 'Média', cor: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/40', dot: 'bg-sky-500' },
+  alta: { label: 'Alta', cor: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/40', dot: 'bg-orange-500' },
+  urgente: { label: 'Urgente', cor: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40', dot: 'bg-rose-500 animate-pulse' }
 };
 
 const TAGS = {
-  estudos: { label: 'Aulas & Teoria', cor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30', emoji: '📚' },
-  exercicios: { label: 'Exercícios', cor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30', emoji: '✏️' },
-  pi: { label: 'Projeto Integrador', cor: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30', emoji: '🚀' },
-  revisao: { label: 'Revisão', cor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30', emoji: '🔍' },
-  prova: { label: 'Avaliação / Prova', cor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30', emoji: '📝' },
-  geral: { label: 'Geral', cor: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30', emoji: '📌' }
+  estudos: { label: 'Aulas & Teoria', cor: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/40', emoji: '📚' },
+  exercicios: { label: 'Exercícios', cor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/40', emoji: '✏️' },
+  pi: { label: 'Projeto Integrador', cor: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/40', emoji: '🚀' },
+  revisao: { label: 'Revisão', cor: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/40', emoji: '🔍' },
+  prova: { label: 'Avaliação / Prova', cor: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40', emoji: '📝' },
+  geral: { label: 'Geral', cor: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/40', emoji: '📌' }
 };
 
 export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
@@ -129,6 +130,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPrioridade, setFilterPrioridade] = useState<string>('all');
   const [filterTag, setFilterTag] = useState<string>('all');
+  const [syncStatus, setSyncStatus] = useState<'loading' | 'ready' | 'offline'>('loading');
 
   // Inline fast add state per column
   const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null);
@@ -143,13 +145,6 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
-  // Fetch tasks from Supabase
-  useEffect(() => {
-    if (userId) {
-      fetchTarefas();
-    }
-  }, [userId]);
-
   // Sync to local cache
   useEffect(() => {
     if (userId) {
@@ -157,7 +152,24 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
     }
   }, [tarefas, userId]);
 
-  const fetchTarefas = async () => {
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsModalOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen]);
+
+  const fetchTarefas = useCallback(async () => {
     if (!userId) return;
     try {
       const { data, error } = await supabase
@@ -175,11 +187,12 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
         }));
         setTarefas(formatted);
       }
-    } catch (err: any) {
-      console.error('Erro ao buscar tarefas do Kanban:', err.message);
+      setSyncStatus('ready');
+    } catch (err: unknown) {
+      console.error('Erro ao buscar tarefas do Kanban:', err instanceof Error ? err.message : err);
+      setSyncStatus('offline');
       // Fallback sample tasks on fresh start if table is completely empty
-      if (tarefas.length === 0) {
-        const initialSamples: KanbanTarefa[] = [
+      const initialSamples: KanbanTarefa[] = [
           {
             id: 'sample-1',
             aluno_id: userId,
@@ -216,11 +229,19 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
             checklist: [],
             ordem: 2
           }
-        ];
-        setTarefas(initialSamples);
-      }
+      ];
+      setTarefas(current => current.length === 0 ? initialSamples : current);
     }
-  };
+  }, [userId]);
+
+  // Fetch tasks from Supabase
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void fetchTarefas();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchTarefas]);
 
   // 1-Click Fast Inline Add
   const handleQuickAdd = async (colunaId: 'todo' | 'in_progress' | 'review' | 'done') => {
@@ -425,6 +446,8 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
     });
   }, [tarefas, searchQuery, filterPrioridade, filterTag]);
 
+  const filtersActive = searchQuery.trim() !== '' || filterPrioridade !== 'all' || filterTag !== 'all';
+
   // Telemetry HUD stats
   const totalTarefas = tarefas.length;
   const concluidasCount = tarefas.filter(t => t.coluna_id === 'done').length;
@@ -438,23 +461,21 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
   };
 
   return (
-    <div className="app-page space-y-6 max-w-7xl mx-auto font-sans relative">
+    <div className="app-page max-w-7xl mx-auto font-sans relative">
       
       {/* ——————————————————————————————
           1. CABEÇALHO & HUD DE PRODUTIVIDADE
          —————————————————————————————— */}
-      <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary via-[#004A8D] to-secondary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
-            <HugeiconsIcon icon={CheckListIcon} size={26} />
+      <div className="app-page-header flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary via-[#004A8D] to-secondary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+            <HugeiconsIcon icon={CheckListIcon} size={28} />
           </div>
-          <div>
-            <h1 className="app-title flex items-center gap-2">
-              Meu Kanban de Estudos
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Ágil & Descomplicado
-              </span>
-            </h1>
+          <div className="min-w-0">
+            <span className="inline-flex mb-1.5 text-xs font-extrabold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25">
+              Organização pessoal
+            </span>
+            <h1 className="app-title text-[26px] sm:text-headline-lg">Meu Kanban de Estudos</h1>
             <p className="app-subtitle">
               Organize suas matérias, exercícios, entregas do Projeto Integrador e revisões sem burocracia.
             </p>
@@ -462,32 +483,32 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
         </div>
 
         {/* Telemetry Stats Badges */}
-        <div className="flex items-center gap-3 flex-wrap self-end md:self-auto">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/30">
-            <HugeiconsIcon icon={Task01Icon} size={16} className="text-primary" />
+        <div className="grid w-full grid-cols-3 gap-2 sm:gap-3 lg:w-auto" aria-label="Resumo das tarefas">
+          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+            <HugeiconsIcon icon={Task01Icon} size={18} className="text-primary shrink-0" />
             <div>
-              <span className="text-[10px] text-on-surface-variant font-bold block uppercase leading-none">Tarefas</span>
-              <span className="font-mono font-extrabold text-body-md text-on-surface leading-tight">
+              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Tarefas</span>
+              <span className="font-heading font-extrabold text-xl text-on-surface leading-tight">
                 {totalTarefas}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/30">
-            <HugeiconsIcon icon={FireIcon} size={16} className="text-amber-500" />
+          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+            <HugeiconsIcon icon={FireIcon} size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
             <div>
-              <span className="text-[10px] text-on-surface-variant font-bold block uppercase leading-none">Em Foco</span>
-              <span className="font-mono font-extrabold text-body-md text-on-surface leading-tight">
+              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Em foco</span>
+              <span className="font-heading font-extrabold text-xl text-on-surface leading-tight">
                 {emAndamentoCount}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/30">
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-emerald-500" />
+          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
-              <span className="text-[10px] text-on-surface-variant font-bold block uppercase leading-none">Progresso</span>
-              <span className="font-mono font-extrabold text-body-md text-emerald-600 dark:text-emerald-400 leading-tight">
+              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Progresso</span>
+              <span className="font-heading font-extrabold text-xl text-emerald-700 dark:text-emerald-400 leading-tight">
                 {percentConcluidas}%
               </span>
             </div>
@@ -498,51 +519,81 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
       {/* ——————————————————————————————
           2. BARRA DE BUSCA E FILTROS RÁPIDOS
          —————————————————————————————— */}
-      <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/30 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant/70 shadow-sm flex flex-col gap-4" aria-label="Busca e filtros do quadro">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-heading text-sm font-extrabold text-on-surface">Encontre suas tarefas</h2>
+            <p className="mt-0.5 text-xs text-on-surface-variant">Busque por nome, anotação, prioridade ou categoria.</p>
+          </div>
+          <div className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${
+            syncStatus === 'ready'
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+              : syncStatus === 'offline'
+                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                : 'bg-primary/10 text-primary'
+          }`} role="status" aria-live="polite">
+            <span className={`h-2 w-2 rounded-full ${syncStatus === 'ready' ? 'bg-emerald-500' : syncStatus === 'offline' ? 'bg-amber-500' : 'bg-primary animate-pulse'}`} />
+            {syncStatus === 'ready' ? 'Sincronizado' : syncStatus === 'offline' ? 'Disponível neste dispositivo' : 'Sincronizando...'}
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <HugeiconsIcon icon={Search01Icon} size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+        <label className="block flex-1 lg:max-w-md">
+          <span className="mb-1.5 block text-xs font-extrabold text-on-surface">Buscar</span>
+          <div className="relative">
+          <HugeiconsIcon icon={Search01Icon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar tarefa ou anotação..."
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-all"
+            className="min-h-11 w-full pl-11 pr-11 py-2.5 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface"
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+              aria-label="Limpar busca"
             >
-              <HugeiconsIcon icon={Cancel01Icon} size={14} />
+              <HugeiconsIcon icon={Cancel01Icon} size={16} />
             </button>
           )}
-        </div>
+          </div>
+        </label>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           {/* Priority Pill Filters */}
-          <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/30">
+          <div className="min-w-0">
+            <span className="mb-1.5 block text-xs font-extrabold text-on-surface">Prioridade</span>
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto bg-surface-container-low p-1 rounded-xl border border-outline-variant/70" aria-label="Filtrar por prioridade">
             {['all', 'urgente', 'alta', 'media', 'baixa'].map(p => (
               <button
                 key={p}
+                type="button"
                 onClick={() => setFilterPrioridade(p)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold capitalize transition-all ${
+                aria-pressed={filterPrioridade === p}
+                className={`min-h-9 shrink-0 px-3 py-1.5 rounded-lg text-xs font-extrabold capitalize transition-all ${
                   filterPrioridade === p
-                    ? 'bg-surface-container-lowest text-primary shadow-xs font-black'
+                    ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/15'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 {p === 'all' ? 'Todas' : p}
               </button>
             ))}
+            </div>
           </div>
 
           {/* Tag Dropdown */}
+          <label className="block sm:min-w-52">
+          <span className="mb-1.5 block text-xs font-extrabold text-on-surface">Categoria</span>
           <select
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
-            className="px-3 py-1.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-bold text-on-surface focus:outline-none cursor-pointer"
+            className="min-h-11 w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             <option value="all">Todas as Categorias</option>
             {Object.entries(TAGS).map(([key, item]) => (
@@ -551,13 +602,40 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               </option>
             ))}
           </select>
+          </label>
+
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setFilterPrioridade('all');
+                setFilterTag('all');
+              }}
+              className="min-h-11 px-4 rounded-xl border border-outline-variant/70 bg-surface-container-lowest text-sm font-bold text-primary hover:bg-primary/5"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
         </div>
       </div>
 
       {/* ——————————————————————————————
           3. O QUADRO KANBAN (4 COLUNAS)
          —————————————————————————————— */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-start">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="font-heading text-lg font-extrabold text-on-surface">Quadro de tarefas</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            {filtersActive ? `${filteredTarefas.length} de ${totalTarefas} tarefas visíveis` : 'Arraste os cartões ou use a seta para avançar.'}
+          </p>
+        </div>
+        <span className="text-xs font-bold text-primary sm:hidden">Deslize para ver →</span>
+        <span className="hidden text-xs font-bold text-on-surface-variant sm:inline">4 etapas</span>
+      </div>
+
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 xl:gap-5 items-start" aria-label="Quadro Kanban com quatro etapas">
         {COLUNAS.map(coluna => {
           const colTarefas = filteredTarefas.filter(t => t.coluna_id === coluna.id);
           const isOver = dragOverColumn === coluna.id;
@@ -568,43 +646,49 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               onDragOver={(e) => handleDragOver(e, coluna.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, coluna.id)}
-              className={`rounded-3xl p-4 border-2 transition-all duration-200 flex flex-col gap-3 min-h-[500px] ${
+              className={`w-[min(86vw,340px)] min-w-[280px] shrink-0 snap-start rounded-3xl p-4 border-2 transition-all duration-200 flex flex-col gap-3 min-h-[440px] sm:w-auto sm:min-w-0 ${
                 coluna.corBorda
-              } ${isOver ? 'bg-primary/10 border-primary shadow-lg ring-4 ring-primary/20 scale-[1.01]' : 'bg-surface-container-lowest dark:bg-slate-900 shadow-sm'}`}
+              } ${isOver ? 'bg-primary/10 border-primary shadow-lg ring-4 ring-primary/20 scale-[1.01]' : 'bg-surface-container-lowest shadow-sm'}`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{coluna.icone}</span>
                   <div>
-                    <h3 className="font-heading font-extrabold text-xs text-on-surface flex items-center gap-1.5">
+                    <h3 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-1.5">
                       {coluna.titulo}
                       <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${coluna.corBadge}`}>
                         {colTarefas.length}
                       </span>
                     </h3>
-                    <span className="text-[10px] text-on-surface-variant font-medium block">
+                    <span className="text-xs text-on-surface-variant font-semibold block mt-0.5">
                       {coluna.subtitulo}
                     </span>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setQuickAddColumn(coluna.id);
                     setQuickAddTitle('');
                   }}
-                  className="p-1.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
                   title={`Adicionar tarefa em ${coluna.titulo}`}
+                  aria-label={`Adicionar tarefa em ${coluna.titulo}`}
                 >
-                  <HugeiconsIcon icon={PlusSignIcon} size={16} />
+                  <HugeiconsIcon icon={PlusSignIcon} size={18} />
                 </button>
               </div>
 
               {/* 1-Click Fast Inline Add Form */}
               {quickAddColumn === coluna.id && (
-                <div className="p-3 bg-surface-container-low rounded-2xl border border-primary/40 space-y-2 animate-in fade-in zoom-in-95">
+                <div className="p-3.5 bg-primary/5 rounded-2xl border border-primary/45 space-y-3 animate-in fade-in zoom-in-95">
+                  <label htmlFor={`quick-add-${coluna.id}`} className="block text-xs font-extrabold text-on-surface">
+                    Nova tarefa em {coluna.titulo}
+                  </label>
                   <input
+                    id={`quick-add-${coluna.id}`}
                     type="text"
                     autoFocus
                     value={quickAddTitle}
@@ -614,18 +698,21 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       if (e.key === 'Escape') setQuickAddColumn(null);
                     }}
                     placeholder="Título da tarefa e pressione Enter..."
-                    className="w-full p-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-xs font-semibold text-on-surface focus:outline-none focus:border-primary"
+                    className="min-h-11 w-full p-3 bg-surface-container-lowest border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                  <div className="flex justify-end gap-2 text-xs">
+                  <div className="flex justify-end gap-2">
                     <button
+                      type="button"
                       onClick={() => setQuickAddColumn(null)}
-                      className="px-2.5 py-1 text-on-surface-variant hover:text-on-surface font-bold text-[11px]"
+                      className="min-h-10 px-3 text-on-surface-variant hover:text-on-surface font-bold text-xs rounded-lg"
                     >
                       Cancelar
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleQuickAdd(coluna.id)}
-                      className="px-3 py-1 bg-primary text-white rounded-lg font-bold text-[11px] shadow-xs"
+                      disabled={!quickAddTitle.trim()}
+                      className="min-h-10 px-4 bg-primary text-white rounded-lg font-bold text-xs shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Adicionar
                     </button>
@@ -648,28 +735,28 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       key={tarefa.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, tarefa.id)}
-                      className="p-3.5 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 hover:border-primary/40 shadow-xs hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing space-y-2.5 group select-none"
+                      className="p-4 rounded-2xl bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/70 hover:border-primary/45 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing space-y-3 group select-none"
                     >
                       {/* Card Top: Tag + Priority */}
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border ${tagDef.cor}`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border leading-tight ${tagDef.cor}`}>
                           {tagDef.emoji} {tagDef.label}
                         </span>
 
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold border flex items-center gap-1 ${prioridadeDef.cor}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${prioridadeDef.dot}`} />
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1.5 leading-tight ${prioridadeDef.cor}`}>
+                          <span className={`w-2 h-2 rounded-full ${prioridadeDef.dot}`} />
                           {prioridadeDef.label}
                         </span>
                       </div>
 
                       {/* Card Title */}
-                      <h4 className="font-heading font-extrabold text-xs text-on-surface line-clamp-2 leading-snug">
+                      <h4 className="font-heading font-extrabold text-sm text-on-surface line-clamp-2 leading-snug">
                         {tarefa.titulo}
                       </h4>
 
                       {/* Card Description preview if exists */}
                       {tarefa.descricao && (
-                        <p className="text-[11px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
                           {tarefa.descricao}
                         </p>
                       )}
@@ -677,14 +764,14 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       {/* Checklist Progress if items exist */}
                       {checklistTotal > 0 && (
                         <div className="space-y-1 pt-1">
-                          <div className="flex justify-between items-center text-[10px] font-mono font-bold text-on-surface-variant/80">
+                          <div className="flex justify-between items-center text-xs font-bold text-on-surface-variant">
                             <span className="flex items-center gap-1">
-                              <HugeiconsIcon icon={CheckListIcon} size={12} />
+                              <HugeiconsIcon icon={CheckListIcon} size={14} />
                               {checklistDone}/{checklistTotal} concluídos
                             </span>
                             <span>{checklistPercent}%</span>
                           </div>
-                          <div className="h-1.5 bg-surface-container rounded-full overflow-hidden">
+                          <div className="h-2 bg-surface-container rounded-full overflow-hidden" role="progressbar" aria-label={`Progresso da tarefa ${tarefa.titulo}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={checklistPercent}>
                             <div
                               className={`h-full rounded-full transition-all ${
                                 checklistPercent === 100 ? 'bg-emerald-500' : 'bg-primary'
@@ -696,15 +783,15 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       )}
 
                       {/* Card Footer: Due Date, Link & Action buttons */}
-                      <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20 text-[10px] text-on-surface-variant font-semibold">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-outline-variant/60 text-xs text-on-surface-variant font-semibold">
                         <div className="flex items-center gap-2 flex-wrap">
                           {tarefa.prazo && (
-                            <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
+                            <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${
                               overdue && tarefa.coluna_id !== 'done'
-                                ? 'bg-rose-500/10 text-rose-600 font-bold'
+                                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 font-extrabold'
                                 : 'bg-surface-container text-on-surface-variant'
                             }`}>
-                              <HugeiconsIcon icon={Calendar01Icon} size={11} />
+                              <HugeiconsIcon icon={Calendar01Icon} size={14} />
                               {new Date(`${tarefa.prazo}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                             </span>
                           )}
@@ -715,31 +802,35 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-primary hover:underline flex items-center gap-0.5"
+                              className="min-h-9 px-2 text-primary hover:underline flex items-center gap-1 rounded-lg hover:bg-primary/5"
                               title="Abrir Link Anexo"
+                              aria-label={`Abrir link anexo da tarefa ${tarefa.titulo}`}
                             >
-                              <HugeiconsIcon icon={LinkSquare01Icon} size={12} />
+                              <HugeiconsIcon icon={LinkSquare01Icon} size={15} />
                               <span>Link</span>
                             </a>
                           )}
                         </div>
 
                         {/* Card Edit & Move Buttons */}
-                        <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             onClick={() => {
                               setEditingTask(tarefa);
                               setIsModalOpen(true);
                             }}
-                            className="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container"
                             title="Editar Detalhes"
+                            aria-label={`Editar tarefa ${tarefa.titulo}`}
                           >
-                            <HugeiconsIcon icon={Edit01Icon} size={13} />
+                            <HugeiconsIcon icon={Edit01Icon} size={16} />
                           </button>
 
                           {/* Quick Next Column Arrow */}
                           {coluna.id !== 'done' && (
                             <button
+                              type="button"
                               onClick={() => {
                                 const nextCols: Record<string, 'todo' | 'in_progress' | 'review' | 'done'> = {
                                   todo: 'in_progress',
@@ -748,10 +839,11 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                                 };
                                 handleMoveTask(tarefa.id, nextCols[coluna.id]);
                               }}
-                              className="p-1 rounded-lg text-on-surface-variant hover:text-emerald-600 hover:bg-emerald-500/10"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10"
                               title="Avançar para próxima coluna"
+                              aria-label={`Avançar tarefa ${tarefa.titulo} para a próxima coluna`}
                             >
-                              <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
+                              <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
                             </button>
                           )}
                         </div>
@@ -761,17 +853,25 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 })}
 
                 {colTarefas.length === 0 && quickAddColumn !== coluna.id && (
-                  <div className="h-32 border border-dashed border-outline-variant/30 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant/40 p-4 text-center">
-                    <span className="text-xl mb-1">{coluna.icone}</span>
-                    <span className="text-[11px] font-bold">Nenhuma tarefa aqui</span>
+                  <div className="min-h-40 border border-dashed border-outline-variant/70 bg-surface-container-low/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant p-5 text-center">
+                    <span className="text-2xl mb-2" aria-hidden="true">{filtersActive ? '🔎' : coluna.icone}</span>
+                    <span className="text-sm font-extrabold text-on-surface">{filtersActive ? 'Nenhum resultado nesta etapa' : 'Nenhuma tarefa aqui'}</span>
+                    <span className="mt-1 text-xs">{filtersActive ? 'Tente alterar ou limpar os filtros.' : `Adicione uma tarefa em ${coluna.titulo}.`}</span>
                     <button
+                      type="button"
                       onClick={() => {
-                        setQuickAddColumn(coluna.id);
-                        setQuickAddTitle('');
+                        if (filtersActive) {
+                          setSearchQuery('');
+                          setFilterPrioridade('all');
+                          setFilterTag('all');
+                        } else {
+                          setQuickAddColumn(coluna.id);
+                          setQuickAddTitle('');
+                        }
                       }}
-                      className="text-[10px] text-primary font-bold hover:underline mt-1"
+                      className="min-h-10 px-3 text-xs text-primary font-extrabold hover:underline mt-2 rounded-lg"
                     >
-                      + Criar tarefa rápida
+                      {filtersActive ? 'Limpar filtros' : '+ Criar tarefa rápida'}
                     </button>
                   </div>
                 )}
@@ -785,56 +885,68 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
           4. MODAL DE EDIÇÃO & DETALHES RICOS
          —————————————————————————————— */}
       {isModalOpen && editingTask && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-outline-variant/30 overflow-hidden font-sans max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+          <div
+            className="bg-surface-container-lowest rounded-2xl sm:rounded-3xl w-full max-w-2xl shadow-2xl border border-outline-variant/70 overflow-hidden font-sans max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="kanban-task-dialog-title"
+          >
             
             {/* Modal Header */}
-            <div className="p-5 border-b border-outline-variant/30 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <HugeiconsIcon icon={Edit01Icon} size={18} className="text-primary" />
-                <h3 className="text-body-md font-heading font-extrabold text-on-surface">
+            <div className="p-4 sm:p-6 border-b border-outline-variant/70 flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                  <HugeiconsIcon icon={Edit01Icon} size={20} />
+                </span>
+                <div>
+                <h3 id="kanban-task-dialog-title" className="text-lg font-heading font-extrabold text-on-surface">
                   Detalhes da Tarefa
                 </h3>
+                <p className="mt-0.5 text-xs text-on-surface-variant">Atualize o status, prazo e os passos necessários.</p>
+                </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
+                className="flex h-10 w-10 shrink-0 items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl"
+                aria-label="Fechar detalhes da tarefa"
               >
-                <HugeiconsIcon icon={Cancel01Icon} size={18} />
+                <HugeiconsIcon icon={Cancel01Icon} size={20} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+            <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 text-sm">
               {/* Title */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+              <div className="space-y-1.5">
+                <label htmlFor="kanban-task-title" className="text-xs font-extrabold text-on-surface block">
                   Título da Tarefa
                 </label>
                 <input
+                  id="kanban-task-title"
                   type="text"
                   value={editingTask.titulo}
                   onChange={(e) => setEditingTask({ ...editingTask, titulo: e.target.value })}
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-bold text-on-surface focus:outline-none focus:border-primary"
+                  className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Ex: Fazer exercícios da Aula 04..."
                 />
               </div>
 
               {/* Column Selection */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
-                  Coluna / Status
-                </label>
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-extrabold text-on-surface">Status da tarefa</legend>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {COLUNAS.map(col => (
                     <button
                       key={col.id}
                       type="button"
                       onClick={() => setEditingTask({ ...editingTask, coluna_id: col.id })}
-                      className={`p-2 rounded-xl border text-center font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
+                      aria-pressed={editingTask.coluna_id === col.id}
+                      className={`min-h-11 p-2.5 rounded-xl border text-center font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                         editingTask.coluna_id === col.id
                           ? `${col.corBadge} border-transparent shadow-xs`
-                          : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant hover:bg-surface-container'
+                          : 'bg-surface-container-low border-outline-variant/70 text-on-surface hover:bg-surface-container'
                       }`}
                     >
                       <span>{col.icone}</span>
@@ -842,19 +954,20 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               {/* Priority & Tag Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Priority */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+                <div className="space-y-1.5">
+                  <label htmlFor="kanban-task-priority" className="text-xs font-extrabold text-on-surface block">
                     Prioridade
                   </label>
                   <select
+                    id="kanban-task-priority"
                     value={editingTask.prioridade}
-                    onChange={(e) => setEditingTask({ ...editingTask, prioridade: e.target.value as any })}
-                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-bold text-on-surface focus:outline-none"
+                    onChange={(e) => setEditingTask({ ...editingTask, prioridade: e.target.value as KanbanTarefa['prioridade'] })}
+                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="baixa">🟢 Baixa</option>
                     <option value="media">🔵 Média</option>
@@ -864,14 +977,15 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 </div>
 
                 {/* Tag */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+                <div className="space-y-1.5">
+                  <label htmlFor="kanban-task-tag" className="text-xs font-extrabold text-on-surface block">
                     Categoria / Tag
                   </label>
                   <select
+                    id="kanban-task-tag"
                     value={editingTask.tag}
-                    onChange={(e) => setEditingTask({ ...editingTask, tag: e.target.value as any })}
-                    className="w-full p-2.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-bold text-on-surface focus:outline-none"
+                    onChange={(e) => setEditingTask({ ...editingTask, tag: e.target.value as KanbanTarefa['tag'] })}
+                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
                     {Object.entries(TAGS).map(([key, item]) => (
                       <option key={key} value={key}>
@@ -884,85 +998,90 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
 
               {/* Due Date & Link URL */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+                <div className="space-y-1.5">
+                  <label htmlFor="kanban-task-date" className="text-xs font-extrabold text-on-surface block">
                     Data de Entrega / Prazo
                   </label>
                   <input
+                    id="kanban-task-date"
                     type="date"
                     value={editingTask.prazo || ''}
                     onChange={(e) => setEditingTask({ ...editingTask, prazo: e.target.value || null })}
-                    className="w-full p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-bold text-on-surface focus:outline-none"
+                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+                <div className="space-y-1.5">
+                  <label htmlFor="kanban-task-link" className="text-xs font-extrabold text-on-surface block">
                     Link Anexo (Drive / Notion / Material)
                   </label>
                   <input
+                    id="kanban-task-link"
                     type="url"
                     value={editingTask.link_url || ''}
                     onChange={(e) => setEditingTask({ ...editingTask, link_url: e.target.value || null })}
                     placeholder="https://drive.google.com/..."
-                    className="w-full p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-semibold text-on-surface focus:outline-none"
+                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
 
               {/* Description / Notes */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
+              <div className="space-y-1.5">
+                <label htmlFor="kanban-task-description" className="text-xs font-extrabold text-on-surface block">
                   Anotações & Detalhes
                 </label>
                 <textarea
+                  id="kanban-task-description"
                   rows={3}
                   value={editingTask.descricao || ''}
                   onChange={(e) => setEditingTask({ ...editingTask, descricao: e.target.value })}
                   placeholder="Escreva anotações livres, dúvidas para o professor ou instruções..."
-                  className="w-full p-2.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-medium text-on-surface focus:outline-none focus:border-primary resize-none"
+                  className="w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-medium text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-y"
                 />
               </div>
 
               {/* Subtasks Checklist */}
-              <div className="space-y-2 pt-2 border-t border-outline-variant/20">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant flex items-center justify-between">
+              <div className="space-y-3 pt-4 border-t border-outline-variant/70">
+                <div className="text-xs font-extrabold text-on-surface flex items-center justify-between">
                   <span>Subtarefas (Checklist)</span>
-                  <span className="font-mono text-primary font-bold">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-primary font-extrabold">
                     {editingTask.checklist.filter(c => c.concluido).length} / {editingTask.checklist.length}
                   </span>
-                </label>
+                </div>
 
                 {/* Subtasks List */}
                 <div className="space-y-1.5">
                   {editingTask.checklist.map(item => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 rounded-xl bg-surface-container-low border border-outline-variant/20"
+                      className="flex items-center justify-between gap-2 p-3 rounded-xl bg-surface-container-low border border-outline-variant/60"
                     >
-                      <label className="flex items-center gap-2 cursor-pointer flex-1">
+                      <label className="flex min-h-9 items-center gap-3 cursor-pointer flex-1">
                         <input
                           type="checkbox"
                           checked={item.concluido}
                           onChange={() => handleToggleChecklistItem(editingTask.id, item.id)}
-                          className="w-3.5 h-3.5 rounded text-primary cursor-pointer"
+                          className="w-5 h-5 rounded text-primary cursor-pointer shrink-0"
                         />
-                        <span className={`text-xs font-semibold ${item.concluido ? 'line-through text-on-surface-variant/50' : 'text-on-surface'}`}>
+                        <span className={`text-sm font-semibold ${item.concluido ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
                           {item.texto}
                         </span>
                       </label>
                       <button
+                        type="button"
                         onClick={() => handleRemoveSubtask(item.id)}
-                        className="text-on-surface-variant/40 hover:text-rose-600 p-1"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-400"
+                        aria-label={`Remover subtarefa ${item.texto}`}
                       >
-                        <HugeiconsIcon icon={Cancel01Icon} size={12} />
+                        <HugeiconsIcon icon={Cancel01Icon} size={16} />
                       </button>
                     </div>
                   ))}
                 </div>
 
                 {/* Add Subtask input */}
-                <div className="flex gap-2 pt-1">
+                <div className="flex flex-col gap-2 pt-1 sm:flex-row">
                   <input
                     type="text"
                     value={newChecklistText}
@@ -974,12 +1093,13 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       }
                     }}
                     placeholder="Adicionar item à checklist e Enter..."
-                    className="flex-1 p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-semibold text-on-surface focus:outline-none"
+                    className="min-h-11 flex-1 p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   <button
                     type="button"
                     onClick={handleAddSubtask}
-                    className="px-3 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-bold text-xs rounded-xl border border-outline-variant/30"
+                    disabled={!newChecklistText.trim()}
+                    className="min-h-11 px-4 bg-surface-container hover:bg-surface-container-high text-on-surface font-bold text-sm rounded-xl border border-outline-variant/70 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Adicionar
                   </button>
@@ -989,28 +1109,29 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-outline-variant/30 flex items-center justify-between shrink-0">
+            <div className="p-4 sm:p-5 border-t border-outline-variant/70 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0 bg-surface-container-lowest">
               <button
                 type="button"
                 onClick={() => handleDeleteTask(editingTask.id)}
-                className="px-3 py-2 text-rose-600 hover:bg-rose-500/10 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
+                className="min-h-11 px-4 text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
-                <HugeiconsIcon icon={Delete01Icon} size={14} />
+                <HugeiconsIcon icon={Delete01Icon} size={17} />
                 <span>Excluir</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-outline-variant/30 text-on-surface hover:bg-surface-container font-bold text-xs rounded-xl"
+                  className="min-h-11 px-5 border border-outline-variant/70 text-on-surface hover:bg-surface-container font-bold text-sm rounded-xl"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveModal}
-                  className="px-5 py-2 bg-primary text-white font-heading font-bold text-xs rounded-xl shadow-xs"
+                  disabled={!editingTask.titulo.trim()}
+                  className="min-h-11 px-6 bg-primary text-white font-heading font-bold text-sm rounded-xl shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Salvar Alterações
                 </button>

@@ -11,7 +11,7 @@
   }
 
   .app-page-header {
-    @apply bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-5 sm:p-6 shadow-sm;
+    @apply bg-surface-container-lowest border border-outline-variant/70 rounded-xl p-5 sm:p-6 shadow-sm;
   }
 
   .app-page-header-row {
@@ -35,11 +35,11 @@
   }
 
   .app-card {
-    @apply bg-surface-container-lowest border border-outline-variant/50 rounded-xl shadow-sm;
+    @apply bg-surface-container-lowest border border-outline-variant/70 rounded-xl shadow-sm;
   }
 
   .app-card-padded {
-    @apply bg-surface-container-lowest border border-outline-variant/50 rounded-xl shadow-sm p-5 sm:p-6;
+    @apply bg-surface-container-lowest border border-outline-variant/70 rounded-xl shadow-sm p-5 sm:p-6;
   }
 
   .app-metric-label {
@@ -51,32 +51,37 @@
   }
 
   .app-primary-action {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-label-md font-heading font-bold text-on-primary shadow-sm shadow-primary/15 transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-label-md font-heading font-bold text-on-primary shadow-sm shadow-primary/15 transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .app-secondary-action {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-2.5 text-label-md font-heading font-semibold text-on-surface-variant transition-all hover:bg-surface-container-low hover:text-on-surface active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-outline-variant/70 bg-surface-container-lowest px-4 py-2.5 text-label-md font-heading font-semibold text-on-surface transition-all hover:bg-surface-container-low active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .app-icon-button {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface focus-visible:ring-2 focus-visible:ring-primary/35;
   }
 
   .app-button-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-label-md font-heading font-bold text-on-primary shadow-sm shadow-primary/15 transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-label-md font-heading font-bold text-on-primary shadow-sm shadow-primary/15 transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .app-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-2.5 text-label-md font-heading font-semibold text-on-surface-variant transition-all hover:bg-surface-container-low hover:text-on-surface active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-outline-variant/70 bg-surface-container-lowest px-4 py-2.5 text-label-md font-heading font-semibold text-on-surface transition-all hover:bg-surface-container-low active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .app-field-label {
-    @apply text-sm font-semibold text-on-surface-variant;
+    @apply text-sm font-bold text-on-surface;
   }
 
   .app-input {
-    @apply w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest px-3 py-2 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15;
+    @apply min-h-11 w-full rounded-lg border border-outline-variant/70 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-primary focus:ring-2 focus:ring-primary/20;
   }
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgb(var(--color-primary) / 0.28);
+  outline-offset: 2px;
 }
 
 body {
