@@ -3,9 +3,13 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import type { IconSvgElement } from '@hugeicons/react';
 import {
   Award01Icon,
+  BookOpen01Icon,
   FireIcon,
   GraduateMaleIcon,
+  Layers01Icon,
   LockPasswordIcon,
+  NotebookIcon,
+  Rocket01Icon,
 } from '@hugeicons/core-free-icons';
 
 export interface CardConquistaProps {
@@ -21,8 +25,12 @@ export interface CardConquistaProps {
 
 const achievementIcons: Record<string, IconSvgElement> = {
   Award01Icon,
+  BookOpen01Icon,
   FireIcon,
   GraduateMaleIcon,
+  Layers01Icon,
+  NotebookIcon,
+  Rocket01Icon,
 };
 
 /**
@@ -39,25 +47,23 @@ export const CardConquista: React.FC<CardConquistaProps> = ({
 
   return (
     <div
-      className={`relative p-5 rounded-2xl border transition-all duration-300 flex flex-col items-center text-center space-y-3 shadow-sm select-none ${
-        bloqueado
-          ? 'grayscale opacity-60 bg-gray-100 border-slate-200 text-slate-500 dark:bg-surface-container dark:border-outline-variant/30 dark:text-on-surface-variant'
-          : 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 border-outline-variant/30 hover:border-secondary/40 hover:shadow-md hover:-translate-y-1 text-on-surface'
+      className={`product-card group relative flex min-h-[190px] flex-col items-center justify-center space-y-3 p-4 text-center select-none sm:p-5 ${
+        bloqueado ? 'text-on-surface-variant' : 'text-on-surface hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-product-elevated'
       }`}
     >
       {/* Mini ícone de cadeado no canto superior para conquistas bloqueadas */}
       {bloqueado && (
-        <div className="absolute top-3 right-3 text-slate-400 bg-slate-200/50 p-1 rounded-full dark:bg-surface-container-highest/50 dark:text-on-surface-variant/80" title="Bloqueado">
+        <div className="absolute right-3 top-3 rounded-full bg-surface-container-high p-1.5 text-on-surface-variant" title="Bloqueado">
           <HugeiconsIcon icon={LockPasswordIcon} size={14} strokeWidth={2.5} />
         </div>
       )}
 
       {/* Círculo do Ícone */}
       <div
-        className={`w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-300 ${
+        className={`flex h-16 w-16 items-center justify-center rounded-[20px] border transition-transform duration-300 ${
           bloqueado
-            ? 'bg-slate-200 text-slate-400 dark:bg-surface-container-high dark:text-on-surface-variant/60'
-            : 'bg-secondary/5 text-secondary group-hover:scale-110 shadow-sm border border-secondary/10'
+            ? 'border-outline-variant/50 bg-surface-container-high text-on-surface-variant'
+            : 'border-primary/15 bg-primary/10 text-primary shadow-sm group-hover:scale-105'
         }`}
       >
         <HugeiconsIcon icon={IconComponent} size={32} strokeWidth={2} />
@@ -65,18 +71,13 @@ export const CardConquista: React.FC<CardConquistaProps> = ({
 
       {/* Conteúdo Textual */}
       <div className="space-y-1">
-        <h4 className={`font-heading font-extrabold text-label-md ${bloqueado ? 'text-slate-600 dark:text-on-surface/80' : 'text-on-surface'}`}>
+        <h4 className="font-heading text-sm font-extrabold text-on-surface">
           {titulo}
         </h4>
-        <p className={`font-sans text-label-sm ${bloqueado ? 'text-slate-400 dark:text-on-surface-variant/80' : 'text-on-surface-variant'}`}>
+        <p className="font-sans text-xs leading-relaxed text-on-surface-variant">
           {descricao}
         </p>
       </div>
-
-      {/* Efeito Visual Premium de Progresso/Brilho */}
-      {!bloqueado && (
-        <div className="absolute bottom-0 inset-x-6 h-1 bg-gradient-to-r from-transparent via-secondary/20 to-transparent rounded-full opacity-0 hover:opacity-100 transition-opacity" />
-      )}
     </div>
   );
 };

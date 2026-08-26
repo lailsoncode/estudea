@@ -97,16 +97,16 @@ const formatAgendaDate = (date?: string) => {
 const getAgendaAccent = (type?: string) => {
   switch (type) {
     case 'live':
-      return { border: 'border-primary', text: 'text-primary', label: 'Live' };
+      return { dot: 'bg-primary', text: 'text-primary', label: 'Live' };
     case 'deadline':
-      return { border: 'border-orange-400', text: 'text-orange-500', label: 'Prazo' };
+      return { dot: 'bg-orange-500', text: 'text-orange-600', label: 'Prazo' };
     case 'exam':
-      return { border: 'border-red-500', text: 'text-red-600', label: 'Prova' };
+      return { dot: 'bg-red-500', text: 'text-red-600', label: 'Prova' };
     case 'mentorship':
-      return { border: 'border-purple-600', text: 'text-purple-600', label: 'Mentoria' };
+      return { dot: 'bg-purple-600', text: 'text-purple-600', label: 'Mentoria' };
     case 'activity':
     default:
-      return { border: 'border-emerald-500', text: 'text-emerald-600', label: 'Atividade' };
+      return { dot: 'bg-emerald-500', text: 'text-emerald-600', label: 'Atividade' };
   }
 };
 
@@ -1314,6 +1314,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
     }
   ];
 
+  const unlockedAchievementsCount = achievements.filter(achievement => achievement.unlocked).length;
+
   // Extract youtube video id
   const getYoutubeEmbedUrl = (url: string | null) => {
     if (!url) return null;
@@ -1359,24 +1361,29 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-        <p className="text-on-surface-variant font-medium animate-pulse">Carregando sua jornada de aprendizado...</p>
+      <div className="product-panel mx-auto flex min-h-[360px] max-w-2xl flex-col items-center justify-center space-y-4 p-8 text-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+        <div>
+          <h2 className="font-heading text-lg font-extrabold text-on-surface">Preparando sua jornada</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">Carregando aulas, progresso e próximos compromissos...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-md mx-auto bg-error-container/10 border border-error/20 rounded-2xl p-6 text-center space-y-4">
-        <HugeiconsIcon icon={Alert01Icon} size={48} className="text-error mx-auto" />
-        <h3 className="app-section-title">Ops, algo deu errado</h3>
-        <p className="text-on-surface-variant text-body-md">{error}</p>
+      <div className="product-panel mx-auto max-w-lg space-y-4 border-error/25 bg-error-container/10 p-7 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-product-control bg-error/10 text-error">
+          <HugeiconsIcon icon={Alert01Icon} size={28} />
+        </div>
+        <h2 className="font-heading text-xl font-extrabold text-on-surface">Não foi possível carregar seu painel</h2>
+        <p className="text-sm leading-relaxed text-on-surface-variant">{error}</p>
         <button
           onClick={fetchData}
-          className="px-5 py-2.5 bg-primary text-on-primary font-bold rounded-lg hover:bg-primary-container shadow transition-all"
+          className="product-primary-action"
         >
-          Tentar Novamente
+          Tentar novamente
         </button>
       </div>
     );
@@ -1384,25 +1391,26 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
   if (!turma) {
     return (
-      <div className="max-w-xl mx-auto bg-white/70 backdrop-blur-md border border-white/50 rounded-2xl p-8 text-center space-y-6 shadow-sm">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto">
+      <div className="product-panel mx-auto max-w-xl space-y-6 p-8 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-product-card bg-primary/10 text-primary">
           <HugeiconsIcon icon={BookOpen01Icon} size={28} />
         </div>
         <div className="space-y-2">
-          <h3 className="app-title">Nenhuma turma vinculada</h3>
-          <p className="text-on-surface-variant text-body-md leading-relaxed">
+          <span className="product-eyebrow mx-auto">Aguardando vínculo</span>
+          <h2 className="font-heading text-2xl font-extrabold text-on-surface">Nenhuma turma vinculada</h2>
+          <p className="text-body-md leading-relaxed text-on-surface-variant">
             Olá! Parece que você ainda não está vinculado a nenhuma turma na plataforma.
           </p>
-          <p className="text-label-md text-on-surface-variant/80">
+          <p className="text-sm text-on-surface-variant">
             Entre em contato com o seu professor ou administrador para solicitar o ingresso em uma turma.
           </p>
         </div>
         <div className="pt-2">
           <button
             onClick={fetchData}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold font-heading rounded-xl shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 transition-all"
+            className="product-primary-action"
           >
-            Verificar Novamente
+            Verificar novamente
           </button>
         </div>
       </div>
@@ -1411,28 +1419,28 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
   if (!curso) {
     return (
-      <div className="max-w-xl mx-auto bg-white/70 backdrop-blur-md border border-white/50 rounded-2xl p-8 text-center space-y-6 shadow-sm">
-        <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mx-auto">
+      <div className="product-panel mx-auto max-w-xl space-y-6 p-8 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-product-card bg-secondary/10 text-secondary">
           <HugeiconsIcon icon={BookOpen01Icon} size={28} />
         </div>
         <div className="space-y-2 text-center">
-          <span className="inline-block px-3 py-1 rounded-full bg-surface-container border border-outline-variant/40 text-label-sm font-semibold text-on-surface-variant mb-2">
+          <span className="inline-flex rounded-full border border-outline-variant/70 bg-surface-container-low px-3 py-1.5 text-xs font-bold text-on-surface-variant">
             Turma: {turma.nome}
           </span>
-          <h3 className="app-title">Aguardando Curso</h3>
-          <p className="text-on-surface-variant text-body-md leading-relaxed">
+          <h2 className="font-heading text-2xl font-extrabold text-on-surface">Aguardando curso</h2>
+          <p className="text-body-md leading-relaxed text-on-surface-variant">
             Sua turma <span className="font-bold text-on-surface">{turma.nome}</span> ainda não tem nenhum curso ativo atribuído.
           </p>
-          <p className="text-label-md text-on-surface-variant/80">
+          <p className="text-sm text-on-surface-variant">
             Fique atento! Assim que o professor liberar os materiais do curso, eles aparecerão automaticamente aqui.
           </p>
         </div>
         <div className="pt-2">
           <button
             onClick={fetchData}
-            className="px-6 py-3 bg-gradient-to-r from-secondary to-secondary-container text-on-secondary font-bold font-heading rounded-xl shadow-md shadow-secondary/10 hover:shadow-lg hover:shadow-secondary/20 transition-all"
+            className="product-primary-action"
           >
-            Atualizar Conteúdos
+            Atualizar conteúdos
           </button>
         </div>
       </div>
@@ -1440,7 +1448,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
   }
 
   return (
-    <div className="app-page animate-fade-in" data-initial-view={initialViewMode}>
+    <div className="product-page animate-fade-in" data-initial-view={initialViewMode}>
 
 
       {/* VIEW 1: STUDENT DASHBOARD */}
@@ -1448,37 +1456,106 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         <div className="space-y-6 animate-fade-in">
           
           {/* Welcome & Progress Row */}
-          <section id="welcome-section" className="app-page-header app-page-header-row">
-            <div>
-              <h1 className="app-title">
-                Olá, {userName}! 👋 {isAdmin && <span className="text-[12px] bg-secondary/10 text-secondary border border-secondary/20 font-bold px-2.5 py-0.5 rounded-full inline-block align-middle ml-2">Modo de Visualização</span>}
-              </h1>
-              <p className="text-body-md text-on-surface-variant font-medium">Pronto para continuar sua jornada de aprendizado hoje?</p>
-            </div>
-            
-            {/* General Progress Card Widget */}
-            <div className="app-card-padded w-full md:w-auto md:min-w-[320px] shrink-0">
-              <div className="flex justify-between items-end mb-3">
-                <span className="font-semibold text-sm text-on-surface-variant uppercase tracking-wide">Progresso Geral</span>
-                <span className="text-2xl font-bold text-primary">{percentComplete}%</span>
-              </div>
-              <div className="h-3 bg-surface-container-low rounded-full overflow-hidden shadow-inner relative">
-                <div 
-                  className="h-full rounded-full transition-all duration-500 ease-out" 
-                  style={{ 
-                    width: `${percentComplete}%`,
-                    background: 'linear-gradient(90deg, #004A8D 0%, #F7941E 100%)' 
-                  }}
-                >
-                  <div className="shimmer-bg"></div>
+          <section id="welcome-section" className="product-card p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={2} />
                 </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-primary">Painel do estudante</span>
+                  <h1 className="mt-1 font-heading text-xl font-extrabold leading-tight tracking-[-0.025em] text-on-surface sm:text-2xl">
+                    Olá, {userName}!
+                  </h1>
+                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+                    Acompanhe seu progresso e continue de onde parou.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                      {curso.titulo}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-surface-container-high px-2.5 py-1 text-xs font-bold text-on-surface-variant">
+                      Turma {turma.nome}
+                    </span>
+                    {isAdmin && (
+                      <span className="inline-flex items-center rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-bold text-secondary">
+                        Modo de visualização
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* General Progress Card Widget */}
+              <div className="rounded-product-control border border-outline-variant/70 bg-surface-container-low p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">Progresso geral</span>
+                  <strong className="font-heading text-2xl font-extrabold text-primary">{percentComplete}%</strong>
+                </div>
+                <div
+                  className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-container-highest shadow-inner"
+                  role="progressbar"
+                  aria-label="Progresso geral do curso"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={percentComplete}
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-brand-cyan to-secondary transition-all duration-500 ease-out"
+                    style={{ width: `${percentComplete}%` }}
+                  />
+                </div>
+                <div className="mt-2.5 flex items-center justify-between gap-3 text-xs font-semibold text-on-surface-variant">
+                  <span>{completedAulasCount} de {totalAulasCount} aulas concluídas</span>
+                  <span>{Math.max(totalAulasCount - completedAulasCount, 0)} restantes</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Learning summary */}
+          <section aria-label="Resumo da sua aprendizagem" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+                <HugeiconsIcon icon={BookOpen01Icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Aulas concluídas</span>
+                <strong className="product-metric-value">{completedAulasCount}<span className="text-sm text-on-surface-variant">/{totalAulasCount}</span></strong>
+              </div>
+            </div>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary">
+                <HugeiconsIcon icon={TaskDone01Icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Atividades</span>
+                <strong className="product-metric-value">{entregas.length}</strong>
+              </div>
+            </div>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-orange-500/10 text-orange-600">
+                <HugeiconsIcon icon={FireIcon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Ofensiva atual</span>
+                <strong className="product-metric-value">{profile?.ofensiva_atual ?? 0}<span className="ml-1 text-sm text-on-surface-variant">dias</span></strong>
+              </div>
+            </div>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-gradient-to-br ${ligaUsuario.cor} text-white shadow-sm`}>
+                <HugeiconsIcon icon={ligaUsuario.icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">{ligaUsuario.nome}</span>
+                <strong className="product-metric-value">{studentXP}<span className="ml-1 text-sm text-on-surface-variant">XP</span></strong>
               </div>
             </div>
           </section>
 
           {/* Academic Situation / Finalized Class Banner */}
           {profile?.situacao_final && profile.situacao_final !== 'cursando' && (
-            <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in duration-300 ${
+            <div className={`flex flex-col items-start justify-between gap-4 rounded-product-card border p-5 shadow-product-card animate-in fade-in duration-300 sm:flex-row sm:items-center ${
               profile.situacao_final === 'aprovado'
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
                 : profile.situacao_final === 'reprovado'
@@ -1486,7 +1563,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
             }`}>
               <div className="flex items-center gap-3.5">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-product-control border ${
                   profile.situacao_final === 'aprovado'
                     ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                     : profile.situacao_final === 'reprovado'
@@ -1513,7 +1590,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 <button
                   type="button"
                   onClick={() => dispararCelebracao()}
-                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-heading font-bold text-xs shadow-xs transition-colors shrink-0"
+                  className="product-secondary-action shrink-0 border-emerald-600/30 text-emerald-700 hover:bg-emerald-600/10 dark:text-emerald-300"
                 >
                   Comemorar! 🎊
                 </button>
@@ -1522,47 +1599,59 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
           )}
 
           {/* Main Content & Sidebar Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
             
             {/* Left Column: Main Course Trail (8 Columns) */}
-            <div className="lg:col-span-8 flex flex-col gap-10">
+            <div className="flex flex-col gap-9 lg:col-span-8">
               
               {/* Continuing Watching Banner */}
               {resumeLesson && (
-                <section>
-                  <div 
-                    onClick={() => handleOpenAula(resumeLesson)}
-                    className="app-card-padded hover-lift relative overflow-hidden group min-h-[180px] cursor-pointer"
-                  >
-                    <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent z-0"></div>
-                    <img 
-                      alt="Aula em andamento" 
-                      className="absolute right-0 top-0 w-2/3 h-full object-cover object-right opacity-30 group-hover:scale-105 transition-transform duration-700 mix-blend-multiply" 
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUw456cP16FhWgyosnJDFinBAvf0CYt8XZxgsGs0KraSItgUFDSC5CQZRicq2QFORsZY7nym7gBk1lfngyGLaimKxXHzRgRsCruXoB4eAaOu1TyfCveHSXIvrfecav0mOxbGntRV47L28S6svQNJ8N9K_AFIZIWqM_Ch8XUNWTFn79LzstNzTmgXmGfodeoBMZKiATRMlEKhRdHlwEDXenR_eNiDFwqiKUFK69k65hirnI3vWMrTckNboL1ceaavlYuyCbp8oL-TA"
-                    />
-                    <div className="relative z-20 flex flex-col h-full justify-between">
-                      <div>
-                        <span className="inline-block px-4 py-1.5 bg-white/60 text-primary font-semibold text-xs rounded-full mb-4 backdrop-blur-md border border-white/50 uppercase tracking-wider">
-                          Continuar Assistindo • {curso.titulo}
+                <section aria-labelledby="continue-learning-title">
+                  <div className="product-card group overflow-hidden p-0 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-product-elevated">
+                    <div className="grid md:grid-cols-[minmax(0,1fr)_190px]">
+                      <div className="p-5 sm:p-6">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.11em] text-primary">
+                          <HugeiconsIcon icon={PlayCircleIcon} size={15} strokeWidth={2} />
+                          {percentComplete === 100 ? 'Revisar conteúdo' : 'Continuar assistindo'}
                         </span>
-                        <h3 className="app-title max-w-lg">
+                        <p className="mt-4 text-xs font-bold uppercase tracking-wider text-on-surface-variant">{curso.titulo}</p>
+                        <h2 id="continue-learning-title" className="mt-1.5 max-w-2xl font-heading text-xl font-extrabold leading-tight tracking-[-0.025em] text-on-surface sm:text-2xl">
                           Aula {resumeLesson.numero_aula}: {resumeLesson.titulo}
-                        </h3>
-                        <p className="text-on-surface-variant mt-3 max-w-md font-medium text-body-md">
-                          {resumeLesson.tipo === 'quiz' ? 'Resolva as questões do quiz para passar de módulo.' : 'Faltam alguns minutos para concluir este módulo.'}
+                        </h2>
+                        <p className="mt-2 max-w-xl text-sm leading-relaxed text-on-surface-variant">
+                          {resumeLesson.tipo === 'quiz'
+                            ? 'Resolva as questões do quiz para consolidar o conteúdo e avançar na trilha.'
+                            : percentComplete === 100
+                              ? 'Seu curso está completo. Você pode rever esta aula sempre que quiser.'
+                              : 'Retome seus estudos exatamente do ponto em que parou.'}
                         </p>
-                      </div>
-                      <div className="mt-8 flex items-center gap-4">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenAula(resumeLesson);
-                          }}
-                          className="app-primary-action"
+                          type="button"
+                          onClick={() => handleOpenAula(resumeLesson)}
+                          className="product-primary-action mt-5"
                         >
-                          <HugeiconsIcon icon={PlayCircleIcon} size={18} />
-                          Retomar Aula
+                          <HugeiconsIcon icon={PlayCircleIcon} size={19} strokeWidth={2} />
+                          {percentComplete === 100 ? 'Revisar aula' : 'Continuar aula'}
                         </button>
+                      </div>
+
+                      <div className="relative flex min-h-[150px] items-center justify-center overflow-hidden border-t border-outline-variant/70 bg-surface-container-low p-5 md:min-h-full md:border-l md:border-t-0">
+                        <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+                        <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-secondary/10 blur-2xl" />
+                        <div
+                          className="relative flex h-24 w-24 items-center justify-center rounded-full p-1 shadow-xl transition-transform duration-300 group-hover:scale-105"
+                          style={{
+                            background: `conic-gradient(rgb(var(--color-secondary)) ${percentComplete}%, rgb(var(--color-outline-variant) / 0.65) 0)`,
+                          }}
+                        >
+                          <div className="flex h-full w-full flex-col items-center justify-center rounded-full border border-outline-variant/70 bg-surface-container-lowest text-on-surface">
+                            <HugeiconsIcon icon={PlayCircleIcon} size={30} strokeWidth={2} className="text-secondary" />
+                            <span className="mt-1 text-[10px] font-extrabold uppercase tracking-wider text-on-surface-variant">Aula {resumeLesson.numero_aula}</span>
+                          </div>
+                        </div>
+                        <span className="absolute bottom-3 right-3 rounded-full bg-surface-container-high px-2 py-1 text-[10px] font-bold text-on-surface-variant">
+                          {percentComplete}% concluído
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1570,17 +1659,21 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
               )}
 
               {/* Achievements Row */}
-              <section id="achievements-section">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="app-section-title">Conquistas</h2>
+              <section id="achievements-section" aria-labelledby="achievements-title">
+                <div className="mb-4 flex items-end justify-between gap-4">
+                  <div>
+                    <span className="product-section-kicker">Sua evolução</span>
+                    <h2 id="achievements-title" className="product-section-heading">Conquistas recentes</h2>
+                  </div>
                   <button 
                     onClick={handleGoToAchievements}
-                    className="text-primary font-medium text-label-sm hover:underline cursor-pointer"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-product-control px-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
                   >
                     Ver todas
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
                   </button>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   {achievements.slice(0, 4).map((ach, idx) => (
                     <CardConquista
                       key={idx}
@@ -1594,38 +1687,45 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
               </section>
 
               {/* Learning Trail Modules list */}
-              <section id="trail-section">
-                <h2 className="app-section-title mb-4">Trilha de Aprendizado</h2>
+              <section id="trail-section" aria-labelledby="trail-title">
+                <div className="mb-4 flex items-end justify-between gap-4">
+                  <div>
+                    <span className="product-section-kicker">Conteúdo do curso</span>
+                    <h2 id="trail-title" className="product-section-heading">Trilha de aprendizado</h2>
+                  </div>
+                  <span className="rounded-full border border-outline-variant/70 bg-surface-container-low px-3 py-1.5 text-xs font-bold text-on-surface-variant">
+                    {processedModulos.length} {processedModulos.length === 1 ? 'módulo' : 'módulos'}
+                  </span>
+                </div>
                 <div className="flex flex-col gap-4">
                   {processedModulos.length === 0 ? (
-                    <div className="app-card-padded text-center text-on-surface-variant italic">
-                      Nenhum módulo disponível no momento.
+                    <div className="product-empty-state">
+                      <HugeiconsIcon icon={BookOpen01Icon} size={26} strokeWidth={2} className="mb-2 text-primary" />
+                      <strong className="font-heading text-sm text-on-surface">Nenhum módulo disponível</strong>
+                      <span className="mt-1 text-sm">O conteúdo aparecerá aqui assim que for liberado.</span>
                     </div>
                   ) : (
                     processedModulos.map((modulo) => {
                       const percentModulo = modulo.total > 0 ? Math.round((modulo.completed / modulo.total) * 100) : 0;
 
-                      let borderStyle = 'border-l-4 border-l-gray-300 opacity-75';
-                      let circleStyle = 'bg-surface-variant text-outline';
-                      let textStyle = 'text-gray-500';
-                      let badgeStyle = 'bg-gray-100 text-gray-500';
+                      let circleStyle = 'border-outline-variant/60 bg-surface-container-high text-on-surface-variant';
+                      let textStyle = 'text-on-surface-variant';
+                      let badgeStyle = 'border-outline-variant/60 bg-surface-container-high text-on-surface-variant';
                       let badgeText = 'Bloqueado';
-                      let barStyle = 'bg-outline-variant w-0';
+                      let barStyle = 'bg-outline-variant';
                       let Icon = ModuleLockIcon;
 
                       if (modulo.status === 'CONCLUÍDO') {
-                        borderStyle = 'border-l-4 border-l-green-500';
-                        circleStyle = 'bg-green-50 text-green-600';
+                        circleStyle = 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600';
                         textStyle = 'text-on-surface';
-                        badgeStyle = 'bg-green-100 text-green-700';
-                        badgeText = 'Conclúido';
-                        barStyle = 'bg-green-500 w-full';
+                        badgeStyle = 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+                        badgeText = 'Concluído';
+                        barStyle = 'bg-emerald-500';
                         Icon = RocketModuleIcon;
                       } else if (modulo.status === 'EM PROGRESSO') {
-                        borderStyle = 'border-l-4 border-l-primary';
-                        circleStyle = 'bg-blue-50 text-primary';
+                        circleStyle = 'border-primary/20 bg-primary/10 text-primary';
                         textStyle = 'text-on-surface';
-                        badgeStyle = 'bg-blue-100 text-primary';
+                        badgeStyle = 'border-primary/20 bg-primary/10 text-primary';
                         badgeText = 'Em Progresso';
                         barStyle = 'bg-primary';
                         Icon = ArchitectureIcon;
@@ -1636,58 +1736,62 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                       return (
                         <div 
-                          key={modulo.id} 
-                          onClick={() => {
-                            if (modulo.status !== 'BLOQUEADO') {
-                              handleOpenModulo(modulo);
-                            }
-                          }}
-                          className={`app-card-padded transition-all ${
+                          key={modulo.id}
+                          className={`product-card overflow-hidden p-5 sm:p-6 ${
                             modulo.status !== 'BLOQUEADO' 
-                              ? 'hover-lift cursor-pointer hover:bg-surface-container-low dark:hover:bg-surface-container-high/60' 
-                              : 'opacity-75 cursor-not-allowed'
-                          } ${borderStyle}`}
+                              ? 'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-product-elevated'
+                              : 'bg-surface-container-lowest'
+                          }`}
                         >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex items-start gap-4">
-                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${circleStyle}`}>
+                          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                            <div className="flex min-w-0 items-start gap-4">
+                              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-product-control border shadow-sm ${circleStyle}`}>
                                 <Icon />
                               </div>
-                              <div>
-                                <div className="flex items-center gap-3 mb-1">
-                                  <h4 className={`app-section-title ${textStyle}`}>{modulo.titulo}</h4>
-                                  <span className={`px-2.5 py-1 font-bold text-[10px] uppercase tracking-wider rounded-md ${badgeStyle}`}>
+                              <div className="min-w-0">
+                                <div className="mb-1 flex flex-wrap items-center gap-2">
+                                  <h3 className={`font-heading text-base font-extrabold leading-tight sm:text-lg ${textStyle}`}>{modulo.titulo}</h3>
+                                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badgeStyle}`}>
                                     {badgeText}
                                   </span>
                                 </div>
-                                <p className="text-label-sm text-on-surface-variant font-medium mb-3">
+                                <p className="mb-4 text-sm font-medium leading-relaxed text-on-surface-variant">
                                   {modulo.status === 'BLOQUEADO'
                                     ? 'Complete o módulo anterior para desbloquear.'
                                     : `${modulo.total} aula${modulo.total !== 1 ? 's' : ''} neste módulo`}
                                 </p>
 
-                                <div className="flex flex-wrap items-center gap-4">
+                                <div className="flex flex-wrap items-center gap-2">
                                   {modulo.status === 'EM PROGRESSO' && modulo.nextLesson && (
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenAula(modulo.nextLesson!);
-                                      }}
-                                      className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline text-left cursor-pointer"
+                                      type="button"
+                                      onClick={() => handleOpenAula(modulo.nextLesson!)}
+                                      className="inline-flex min-h-10 items-center gap-2 rounded-product-control bg-primary/10 px-3 text-left text-xs font-bold text-primary transition-colors hover:bg-primary/15"
                                     >
                                       <HugeiconsIcon icon={PlayCircleIcon} size={16} />
-                                      Próxima: Aula {modulo.nextLesson.numero_aula} - {modulo.nextLesson.titulo}
+                                      Continuar na aula {modulo.nextLesson.numero_aula}
+                                    </button>
+                                  )}
+
+                                  {modulo.status !== 'BLOQUEADO' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenModulo(modulo)}
+                                      className="inline-flex min-h-10 items-center gap-1.5 rounded-product-control px-3 text-xs font-bold text-on-surface transition-colors hover:bg-surface-container-high"
+                                    >
+                                      Abrir módulo
+                                      <HugeiconsIcon icon={ArrowRight01Icon} size={15} strokeWidth={2} />
                                     </button>
                                   )}
 
                                   <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleModulo(modulo.id);
-                                    }}
-                                    className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                                    type="button"
+                                    onClick={() => toggleModulo(modulo.id)}
+                                    className="inline-flex min-h-10 items-center gap-1.5 rounded-product-control px-3 text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-primary"
+                                    aria-expanded={isExpanded}
+                                    aria-controls={`module-lessons-${modulo.id}`}
                                   >
-                                    {isExpanded ? 'Ocultar Lições' : 'Ver Lições do Módulo'}
+                                    {isExpanded ? 'Ocultar aulas' : 'Ver aulas'}
                                     <svg 
                                       className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
                                       fill="none" 
@@ -1705,14 +1809,21 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                             </div>
 
                             {/* Right Module progress bar */}
-                            <div className="flex flex-col gap-2 min-w-[200px] pt-4 md:pt-0 border-t md:border-0 border-outline-variant/20">
-                              <div className="flex justify-between text-xs font-semibold text-on-surface-variant">
-                                <span>Progresso do Módulo</span>
-                                <span className={modulo.status === 'CONCLUÍDO' ? 'text-green-600' : modulo.status === 'EM PROGRESSO' ? 'text-primary' : 'text-gray-400'}>
+                            <div className="flex min-w-[200px] flex-col gap-2 border-t border-outline-variant/40 pt-4 md:border-0 md:pt-0">
+                              <div className="flex justify-between text-xs font-bold text-on-surface-variant">
+                                <span>Progresso do módulo</span>
+                                <span className={modulo.status === 'CONCLUÍDO' ? 'text-emerald-600 dark:text-emerald-300' : modulo.status === 'EM PROGRESSO' ? 'text-primary' : 'text-on-surface-variant'}>
                                   {modulo.completed}/{modulo.total} aulas
                                 </span>
                               </div>
-                              <div className="h-2 bg-surface-container rounded-full overflow-hidden">
+                              <div
+                                className="h-2.5 overflow-hidden rounded-full bg-surface-container-high"
+                                role="progressbar"
+                                aria-label={`Progresso do módulo ${modulo.titulo}`}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={modulo.status === 'BLOQUEADO' ? 0 : percentModulo}
+                              >
                                 <div 
                                   className={`h-full rounded-full transition-all duration-300 ${barStyle}`}
                                   style={{ width: modulo.status === 'BLOQUEADO' ? '0%' : modulo.status === 'CONCLUÍDO' ? '100%' : `${percentModulo}%` }}
@@ -1723,13 +1834,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                           {/* Expanded Lesson Drawer List */}
                           {isExpanded && (
-                            <div 
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-6 pt-6 border-t border-outline-variant/30 space-y-2"
+                            <div
+                              id={`module-lessons-${modulo.id}`}
+                              className="mt-6 space-y-2 border-t border-outline-variant/40 pt-6"
                             >
-                              <h5 className="font-heading font-extrabold text-label-md text-on-surface mb-3">Conteúdo Detalhado:</h5>
+                              <h4 className="mb-3 font-heading text-sm font-extrabold text-on-surface">Aulas deste módulo</h4>
                               {moduloAulas.length === 0 ? (
-                                <p className="text-xs text-on-surface-variant italic">Nenhuma lição cadastrada neste módulo.</p>
+                                <p className="text-sm italic text-on-surface-variant">Nenhuma aula cadastrada neste módulo.</p>
                               ) : (
                                 moduloAulas.map((aula) => {
                                   const completed = isLessonCompleted(aula.id);
@@ -1741,14 +1852,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                       : (completed || modulo.nextLesson?.id === aula.id)) && isLiberada;
 
                                   let statusText = 'Bloqueado';
-                                  let statusColor = 'text-gray-400';
+                                  let statusColor = 'text-on-surface-variant';
                                   
                                   if (!isLiberada) {
                                     statusText = 'Aguardando Liberação';
                                     statusColor = 'text-amber-500 font-bold';
                                   } else if (completed) {
                                     statusText = 'Concluído';
-                                    statusColor = 'text-green-600 font-bold';
+                                    statusColor = 'text-emerald-600 font-bold dark:text-emerald-300';
                                   } else if (unlocked) {
                                     statusText = 'Disponível';
                                     statusColor = 'text-primary font-bold';
@@ -1770,10 +1881,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                         e.stopPropagation();
                                         handleOpenAula(aula);
                                       }}
-                                      className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all ${
+                                      className={`flex min-h-14 w-full items-start justify-between gap-3 rounded-product-control border p-3.5 text-left transition-all sm:items-center ${
                                         unlocked
-                                          ? 'bg-white/60 hover:bg-primary/5 hover:border-primary/20 border-outline-variant/30 cursor-pointer shadow-sm hover:scale-[1.01]'
-                                          : 'bg-surface border-transparent opacity-60 cursor-not-allowed'
+                                          ? 'cursor-pointer border-outline-variant/60 bg-surface-container-lowest shadow-sm hover:border-primary/30 hover:bg-primary/5'
+                                          : 'cursor-not-allowed border-outline-variant/30 bg-surface-container-low opacity-70'
                                       }`}
                                     >
                                       <div className="flex items-center gap-3.5 min-w-0">
@@ -1806,17 +1917,17 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                           </svg>
                                         </div>
                                         <div className="truncate">
-                                          <p className={`font-sans font-bold text-label-md truncate ${unlocked ? 'text-on-surface' : 'text-gray-400'}`}>
+                                          <p className={`truncate font-sans text-sm font-bold ${unlocked ? 'text-on-surface' : 'text-on-surface-variant'}`}>
                                             Aula {aula.numero_aula}: {aula.titulo}
                                           </p>
-                                          <p className="text-[10px] text-on-surface-variant font-semibold mt-0.5">
+                                          <p className="mt-0.5 text-xs font-semibold text-on-surface-variant">
                                             {typeLabel} {aula.duracao ? `• ${aula.duracao}` : ''}
                                           </p>
                                         </div>
                                       </div>
                                       
                                       <div className="flex items-center gap-2.5 shrink-0">
-                                        <span className={`text-[11px] font-bold uppercase tracking-wide ${statusColor}`}>
+                                        <span className={`hidden text-[11px] font-bold uppercase tracking-wide sm:inline ${statusColor}`}>
                                           {statusText}
                                         </span>
                                         <div className={completed ? 'text-green-600' : unlocked ? 'text-primary' : 'text-outline-variant'}>
@@ -1845,118 +1956,99 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
             </div>
 
             {/* Right Column: Sidebar Widgets (4 Columns) */}
-            <div className="lg:col-span-4 flex flex-col gap-8">
+            <aside className="flex flex-col gap-6 lg:col-span-4" aria-label="Informações complementares">
 
               {/* Arena Live Widget */}
-              <div className="app-card-padded border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-primary/10 rounded-full blur-xl pointer-events-none"></div>
-                <div>
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black text-primary uppercase tracking-widest mb-3">
-                    Multiplayer Live
-                  </span>
-                  <h3 className="font-heading font-black text-body-md text-on-surface flex items-center gap-2">
-                    <HugeiconsIcon icon={GameControllerIcon} size={20} strokeWidth={2} />
-                    Arena Estudea
-                  </h3>
-                  <p className="text-xs text-on-surface-variant mt-1.5 font-medium leading-relaxed">
-                    Entre com o código PIN fornecido pelo seu professor para participar do quiz competitivo em tempo real!
-                  </p>
+              <section className="product-card p-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control shadow-sm ring-4 ring-primary/10"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-primary))',
+                      color: 'rgb(var(--color-on-primary))',
+                    }}
+                  >
+                    <HugeiconsIcon
+                      icon={GameControllerIcon}
+                      size={20}
+                      strokeWidth={2.25}
+                      color="rgb(var(--color-on-primary))"
+                      primaryColor="rgb(var(--color-on-primary))"
+                      secondaryColor="rgb(var(--color-on-primary))"
+                      disableSecondaryOpacity
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="product-section-kicker">Experiência ao vivo</span>
+                    <h2 className="mt-0.5 font-heading text-base font-extrabold text-on-surface">Arena Estudea</h2>
+                    <p className="mt-1 text-xs font-medium leading-relaxed text-on-surface-variant">
+                      Entre com o PIN enviado pelo professor e jogue com sua turma.
+                    </p>
+                  </div>
                 </div>
                 <button 
+                  type="button"
                   onClick={onStartArena}
-                  className="w-full mt-5 py-3 bg-primary hover:bg-blue-700 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  className="product-primary-action mt-4 w-full !min-h-10 !py-2 !text-xs"
                 >
-                  Entrar na Arena Live
+                  <HugeiconsIcon icon={GameControllerIcon} size={16} strokeWidth={2} />
+                  Entrar na Arena
                 </button>
-              </div>
-              
-              {/* Quick Stats Widget */}
-              <div className="app-card-padded">
-                <h3 className="app-section-title mb-6">Estatísticas Rápidas</h3>
-                <div className="flex flex-col gap-5">
-                  
-                  {/* Card 1: Completed lessons count */}
-                  <div className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-primary shrink-0 shadow-sm">
-                      <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={2} className="text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-on-surface-variant">Aulas Assistidas</div>
-                      <div className="text-2xl font-extrabold text-on-surface">{completedAulasCount}</div>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Assignments completed count */}
-                  <div className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
-                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-secondary shrink-0 shadow-sm">
-                      <HugeiconsIcon icon={TaskDone01Icon} size={22} strokeWidth={2} className="text-secondary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-on-surface-variant">Atividades Entregues</div>
-                      <div className="text-2xl font-extrabold text-on-surface">{entregas.length}</div>
-                    </div>
-                  </div>
-
-                  {/* Card 3: Offensive Streak streak */}
-                  <div className="flex items-center gap-4 bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-orange-200">
-                      <HugeiconsIcon icon={FireIcon} size={22} strokeWidth={2} className="text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-orange-800">Dias de Ofensiva</div>
-                      <div className="text-2xl font-extrabold text-orange-600">{profile?.ofensiva_atual ?? 0}</div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
+              </section>
 
               {/* Study Calendar Widget */}
-              <div className="app-card-padded">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="app-section-title">Agenda de Estudos</h3>
-                  <button className="text-primary hover:bg-blue-50 p-1.5 rounded-lg transition-colors">
+              <section className="product-card p-5 sm:p-6" aria-labelledby="study-agenda-title">
+                <div className="mb-5 flex items-center justify-between gap-4">
+                  <div>
+                    <span className="product-section-kicker">Próximos compromissos</span>
+                    <h2 id="study-agenda-title" className="product-section-heading">Agenda de estudos</h2>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-product-control bg-primary/10 text-primary">
                     <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} className="text-primary" />
-                  </button>
+                  </div>
                 </div>
-	                <div className="flex flex-col gap-4">
-	                  {schedule.length === 0 ? (
-	                    <div className="text-xs text-on-surface-variant italic pl-2">Nenhum evento agendado.</div>
-	                  ) : (
-	                    schedule.map((item) => {
-	                      const accent = getAgendaAccent(item.type);
+                <div className={schedule.length > 0 ? 'divide-y divide-outline-variant/50' : ''}>
+                  {schedule.length === 0 ? (
+                    <div className="rounded-product-control border border-dashed border-outline-variant/70 bg-surface-container-low p-4 text-center text-sm text-on-surface-variant">
+                      Nenhum evento agendado.
+                    </div>
+                  ) : (
+                    schedule.map((item) => {
+                      const accent = getAgendaAccent(item.type);
 
-	                      return (
-	                        <div key={item.id} className={`border-l-2 ${accent.border} pl-4 py-1`}>
-	                          <div className={`text-xs font-bold ${accent.text} mb-1 uppercase tracking-wide flex items-center gap-1.5`}>
-	                            {formatAgendaDate(item.event_date)} • {item.time}
-	                            <span className={`text-[9px] text-white px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest ${
-	                              item.type === 'live' ? 'bg-red-500 animate-pulse' :
-	                              item.type === 'exam' ? 'bg-red-600' :
-	                              item.type === 'deadline' ? 'bg-orange-500' :
-	                              item.type === 'mentorship' ? 'bg-purple-600' :
-	                              'bg-emerald-600'
-	                            }`}>
-	                              {accent.label}
-	                            </span>
-	                          </div>
-	                          <div className="font-semibold text-on-surface text-sm">{item.title}</div>
-	                          <div className="text-xs text-on-surface-variant mt-1 truncate">
+                      return (
+                        <article key={item.id} className="py-3 first:pt-0 last:pb-0">
+                          <div className={`mb-1.5 flex flex-wrap items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${accent.text}`}>
+                            <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
+                            {formatAgendaDate(item.event_date)} • {item.time}
+                            <span className={`rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white ${
+                              item.type === 'live' ? 'bg-red-500' :
+                              item.type === 'exam' ? 'bg-red-600' :
+                              item.type === 'deadline' ? 'bg-orange-500' :
+                              item.type === 'mentorship' ? 'bg-purple-600' :
+                              'bg-emerald-600'
+                            }`}>
+                              {accent.label}
+                            </span>
+                          </div>
+                          <div className="text-sm font-bold text-on-surface">{item.title}</div>
+                          <div className="mt-1 truncate text-xs text-on-surface-variant">
                             {item.cohort} • {item.duration}
                           </div>
-                        </div>
+                        </article>
                       );
                     })
                   )}
                 </div>
-              </div>
+              </section>
 
               {/* Community activity feed */}
-              <div className="app-card-padded">
-                <h3 className="app-section-title mb-5">Comunidade</h3>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+              <section className="product-card p-5 sm:p-6" aria-labelledby="community-title">
+                <span className="product-section-kicker">Sua turma</span>
+                <h2 id="community-title" className="product-section-heading mb-5">Movimento da comunidade</h2>
+                <div className="divide-y divide-outline-variant/50">
+                  <div className="flex items-start gap-3 pb-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-xs font-bold text-primary">
                       MR
                     </div>
                     <div>
@@ -1964,11 +2056,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                         <span className="font-bold">Maria R.</span> acabou de concluir o módulo{' '}
                         <span className="font-medium text-primary">Introdução ao Sistema</span>.
                       </p>
-                      <span className="text-[10px] text-on-surface-variant">Há 2 horas</span>
+                      <span className="mt-1 block text-xs text-on-surface-variant">Há 2 horas</span>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-secondary font-bold text-xs shrink-0">
+                  <div className="flex items-start gap-3 pt-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-xs font-bold text-secondary">
                       PL
                     </div>
                     <div>
@@ -1976,16 +2068,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                         <span className="font-bold">Pedro L.</span> alcançou a conquista{' '}
                         <span className="font-medium text-secondary">Estudioso</span>.
                       </p>
-                      <span className="text-[10px] text-on-surface-variant">Há 5 horas</span>
+                      <span className="mt-1 block text-xs text-on-surface-variant">Há 5 horas</span>
                     </div>
                   </div>
                 </div>
-                <button className="w-full mt-4 py-2 bg-surface-container text-on-surface font-semibold text-sm rounded-xl hover:bg-surface-container-high transition-colors">
-                  Acessar Fórum
-                </button>
-              </div>
+              </section>
 
-            </div>
+            </aside>
 
           </div>
 
@@ -2320,197 +2409,161 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
       ) : view === 'achievements' ? (
         
         /* VIEW 3: DEDICATED ACHIEVEMENTS PANEL */
-        <div className="space-y-8 animate-fade-in pb-12">
-          {/* Section Header */}
-          <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleGoToDashboard}
-                className="app-icon-button"
-                title="Voltar para a Trilha"
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={20} strokeWidth={2} />
+        <div className="product-page animate-fade-in pb-10">
+          <section className="product-card p-4 sm:p-5" aria-labelledby="achievements-title">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  onClick={handleGoToDashboard}
+                  className="product-icon-action shrink-0 border border-outline-variant/70 bg-surface-container-lowest shadow-sm"
+                  title="Voltar para a trilha"
+                  aria-label="Voltar para a trilha"
+                >
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={19} strokeWidth={2} />
+                </button>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary">
+                  <HugeiconsIcon icon={Award01Icon} size={22} strokeWidth={2} />
+                </div>
+                <div className="min-w-0">
+                  <span className="product-section-kicker">Progresso e recompensas</span>
+                  <h1 id="achievements-title" className="product-section-heading mt-0 text-xl sm:text-2xl">Central de Conquistas</h1>
+                  <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">Medalhas, desafios e sua posição na turma em um só lugar.</p>
+                </div>
+              </div>
+
+              <button onClick={handleGoToDashboard} className="product-secondary-action w-full shrink-0 sm:w-auto">
+                <HugeiconsIcon icon={MapsIcon} size={18} />
+                Ver trilha de aprendizado
               </button>
-              <div>
-                <h1 className="app-title flex items-center gap-2">
-                  <HugeiconsIcon icon={Award01Icon} size={28} className="text-secondary animate-bounce" />
-                  Central de Conquistas
-                </h1>
-                <p className="text-body-md text-on-surface-variant font-medium">Acompanhe seu progresso, medalhas conquistadas e ranking da turma.</p>
+            </div>
+          </section>
+
+          <section aria-label="Resumo das conquistas" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                <HugeiconsIcon icon={FireIcon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Ofensiva atual</span>
+                <strong className="product-metric-value">{profile?.ofensiva_atual ?? 0}<span className="ml-1 text-sm text-on-surface-variant">dias</span></strong>
               </div>
             </div>
-            
-            {/* Back to Trail Action Button */}
-            <button
-              onClick={handleGoToDashboard}
-              className="app-secondary-action w-full md:w-auto"
-            >
-              <HugeiconsIcon icon={MapsIcon} size={18} />
-              Ver Trilha de Aprendizado
-            </button>
-          </div>
-
-          {/* Stats Summary Grid (Duolingo Style) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Ofensiva Flame Card */}
-            <div className="bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 rounded-3xl p-6 relative overflow-hidden group shadow-sm">
-              <div className="absolute right-4 bottom-2 text-orange-500/10 group-hover:scale-110 transition-transform duration-300">
-                <HugeiconsIcon icon={FireIcon} size={96} strokeWidth={1} />
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary">
+                <HugeiconsIcon icon={Rocket01Icon} size={21} strokeWidth={2} />
               </div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-sm">
-                  <HugeiconsIcon icon={FireIcon} size={22} strokeWidth={2} />
-                </div>
-                <span className="font-heading font-extrabold text-label-md text-orange-700 dark:text-orange-300 uppercase tracking-wider">Ofensiva</span>
+              <div className="min-w-0">
+                <span className="product-metric-label">Pontuação</span>
+                <strong className="product-metric-value">{studentXP}<span className="ml-1 text-sm text-on-surface-variant">XP</span></strong>
               </div>
-              <div className="text-5xl font-heading font-black text-orange-600 dark:text-orange-400">
-                {profile?.ofensiva_atual || 0} <span className="text-body-lg font-bold">dias</span>
-              </div>
-              <p className="text-sm text-orange-700/80 dark:text-orange-400/80 font-semibold mt-2">
-                Seu recorde histórico é de <strong className="text-orange-600">{profile?.maior_ofensiva || 0}</strong> dias seguidos.
-              </p>
             </div>
-
-            {/* XP Total Card */}
-            <div className="bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent border border-secondary/20 rounded-3xl p-6 relative overflow-hidden group shadow-sm">
-              <div className="absolute right-4 bottom-2 text-secondary/10 group-hover:scale-110 transition-transform duration-300">
-                <HugeiconsIcon icon={Rocket01Icon} size={96} strokeWidth={1} />
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={21} strokeWidth={2} />
               </div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
-                  <HugeiconsIcon icon={Rocket01Icon} size={22} strokeWidth={2} />
-                </div>
-                <span className="font-heading font-extrabold text-label-md text-secondary uppercase tracking-wider">Pontuação (XP)</span>
+              <div className="min-w-0">
+                <span className="product-metric-label">Aulas concluídas</span>
+                <strong className="product-metric-value">{completedAulasCount}<span className="text-sm text-on-surface-variant">/{totalAulasCount}</span></strong>
               </div>
-              <div className="text-5xl font-heading font-black text-secondary">
-                {(completedAulasCount * 50) + ((profile?.maior_ofensiva || 0) * 20)} <span className="text-body-lg font-bold">XP</span>
-              </div>
-              <p className="text-sm text-secondary/80 font-semibold mt-2">
-                Você ganha 50 XP por aula e 20 XP por dia de ofensiva!
-              </p>
             </div>
-
-            {/* Aulas Assistidas Card */}
-            <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 rounded-3xl p-6 relative overflow-hidden group shadow-sm">
-              <div className="absolute right-4 bottom-2 text-emerald-500/10 group-hover:scale-110 transition-transform duration-300">
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={96} strokeWidth={1} />
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+                <HugeiconsIcon icon={Award01Icon} size={21} strokeWidth={2} />
               </div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-sm">
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={22} strokeWidth={2} />
-                </div>
-                <span className="font-heading font-extrabold text-label-md text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Aulas Concluídas</span>
+              <div className="min-w-0">
+                <span className="product-metric-label">Medalhas liberadas</span>
+                <strong className="product-metric-value">{unlockedAchievementsCount}<span className="text-sm text-on-surface-variant">/{achievements.length}</span></strong>
               </div>
-              <div className="text-5xl font-heading font-black text-emerald-600 dark:text-emerald-400">
-                {completedAulasCount} <span className="text-body-lg font-bold">/ {totalAulasCount}</span>
-              </div>
-              <p className="text-sm text-emerald-700/80 dark:text-emerald-400/80 font-semibold mt-2">
-                Seu progresso total do curso está em <strong className="text-emerald-600">{percentComplete}%</strong>.
-              </p>
             </div>
-          </div>
+          </section>
 
-          {/* Two Columns Grid: Quests & Leaderboard */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            {/* Left Column: Daily Quests & Detailed Badges (8 columns) */}
-            <div className="lg:col-span-8 space-y-8">
-              
-              {/* Daily Quests Section */}
-              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 shadow-sm space-y-5">
-                <div className="flex justify-between items-center pb-3 border-b border-outline-variant/30">
-                  <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
-                    <HugeiconsIcon icon={Calendar01Icon} size={20} className="text-primary" />
-                    Desafios Diários
-                  </h3>
-                  <span className="text-xs bg-primary/10 text-primary font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Atualiza Diariamente</span>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+            <div className="space-y-6 lg:col-span-8">
+              <section className="product-card p-5 sm:p-6" aria-labelledby="daily-challenges-title">
+                <div className="flex flex-col gap-3 border-b border-outline-variant/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <span className="product-section-kicker">Metas de hoje</span>
+                    <h2 id="daily-challenges-title" className="product-section-heading">Desafios diários</h2>
+                  </div>
+                  <span className="w-fit rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-primary">Renovados diariamente</span>
                 </div>
-                
-                <div className="space-y-4">
-                  {/* Quest 1 */}
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+
+                <div className="divide-y divide-outline-variant/70">
+                  <div className="flex gap-3 py-4 sm:gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                       <HugeiconsIcon icon={Tick01Icon} size={18} strokeWidth={2.5} />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-heading font-extrabold text-label-md text-on-surface">Consistência Diária</h4>
-                        <span className="text-label-sm font-bold text-emerald-600 dark:text-emerald-400">Concluído (+10 XP)</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="font-heading text-sm font-extrabold text-on-surface">Consistência diária</h3>
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Concluído · +10 XP</span>
                       </div>
-                      <p className="text-sm text-on-surface-variant">Acesse a plataforma de ensino hoje.</p>
-                      <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }}></div>
+                      <p className="mt-1 text-sm text-on-surface-variant">Acesse a plataforma de ensino hoje.</p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label="Consistência diária" aria-valuemin={0} aria-valuemax={100} aria-valuenow={100}>
+                        <div className="h-full w-full rounded-full bg-emerald-500" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Quest 2 */}
                   {(() => {
                     const isCompleted = completedAulasCount > 0;
                     return (
-                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 border ${
-                          isCompleted 
-                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
-                            : 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/5 dark:text-primary dark:border-primary/20'
-                        }`}>
+                      <div className="flex gap-3 py-4 sm:gap-4">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control ${isCompleted ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-primary/10 text-primary'}`}>
                           <HugeiconsIcon icon={isCompleted ? Tick01Icon : PlayCircleIcon} size={18} strokeWidth={2.5} />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between items-center">
-                            <h4 className="font-heading font-extrabold text-label-md text-on-surface">Foco no Aprendizado</h4>
-                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary'}`}>
-                              {isCompleted ? 'Concluído (+50 XP)' : '0 / 1 Aula (+50 XP)'}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 className="font-heading text-sm font-extrabold text-on-surface">Foco no aprendizado</h3>
+                            <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700 dark:text-emerald-400' : 'text-primary'}`}>
+                              {isCompleted ? 'Concluído · +50 XP' : '0/1 aula · +50 XP'}
                             </span>
                           </div>
-                          <p className="text-sm text-on-surface-variant">Conclua pelo menos uma aula da sua trilha hoje.</p>
-                          <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
-                            <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: isCompleted ? '100%' : '0%' }}></div>
+                          <p className="mt-1 text-sm text-on-surface-variant">Conclua pelo menos uma aula da sua trilha hoje.</p>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label="Foco no aprendizado" aria-valuemin={0} aria-valuemax={100} aria-valuenow={isCompleted ? 100 : 0}>
+                            <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: isCompleted ? '100%' : '0%' }} />
                           </div>
                         </div>
                       </div>
                     );
                   })()}
 
-                  {/* Quest 3 */}
                   {(() => {
                     const value = Math.min(completedAulasCount, 3);
                     const isCompleted = value >= 3;
                     const percent = Math.round((value / 3) * 100);
                     return (
-                      <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-surface-container-low border border-slate-100 dark:border-outline-variant/20 hover:border-primary/20 transition-all">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 border ${
-                          isCompleted 
-                            ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
-                            : 'bg-indigo/10 text-indigo-500 border-indigo-200/50 dark:bg-indigo-500/5 dark:text-indigo-400 dark:border-indigo-500/20'
-                        }`}>
+                      <div className="flex gap-3 py-4 sm:gap-4">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control ${isCompleted ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-secondary/10 text-secondary'}`}>
                           <HugeiconsIcon icon={isCompleted ? Tick01Icon : NotebookIcon} size={18} strokeWidth={2.5} />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between items-center">
-                            <h4 className="font-heading font-extrabold text-label-md text-on-surface">Dedicação Total</h4>
-                            <span className={`text-label-sm font-bold ${isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-on-surface-variant'}`}>
-                              {isCompleted ? 'Concluído (+150 XP)' : `${value} / 3 Aulas (+150 XP)`}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 className="font-heading text-sm font-extrabold text-on-surface">Dedicação total</h3>
+                            <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700 dark:text-emerald-400' : 'text-on-surface-variant'}`}>
+                              {isCompleted ? 'Concluído · +150 XP' : `${value}/3 aulas · +150 XP`}
                             </span>
                           </div>
-                          <p className="text-sm text-on-surface-variant">Conclua 3 aulas para um grande impulso no ranking semanal.</p>
-                          <div className="h-2 w-full bg-slate-200 dark:bg-surface-container rounded-full overflow-hidden mt-2">
-                            <div className="h-full bg-indigo-500 rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div>
+                          <p className="mt-1 text-sm text-on-surface-variant">Conclua 3 aulas para avançar mais rápido no ranking semanal.</p>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label="Dedicação total" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+                            <div className="h-full rounded-full bg-secondary transition-all duration-300" style={{ width: `${percent}%` }} />
                           </div>
                         </div>
                       </div>
                     );
                   })()}
                 </div>
-              </div>
+              </section>
 
-              {/* Medalhas & Conquistas Grid */}
-              <div className="space-y-4">
-                <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
-                  <HugeiconsIcon icon={Award01Icon} size={20} className="text-secondary" />
-                  Minhas Medalhas
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <section className="space-y-4" aria-labelledby="medals-title">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <span className="product-section-kicker">Sua coleção</span>
+                    <h2 id="medals-title" className="product-section-heading">Minhas medalhas</h2>
+                  </div>
+                  <span className="shrink-0 text-xs font-bold text-on-surface-variant">{unlockedAchievementsCount} de {achievements.length}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {achievements.map((ach, idx) => {
                     // Calculate progress values for achievements
                     let currentVal = 0;
@@ -2561,81 +2614,66 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                     return (
                       <div
                         key={idx}
-                        className={`relative p-6 rounded-3xl border transition-all duration-300 flex flex-col justify-between space-y-5 shadow-sm hover:shadow-md hover:-translate-y-1 group ${
-                          !ach.unlocked
-                            ? 'grayscale bg-slate-50/50 border-slate-200 text-slate-400 dark:bg-surface-container/30 dark:border-outline-variant/30 dark:text-on-surface-variant/70'
-                            : 'bg-gradient-to-br from-surface-container-lowest to-surface-container-low/40 border-outline-variant/30 text-on-surface'
-                        }`}
+                        className="product-card flex min-h-[230px] flex-col justify-between gap-5 p-5"
                       >
-                        {/* Top Row: Icon and Status */}
                         <div className="flex items-start justify-between gap-4">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-transform duration-300 group-hover:scale-105 ${
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-product-control border ${
                             !ach.unlocked
-                              ? 'bg-slate-200 border-slate-300 text-slate-400 dark:bg-surface-container-high dark:border-outline-variant/30 dark:text-on-surface-variant/60'
-                              : `${ach.bgClass} border-transparent ${ach.iconClass} shadow-sm`
+                              ? 'border-outline-variant/70 bg-surface-container-high text-on-surface-variant'
+                              : `${ach.bgClass} ${ach.iconClass} border-outline-variant/40 dark:bg-surface-container-high`
                           }`}>
-                            <HugeiconsIcon icon={ach.icon as any} size={28} strokeWidth={2} />
+                            <HugeiconsIcon icon={ach.icon as any} size={24} strokeWidth={2} />
                           </div>
-                          
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${
+
+                          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] ${
                             ach.unlocked 
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200/40 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
-                              : 'bg-slate-200 text-slate-500 dark:bg-surface-container dark:text-on-surface-variant/60'
+                              ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                              : 'border-outline-variant/70 bg-surface-container-low text-on-surface-variant'
                           }`}>
                             {ach.unlocked ? 'Conquistada' : 'Bloqueada'}
                           </span>
                         </div>
 
-                        {/* Middle Row: Text info */}
-                        <div className="space-y-1 text-left">
-                          <h4 className="font-heading font-black text-body-lg text-on-surface">
-                            {ach.title}
-                          </h4>
-                          <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
-                            {ach.unlocked ? ach.desc : 'Bloqueada'}
-                          </p>
+                        <div className="text-left">
+                          <h3 className="font-heading text-base font-extrabold text-on-surface">{ach.title}</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">{ach.desc}</p>
                         </div>
 
-                        {/* Bottom Row: Dynamic Progress bar */}
-                        <div className="space-y-1.5 pt-3 border-t border-slate-100/85 dark:border-outline-variant/20">
-                          <div className="flex justify-between text-[11px] font-extrabold text-on-surface-variant">
+                        <div className="space-y-2 border-t border-outline-variant/70 pt-4">
+                          <div className="flex justify-between gap-3 text-[11px] font-bold text-on-surface-variant">
                             <span>Progresso</span>
                             <span>{currentVal} / {targetVal} {unit}</span>
                           </div>
-                          <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden dark:bg-surface-container">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label={`Progresso da medalha ${ach.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                ach.unlocked 
-                                  ? 'bg-gradient-to-r from-secondary to-secondary-container' 
-                                  : 'bg-slate-300 dark:bg-slate-700'
-                              }`}
+                              className={`h-full rounded-full transition-all duration-500 ${ach.unlocked ? 'bg-secondary' : 'bg-on-surface-variant/30'}`}
                               style={{ width: `${percent}%` }}
-                            ></div>
+                            />
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-
+              </section>
             </div>
 
-            {/* Right Column: Leaderboard/Liga (4 columns) */}
-            <div className="lg:col-span-4 space-y-6">
-              
-              {/* Class Ranking Card */}
-              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 shadow-sm space-y-5">
-                <div className="text-center space-y-1">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${ligaUsuario.cor} text-white flex items-center justify-center mx-auto shadow-md ${ligaUsuario.shadow}`}>
-                    <HugeiconsIcon icon={ligaUsuario.icon} size={24} strokeWidth={2} />
+            <aside className="lg:col-span-4">
+              <section className="product-card p-5 sm:p-6" aria-labelledby="ranking-title">
+                <div className="flex items-center justify-between gap-4 border-b border-outline-variant/70 pb-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-gradient-to-br ${ligaUsuario.cor} text-white shadow-sm`}>
+                      <HugeiconsIcon icon={ligaUsuario.icon} size={21} strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="product-section-kicker">Ranking semanal</span>
+                      <h2 id="ranking-title" className="font-heading text-lg font-extrabold text-on-surface">{ligaUsuario.nome}</h2>
+                    </div>
                   </div>
-                  <h3 className="font-heading font-black text-body-lg text-on-surface mt-3">{ligaUsuario.nome}</h3>
-                  <p className="text-label-sm text-on-surface-variant">Classificação Semanal da Turma</p>
+                  <span className="shrink-0 rounded-full border border-outline-variant/70 bg-surface-container-low px-2.5 py-1 text-xs font-extrabold text-on-surface">{studentXP} XP</span>
                 </div>
 
-                {/* League Progression Map */}
-                <div className="flex items-center justify-between px-2 pt-3 pb-1 text-[11px] font-bold text-on-surface-variant border-t border-slate-100/80">
+                <div className="flex items-start justify-between py-5 text-[11px] font-bold text-on-surface-variant">
                   {['Bronze', 'Prata', 'Ouro', 'Platina', 'Diamante'].map((ligaNome, lIdx) => {
                     const lName = 'Liga ' + ligaNome;
                     const isCurrent = ligaUsuario.nome === lName;
@@ -2647,21 +2685,20 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                       (ligaUsuario.nome === 'Liga Diamante' && lIdx <= 4);
 
                     return (
-                      <div key={lIdx} className="flex flex-col items-center gap-1 flex-1 relative z-10">
-                        {/* Line between steps */}
+                      <div key={lIdx} className="relative z-10 flex flex-1 flex-col items-center gap-1.5">
                         {lIdx > 0 && (
-                          <div className={`absolute right-1/2 top-[7px] -translate-y-1/2 w-full h-[3px] -z-10 ${
-                            isPassed ? 'bg-primary' : 'bg-slate-200'
+                          <div className={`absolute right-1/2 top-[7px] -z-10 h-0.5 w-full ${
+                            isPassed ? 'bg-primary' : 'bg-surface-container-highest'
                           }`} />
                         )}
-                        <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`h-3.5 w-3.5 rounded-full border-2 ${
                           isCurrent 
-                            ? 'bg-white border-primary ring-2 ring-primary/30 scale-125' 
+                            ? 'scale-125 border-primary bg-surface-container-lowest ring-2 ring-primary/25'
                             : isPassed 
-                              ? 'bg-primary border-primary' 
-                              : 'bg-white border-slate-300'
+                              ? 'border-primary bg-primary'
+                              : 'border-outline-variant bg-surface-container-lowest'
                         }`} />
-                        <span className={`text-[9px] tracking-tight ${isCurrent ? 'text-primary font-black scale-105' : 'text-slate-400 font-medium'}`}>
+                        <span className={`text-[9px] tracking-tight ${isCurrent ? 'font-extrabold text-primary' : 'font-semibold text-on-surface-variant'}`}>
                           {ligaNome}
                         </span>
                       </div>
@@ -2669,8 +2706,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                   })}
                 </div>
 
-                {/* Leaderboard list */}
-                <div className="space-y-2.5">
+                <div className="border-t border-outline-variant/70">
                   {leaderboard.map((user, index) => {
                     const position = index + 1;
                     let posBadge: React.ReactNode = '';
@@ -2683,31 +2719,27 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                     return (
                       <div 
                         key={user.id || index} 
-                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
-                          user.isSelf 
-                            ? 'bg-primary/5 border-primary/30 shadow-inner' 
-                            : 'bg-slate-50 border-slate-100 hover:border-slate-200'
-                        }`}
+                        className={`flex items-center justify-between gap-3 border-b border-outline-variant/70 py-3 last:border-b-0 ${user.isSelf ? '-mx-2 bg-primary/5 px-2' : ''}`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 text-center font-heading font-black text-body-md text-on-surface-variant flex items-center justify-center">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex w-6 shrink-0 items-center justify-center text-center font-heading text-sm font-extrabold text-on-surface-variant">
                             {posBadge}
                           </span>
                           <img 
                             src={user.avatar} 
                             alt={user.name} 
-                            className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0" 
+                            className="h-9 w-9 shrink-0 rounded-full border border-outline-variant/70 object-cover"
                           />
-                          <div className="text-left">
-                            <p className={`text-label-md text-on-surface ${user.isSelf ? 'font-bold text-primary' : 'font-medium'}`}>
+                          <div className="min-w-0 text-left">
+                            <p className={`truncate text-sm text-on-surface ${user.isSelf ? 'font-extrabold text-primary' : 'font-semibold'}`}>
                               {user.name} {user.isSelf && '(Você)'}
                             </p>
-                            <p className="text-[10px] text-on-surface-variant/80 font-bold uppercase tracking-wider">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
                               {position <= 5 ? 'Zona de Promoção' : 'Estável'}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right font-heading font-extrabold text-label-md text-on-surface shrink-0">
+                        <div className="shrink-0 text-right font-heading text-sm font-extrabold text-on-surface">
                           {user.xp} <span className="text-[10px] text-on-surface-variant font-medium">XP</span>
                         </div>
                       </div>
@@ -2715,17 +2747,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                   })}
                 </div>
 
-                {/* Explanatory footer */}
-                <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl text-[11px] text-on-surface-variant/90 leading-relaxed font-sans font-medium flex items-center justify-center gap-2">
-                  <HugeiconsIcon icon={FireIcon} size={14} className="text-orange-500 shrink-0" strokeWidth={2.5} />
+                <div className="mt-4 flex gap-2 border-t border-outline-variant/70 pt-4 text-xs font-medium leading-relaxed text-on-surface-variant">
+                  <HugeiconsIcon icon={FireIcon} size={16} className="mt-0.5 shrink-0 text-orange-600 dark:text-orange-400" strokeWidth={2.5} />
                   <span>
-                    <strong>Fique no Top 5</strong> para subir de Liga no fim de semana e ganhar medalhas e conquistas exclusivas!
+                    <strong className="text-on-surface">Fique no Top 5</strong> para subir de liga no fim de semana e liberar novas conquistas.
                   </span>
                 </div>
-              </div>
-
-            </div>
-
+              </section>
+            </aside>
           </div>
         </div>
       ) : (

@@ -1045,7 +1045,7 @@ function App() {
 
   if (session && (!isAdmin || teacherView === 'preview')) {
     return (
-      <div className="min-h-screen w-full bg-background text-on-background flex font-sans overflow-hidden" style={shellStyle}>
+      <div className="flex min-h-screen w-full overflow-hidden bg-product-canvas font-sans text-on-background" style={shellStyle}>
         {/* Sidebar Nav do Aluno */}
         {!arenaActive && studentSidebarNav}
 
@@ -1055,15 +1055,16 @@ function App() {
         )}
 
         {/* Main Canvas do Aluno */}
-        <div className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+        <div className="flex h-screen flex-1 flex-col overflow-hidden bg-product-canvas">
           {/* Top Navbar do Aluno */}
-          <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest flex justify-between items-center z-10 shadow-sm flex-shrink-0">
+          <header className="z-10 flex flex-shrink-0 items-center justify-between border-b border-outline-variant/40 bg-surface-container-lowest/95 px-4 py-3.5 shadow-sm backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <button className="lg:hidden p-2 rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={() => setMobileMenuOpen(true)}>
+              <button className="product-icon-action lg:hidden" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu de navegação">
                 <HugeiconsIcon icon={Menu01Icon} size={20} />
               </button>
               <div>
-                <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
+                <span className="hidden text-[10px] font-extrabold uppercase tracking-[0.12em] text-primary sm:block">Portal do aluno</span>
+                <h3 className="font-heading text-base font-extrabold leading-tight text-on-surface sm:text-body-lg">
                   {activeUserTab === 'dashboard' && 'Minhas Aulas'}
                   {activeUserTab === 'achievements' && 'Minhas Conquistas'}
                   {activeUserTab === 'profile' && 'Meu Perfil'}
@@ -1075,22 +1076,22 @@ function App() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <NotificationBell userId={session.user.id} enabled={!isAdmin} />
 
               <ThemeToggle />
 
-              <div className="h-8 w-px bg-outline-variant/30 mx-1"></div>
+              <div className="mx-1 hidden h-8 w-px bg-outline-variant/40 sm:block" />
 
               {/* User Avatar */}
               <div
                 onClick={() => { navigate('/perfil'); }}
-                className="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low rounded-lg p-1.5 pr-3 transition-colors"
+                className="flex cursor-pointer items-center gap-3 rounded-product-control p-1.5 transition-colors hover:bg-surface-container-low sm:pr-3"
                 title="Ver Meu Perfil"
               >
                 <img
                   alt="User Avatar"
-                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20 shadow-sm"
+                  className="h-9 w-9 rounded-product-control border border-outline-variant/40 object-cover shadow-sm"
                   src={session?.user?.user_metadata?.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDjHJPa48VdYiR05ZWGxXbALLDYlIWcSxoTbPlibTUuk_A5DCL8ceP5PgSnt9UDcsU9RAFB5c91IDtPmTCljSnfhoH8EoBhXp_QcCMb4QnDf_L_yuFFhQtcrk823AyvvrtjJbAwqlYZnOsu_lk5zBOMbLX8egLCirDVds1o7bri1xsI-opaFngNWT6CGBfc3F9lG9SBh4apN4fBXkExG7Rqfn34GSDZwsYInAIDdo4Jl6M42fD0xaeWUBN2lwtf5cebz3BoHRN3ypo"}
                 />
                 <div className="hidden md:block text-left text-xs">
@@ -1104,7 +1105,7 @@ function App() {
           </header>
 
           {/* Main workspace scrollable area */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 xl:p-8">
             <div className="max-w-[1280px] mx-auto w-full">
               {profileStatus === 'bloqueado' ? (
                 /* Locked Student Screen */

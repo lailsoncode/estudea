@@ -48,10 +48,7 @@ interface ColunaDef {
   titulo: string;
   subtitulo: string;
   icone: string;
-  corBorda: string;
   corBadge: string;
-  corBg: string;
-  corTexto: string;
 }
 
 const COLUNAS: ColunaDef[] = [
@@ -60,40 +57,28 @@ const COLUNAS: ColunaDef[] = [
     titulo: 'A Fazer',
     subtitulo: 'Para Iniciar',
     icone: '📌',
-    corBorda: 'border-sky-500/50 dark:border-sky-400/40',
-    corBadge: 'bg-sky-500 text-white',
-    corBg: 'bg-sky-500/5',
-    corTexto: 'text-sky-700 dark:text-sky-400'
+    corBadge: 'bg-sky-500 text-white'
   },
   {
     id: 'in_progress',
     titulo: 'Em Andamento',
     subtitulo: 'Estudando Agora',
     icone: '⚡',
-    corBorda: 'border-amber-500/50 dark:border-amber-400/40',
-    corBadge: 'bg-amber-500 text-white',
-    corBg: 'bg-amber-500/5',
-    corTexto: 'text-amber-700 dark:text-amber-400'
+    corBadge: 'bg-amber-500 text-white'
   },
   {
     id: 'review',
     titulo: 'Dúvidas & Revisão',
     subtitulo: 'Aguardando Ajuda',
     icone: '❓',
-    corBorda: 'border-purple-500/50 dark:border-purple-400/40',
-    corBadge: 'bg-purple-500 text-white',
-    corBg: 'bg-purple-500/5',
-    corTexto: 'text-purple-700 dark:text-purple-400'
+    corBadge: 'bg-purple-500 text-white'
   },
   {
     id: 'done',
     titulo: 'Concluído',
     subtitulo: 'Finalizado com Sucesso',
     icone: '✅',
-    corBorda: 'border-emerald-500/50 dark:border-emerald-400/40',
-    corBadge: 'bg-emerald-500 text-white',
-    corBg: 'bg-emerald-500/5',
-    corTexto: 'text-emerald-700 dark:text-emerald-400'
+    corBadge: 'bg-emerald-500 text-white'
   }
 ];
 
@@ -466,26 +451,27 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
       {/* ——————————————————————————————
           1. CABEÇALHO & HUD DE PRODUTIVIDADE
          —————————————————————————————— */}
-      <div className="product-page-header flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="product-icon-tile">
-            <HugeiconsIcon icon={CheckListIcon} size={28} />
+      <header className="product-card p-4 sm:p-5">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+            <HugeiconsIcon icon={CheckListIcon} size={22} strokeWidth={2} />
           </div>
           <div className="min-w-0">
-            <span className="product-eyebrow mb-1.5">
-              Organização pessoal
-            </span>
-            <h1 className="product-title">Meu Kanban de Estudos</h1>
-            <p className="product-subtitle">
+            <span className="product-section-kicker">Organização pessoal</span>
+            <h1 className="mt-1 font-heading text-xl font-extrabold leading-tight tracking-[-0.025em] text-on-surface sm:text-2xl">Meu Kanban de Estudos</h1>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-on-surface-variant">
               Organize suas matérias, exercícios, entregas do Projeto Integrador e revisões sem burocracia.
             </p>
           </div>
         </div>
+      </header>
 
-        {/* Telemetry Stats Badges */}
-        <div className="grid w-full grid-cols-3 gap-2 sm:gap-3 lg:w-auto" aria-label="Resumo das tarefas">
+      {/* Telemetry Stats Badges */}
+      <section className="grid w-full grid-cols-3 gap-2 sm:gap-3" aria-label="Resumo das tarefas">
           <div className="product-metric">
-            <HugeiconsIcon icon={Task01Icon} size={18} className="text-primary shrink-0" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+              <HugeiconsIcon icon={Task01Icon} size={17} strokeWidth={2} />
+            </div>
             <div>
               <span className="product-metric-label">Tarefas</span>
               <span className="product-metric-value">
@@ -495,7 +481,9 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
           </div>
 
           <div className="product-metric">
-            <HugeiconsIcon icon={FireIcon} size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-product-control bg-amber-500/10 text-amber-700 dark:text-amber-300">
+              <HugeiconsIcon icon={FireIcon} size={17} strokeWidth={2} />
+            </div>
             <div>
               <span className="product-metric-label">Em foco</span>
               <span className="product-metric-value">
@@ -505,7 +493,9 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
           </div>
 
           <div className="product-metric">
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+              <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} strokeWidth={2} />
+            </div>
             <div>
               <span className="product-metric-label">Progresso</span>
               <span className="product-metric-value !text-emerald-700 dark:!text-emerald-400">
@@ -513,8 +503,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               </span>
             </div>
           </div>
-        </div>
-      </div>
+      </section>
 
       {/* ——————————————————————————————
           2. BARRA DE BUSCA E FILTROS RÁPIDOS
@@ -568,14 +557,14 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
           {/* Priority Pill Filters */}
           <div className="min-w-0">
             <span className="mb-1.5 block text-xs font-extrabold text-on-surface">Prioridade</span>
-            <div className="flex max-w-full items-center gap-1 overflow-x-auto bg-surface-container-low p-1 rounded-xl border border-outline-variant/70" aria-label="Filtrar por prioridade">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-product-control border border-outline-variant/70 bg-surface-container-low p-1" aria-label="Filtrar por prioridade">
             {['all', 'urgente', 'alta', 'media', 'baixa'].map(p => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setFilterPrioridade(p)}
                 aria-pressed={filterPrioridade === p}
-                className={`min-h-9 shrink-0 px-3 py-1.5 rounded-lg text-xs font-extrabold capitalize transition-all ${
+                className={`min-h-9 shrink-0 rounded-product-control px-3 py-1.5 text-xs font-extrabold capitalize transition-all ${
                   filterPrioridade === p
                     ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/15'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -593,7 +582,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
           <select
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
-            className="min-h-11 w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+            className="min-h-11 w-full cursor-pointer rounded-product-control border border-outline-variant/70 bg-surface-container-low px-3 py-2.5 text-sm font-bold text-on-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="all">Todas as Categorias</option>
             {Object.entries(TAGS).map(([key, item]) => (
@@ -646,18 +635,18 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               onDragOver={(e) => handleDragOver(e, coluna.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, coluna.id)}
-              className={`w-[min(86vw,340px)] min-w-[280px] shrink-0 snap-start rounded-product-panel p-4 border-2 transition-all duration-200 flex flex-col gap-3 min-h-[440px] shadow-product-card sm:w-auto sm:min-w-0 ${
-                coluna.corBorda
-              } ${isOver ? 'bg-primary/10 border-primary shadow-lg ring-4 ring-primary/20 scale-[1.01]' : 'bg-surface-container-lowest shadow-sm'}`}
+              className={`product-card flex min-h-[400px] w-[min(86vw,340px)] min-w-[280px] shrink-0 snap-start flex-col gap-3 p-4 sm:w-auto sm:min-w-0 ${
+                isOver ? '!border-primary bg-primary/5 ring-2 ring-primary/20 scale-[1.01]' : ''
+              }`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
+              <div className="flex items-center justify-between border-b border-outline-variant/50 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{coluna.icone}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-product-control bg-surface-container-high text-lg" aria-hidden="true">{coluna.icone}</span>
                   <div>
                     <h3 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-1.5">
                       {coluna.titulo}
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${coluna.corBadge}`}>
+                      <span className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-extrabold ${coluna.corBadge}`}>
                         {colTarefas.length}
                       </span>
                     </h3>
@@ -683,7 +672,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
 
               {/* 1-Click Fast Inline Add Form */}
               {quickAddColumn === coluna.id && (
-                <div className="p-3.5 bg-primary/5 rounded-2xl border border-primary/45 space-y-3 animate-in fade-in zoom-in-95">
+                <div className="animate-in space-y-3 rounded-product-control border border-outline-variant/70 bg-surface-container-low p-3.5 fade-in zoom-in-95">
                   <label htmlFor={`quick-add-${coluna.id}`} className="block text-xs font-extrabold text-on-surface">
                     Nova tarefa em {coluna.titulo}
                   </label>
@@ -704,7 +693,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     <button
                       type="button"
                       onClick={() => setQuickAddColumn(null)}
-                      className="min-h-10 px-3 text-on-surface-variant hover:text-on-surface font-bold text-xs rounded-lg"
+                      className="min-h-10 rounded-product-control px-3 text-xs font-bold text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                     >
                       Cancelar
                     </button>
@@ -721,7 +710,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               )}
 
               {/* Task Cards List */}
-              <div className="space-y-3 flex-1 overflow-y-auto">
+              <div className="flex-1 space-y-2.5 overflow-y-auto">
                 {colTarefas.map(tarefa => {
                   const prioridadeDef = PRIORIDADES[tarefa.prioridade] || PRIORIDADES.media;
                   const tagDef = TAGS[tarefa.tag] || TAGS.estudos;
@@ -735,7 +724,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       key={tarefa.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, tarefa.id)}
-                      className="product-card-interactive p-4 cursor-grab active:cursor-grabbing space-y-3 group select-none"
+                      className="product-card-interactive group cursor-grab space-y-2.5 p-3.5 select-none active:cursor-grabbing"
                     >
                       {/* Card Top: Tag + Priority */}
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -820,7 +809,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                               setEditingTask(tarefa);
                               setIsModalOpen(true);
                             }}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container"
+                            className="product-icon-action !h-9 !w-9"
                             title="Editar Detalhes"
                             aria-label={`Editar tarefa ${tarefa.titulo}`}
                           >
@@ -839,7 +828,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                                 };
                                 handleMoveTask(tarefa.id, nextCols[coluna.id]);
                               }}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10"
+                              className="product-icon-action !h-9 !w-9 hover:!bg-emerald-500/10 hover:!text-emerald-700 dark:hover:!text-emerald-400"
                               title="Avançar para próxima coluna"
                               aria-label={`Avançar tarefa ${tarefa.titulo} para a próxima coluna`}
                             >
@@ -853,7 +842,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 })}
 
                 {colTarefas.length === 0 && quickAddColumn !== coluna.id && (
-                  <div className="product-empty-state">
+                  <div className="flex min-h-40 flex-col items-center justify-center p-4 text-center text-on-surface-variant">
                     <span className="text-2xl mb-2" aria-hidden="true">{filtersActive ? '🔎' : coluna.icone}</span>
                     <span className="text-sm font-extrabold text-on-surface">{filtersActive ? 'Nenhum resultado nesta etapa' : 'Nenhuma tarefa aqui'}</span>
                     <span className="mt-1 text-xs">{filtersActive ? 'Tente alterar ou limpar os filtros.' : `Adicione uma tarefa em ${coluna.titulo}.`}</span>
