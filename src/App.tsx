@@ -58,6 +58,7 @@ import { ProjetoIntegrador } from './pages/ProjetoIntegrador';
 import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
 import { CursoWindows11 } from './pages/CursoWindows11';
 import { GestaoProfessores } from './pages/GestaoProfessores';
+import { HomePage } from './pages/HomePage';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'professores' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
@@ -336,7 +337,9 @@ function App() {
 
     // 1. Not Authenticated Flow
     if (!session) {
-      if (path === '/cadastro-professor' || path === '/signup-professor') {
+      if (path === '/') {
+        setAuthView('login');
+      } else if (path === '/cadastro-professor' || path === '/signup-professor') {
         setAuthView('teacher_signup');
       } else if (path === '/signup' || path === '/cadastro') {
         setAuthView('signup');
@@ -1199,6 +1202,13 @@ function App() {
   }
 
   return (
+    location.pathname === '/' ? (
+      <HomePage
+        onLogin={() => navigate('/login')}
+        onStudentSignup={() => navigate('/signup')}
+        onTeacherSignup={() => navigate('/cadastro-professor')}
+      />
+    ) : (
     <div className="min-h-screen w-full bg-background text-on-background relative flex flex-col items-center justify-center font-sans">
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
@@ -1277,6 +1287,7 @@ function App() {
         </p>
       </footer>
     </div>
+    )
   );
 }
 
