@@ -15,6 +15,12 @@ Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democra
 
 ---
 
+## 🔌 Integração MCP
+
+O MVP do servidor MCP para criar aulas pelo ChatGPT Work está documentado em [docs/mcp.md](docs/mcp.md).
+
+---
+
 ## 🌟 O que é o Estudea?
 
 O **Estudea** é uma plataforma LMS (Learning Management System) construída com foco em **cursos de TI e letramento digital**. Desenvolvida para professores que trabalham com inclusão digital, iniciação à tecnologia e capacitação técnica — do básico ao avançado.
