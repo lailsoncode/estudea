@@ -461,22 +461,22 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
   };
 
   return (
-    <div className="app-page max-w-7xl mx-auto font-sans relative">
+    <div className="product-page max-w-7xl mx-auto relative">
       
       {/* ——————————————————————————————
           1. CABEÇALHO & HUD DE PRODUTIVIDADE
          —————————————————————————————— */}
-      <div className="app-page-header flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="product-page-header flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary via-[#004A8D] to-secondary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+          <div className="product-icon-tile">
             <HugeiconsIcon icon={CheckListIcon} size={28} />
           </div>
           <div className="min-w-0">
-            <span className="inline-flex mb-1.5 text-xs font-extrabold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/25">
+            <span className="product-eyebrow mb-1.5">
               Organização pessoal
             </span>
-            <h1 className="app-title text-[26px] sm:text-headline-lg">Meu Kanban de Estudos</h1>
-            <p className="app-subtitle">
+            <h1 className="product-title">Meu Kanban de Estudos</h1>
+            <p className="product-subtitle">
               Organize suas matérias, exercícios, entregas do Projeto Integrador e revisões sem burocracia.
             </p>
           </div>
@@ -484,31 +484,31 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
 
         {/* Telemetry Stats Badges */}
         <div className="grid w-full grid-cols-3 gap-2 sm:gap-3 lg:w-auto" aria-label="Resumo das tarefas">
-          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+          <div className="product-metric">
             <HugeiconsIcon icon={Task01Icon} size={18} className="text-primary shrink-0" />
             <div>
-              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Tarefas</span>
-              <span className="font-heading font-extrabold text-xl text-on-surface leading-tight">
+              <span className="product-metric-label">Tarefas</span>
+              <span className="product-metric-value">
                 {totalTarefas}
               </span>
             </div>
           </div>
 
-          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+          <div className="product-metric">
             <HugeiconsIcon icon={FireIcon} size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
             <div>
-              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Em foco</span>
-              <span className="font-heading font-extrabold text-xl text-on-surface leading-tight">
+              <span className="product-metric-label">Em foco</span>
+              <span className="product-metric-value">
                 {emAndamentoCount}
               </span>
             </div>
           </div>
 
-          <div className="flex min-h-[68px] items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/70">
+          <div className="product-metric">
             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
-              <span className="text-[11px] text-on-surface-variant font-extrabold block uppercase leading-tight">Progresso</span>
-              <span className="font-heading font-extrabold text-xl text-emerald-700 dark:text-emerald-400 leading-tight">
+              <span className="product-metric-label">Progresso</span>
+              <span className="product-metric-value !text-emerald-700 dark:!text-emerald-400">
                 {percentConcluidas}%
               </span>
             </div>
@@ -519,7 +519,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
       {/* ——————————————————————————————
           2. BARRA DE BUSCA E FILTROS RÁPIDOS
          —————————————————————————————— */}
-      <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant/70 shadow-sm flex flex-col gap-4" aria-label="Busca e filtros do quadro">
+      <div className="product-toolbar" aria-label="Busca e filtros do quadro">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-heading text-sm font-extrabold text-on-surface">Encontre suas tarefas</h2>
@@ -548,13 +548,13 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar tarefa ou anotação..."
-            className="min-h-11 w-full pl-11 pr-11 py-2.5 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            className="product-control pl-11 pr-11"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+              className="product-icon-action absolute right-1.5 top-1/2 !h-9 !w-9 -translate-y-1/2"
               aria-label="Limpar busca"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={16} />
@@ -612,7 +612,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 setFilterPrioridade('all');
                 setFilterTag('all');
               }}
-              className="min-h-11 px-4 rounded-xl border border-outline-variant/70 bg-surface-container-lowest text-sm font-bold text-primary hover:bg-primary/5"
+              className="product-secondary-action !text-primary"
             >
               Limpar filtros
             </button>
@@ -646,7 +646,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               onDragOver={(e) => handleDragOver(e, coluna.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, coluna.id)}
-              className={`w-[min(86vw,340px)] min-w-[280px] shrink-0 snap-start rounded-3xl p-4 border-2 transition-all duration-200 flex flex-col gap-3 min-h-[440px] sm:w-auto sm:min-w-0 ${
+              className={`w-[min(86vw,340px)] min-w-[280px] shrink-0 snap-start rounded-product-panel p-4 border-2 transition-all duration-200 flex flex-col gap-3 min-h-[440px] shadow-product-card sm:w-auto sm:min-w-0 ${
                 coluna.corBorda
               } ${isOver ? 'bg-primary/10 border-primary shadow-lg ring-4 ring-primary/20 scale-[1.01]' : 'bg-surface-container-lowest shadow-sm'}`}
             >
@@ -673,7 +673,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     setQuickAddColumn(coluna.id);
                     setQuickAddTitle('');
                   }}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+                  className="product-icon-action"
                   title={`Adicionar tarefa em ${coluna.titulo}`}
                   aria-label={`Adicionar tarefa em ${coluna.titulo}`}
                 >
@@ -698,7 +698,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       if (e.key === 'Escape') setQuickAddColumn(null);
                     }}
                     placeholder="Título da tarefa e pressione Enter..."
-                    className="min-h-11 w-full p-3 bg-surface-container-lowest border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control !bg-surface-container-lowest"
                   />
                   <div className="flex justify-end gap-2">
                     <button
@@ -712,7 +712,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       type="button"
                       onClick={() => handleQuickAdd(coluna.id)}
                       disabled={!quickAddTitle.trim()}
-                      className="min-h-10 px-4 bg-primary text-white rounded-lg font-bold text-xs shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                      className="product-primary-action !min-h-10 !px-4 !text-xs"
                     >
                       Adicionar
                     </button>
@@ -735,7 +735,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       key={tarefa.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, tarefa.id)}
-                      className="p-4 rounded-2xl bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/70 hover:border-primary/45 shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing space-y-3 group select-none"
+                      className="product-card-interactive p-4 cursor-grab active:cursor-grabbing space-y-3 group select-none"
                     >
                       {/* Card Top: Tag + Priority */}
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -853,7 +853,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 })}
 
                 {colTarefas.length === 0 && quickAddColumn !== coluna.id && (
-                  <div className="min-h-40 border border-dashed border-outline-variant/70 bg-surface-container-low/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant p-5 text-center">
+                  <div className="product-empty-state">
                     <span className="text-2xl mb-2" aria-hidden="true">{filtersActive ? '🔎' : coluna.icone}</span>
                     <span className="text-sm font-extrabold text-on-surface">{filtersActive ? 'Nenhum resultado nesta etapa' : 'Nenhuma tarefa aqui'}</span>
                     <span className="mt-1 text-xs">{filtersActive ? 'Tente alterar ou limpar os filtros.' : `Adicione uma tarefa em ${coluna.titulo}.`}</span>
@@ -887,14 +887,14 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
       {isModalOpen && editingTask && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
           <div
-            className="bg-surface-container-lowest rounded-2xl sm:rounded-3xl w-full max-w-2xl shadow-2xl border border-outline-variant/70 overflow-hidden font-sans max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col"
+            className="product-dialog max-h-[calc(100dvh-1rem)] sm:max-h-[90vh]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="kanban-task-dialog-title"
           >
             
             {/* Modal Header */}
-            <div className="p-4 sm:p-6 border-b border-outline-variant/70 flex items-center justify-between gap-4 shrink-0">
+            <div className="product-dialog-header flex items-center justify-between gap-4 border-b sm:!p-6">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
                   <HugeiconsIcon icon={Edit01Icon} size={20} />
@@ -909,7 +909,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl"
+                className="product-icon-action shrink-0"
                 aria-label="Fechar detalhes da tarefa"
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={20} />
@@ -928,7 +928,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                   type="text"
                   value={editingTask.titulo}
                   onChange={(e) => setEditingTask({ ...editingTask, titulo: e.target.value })}
-                  className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="product-control font-bold"
                   placeholder="Ex: Fazer exercícios da Aula 04..."
                 />
               </div>
@@ -967,7 +967,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     id="kanban-task-priority"
                     value={editingTask.prioridade}
                     onChange={(e) => setEditingTask({ ...editingTask, prioridade: e.target.value as KanbanTarefa['prioridade'] })}
-                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control font-bold"
                   >
                     <option value="baixa">🟢 Baixa</option>
                     <option value="media">🔵 Média</option>
@@ -985,7 +985,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     id="kanban-task-tag"
                     value={editingTask.tag}
                     onChange={(e) => setEditingTask({ ...editingTask, tag: e.target.value as KanbanTarefa['tag'] })}
-                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control font-bold"
                   >
                     {Object.entries(TAGS).map(([key, item]) => (
                       <option key={key} value={key}>
@@ -1007,7 +1007,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     type="date"
                     value={editingTask.prazo || ''}
                     onChange={(e) => setEditingTask({ ...editingTask, prazo: e.target.value || null })}
-                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control font-bold"
                   />
                 </div>
 
@@ -1021,7 +1021,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                     value={editingTask.link_url || ''}
                     onChange={(e) => setEditingTask({ ...editingTask, link_url: e.target.value || null })}
                     placeholder="https://drive.google.com/..."
-                    className="min-h-11 w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control"
                   />
                 </div>
               </div>
@@ -1037,7 +1037,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                   value={editingTask.descricao || ''}
                   onChange={(e) => setEditingTask({ ...editingTask, descricao: e.target.value })}
                   placeholder="Escreva anotações livres, dúvidas para o professor ou instruções..."
-                  className="w-full p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-medium text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-y"
+                  className="product-control min-h-24 resize-y font-medium"
                 />
               </div>
 
@@ -1093,7 +1093,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                       }
                     }}
                     placeholder="Adicionar item à checklist e Enter..."
-                    className="min-h-11 flex-1 p-3 bg-surface-container-low border border-outline-variant/70 rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="product-control flex-1"
                   />
                   <button
                     type="button"
@@ -1109,7 +1109,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 sm:p-5 border-t border-outline-variant/70 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0 bg-surface-container-lowest">
+            <div className="product-dialog-footer flex flex-col-reverse gap-3 border-t sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 onClick={() => handleDeleteTask(editingTask.id)}
@@ -1123,7 +1123,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="min-h-11 px-5 border border-outline-variant/70 text-on-surface hover:bg-surface-container font-bold text-sm rounded-xl"
+                  className="product-secondary-action"
                 >
                   Cancelar
                 </button>
@@ -1131,7 +1131,7 @@ export const KanbanAluno: React.FC<KanbanAlunoProps> = ({ session }) => {
                   type="button"
                   onClick={handleSaveModal}
                   disabled={!editingTask.titulo.trim()}
-                  className="min-h-11 px-6 bg-primary text-white font-heading font-bold text-sm rounded-xl shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className="product-primary-action px-6"
                 >
                   Salvar Alterações
                 </button>

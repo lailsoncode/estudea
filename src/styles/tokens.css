@@ -45,6 +45,23 @@
   --color-senac-orange-light: 253 193 128; /* #FDC180 - Laranja Claro (Pantone 149) */
 
   /* =============================================
+     ESTUDEA PRODUCT UI — Identidade extraída da homepage
+     ============================================= */
+  --color-brand-ink: 6 47 84;            /* #062F54 */
+  --color-brand-navy: 7 59 104;          /* #073B68 */
+  --color-brand-deep: 5 39 68;           /* #052744 */
+  --color-brand-mid: 6 77 131;           /* #064D83 */
+  --color-brand-bright: 8 114 173;       /* #0872AD */
+  --color-brand-cyan: 14 165 233;
+  --color-brand-canvas: 248 251 255;      /* #F8FBFF */
+  --color-brand-warm: 255 250 243;        /* #FFFAF3 */
+  --color-brand-warm-strong: 255 247 236; /* #FFF7EC */
+  --color-product-canvas: 248 251 255;    /* #F8FBFF */
+  --color-product-title: 6 47 84;
+  --color-product-warm: 255 250 243;      /* #FFFAF3 */
+  --color-product-warm-strong: 255 247 236; /* #FFF7EC */
+
+  /* =============================================
      CORES — Primária (Azul Senac)
      ============================================= */
   --color-primary: 0 74 141;             /* #004A8D */
@@ -104,6 +121,21 @@
   --color-senac-blue: 38 138 230;
   --color-senac-orange: 247 148 30;
   --color-senac-orange-light: 253 193 128;
+
+  /* Identidade fixa + superfícies semânticas para o produto em modo escuro */
+  --color-brand-ink: 6 47 84;
+  --color-brand-navy: 7 59 104;
+  --color-brand-deep: 5 39 68;
+  --color-brand-mid: 6 77 131;
+  --color-brand-bright: 8 114 173;
+  --color-brand-cyan: 56 189 248;
+  --color-brand-canvas: 248 251 255;
+  --color-brand-warm: 255 250 243;
+  --color-brand-warm-strong: 255 247 236;
+  --color-product-canvas: 11 15 25;
+  --color-product-title: 248 250 252;
+  --color-product-warm: 35 27 20;
+  --color-product-warm-strong: 43 31 20;
 
   /* =============================================
      CORES — Superfícies (Modo Escuro Premium)
@@ -237,6 +269,10 @@
   --radius-md: 0.75rem;   /* 12px */
   --radius-lg: 1rem;      /* 16px */
   --radius-xl: 1.5rem;    /* 24px */
+  --radius-product-control: 0.75rem; /* 12px */
+  --radius-product-card: 1rem;       /* 16px */
+  --radius-product-panel: 1.5rem;    /* 24px */
+  --radius-product-display: 2rem;    /* 32px */
 
   /* =============================================
      SOMBRAS — Escala
@@ -244,6 +280,9 @@
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+  --shadow-product-card: 0 10px 30px -22px rgba(6, 47, 84, 0.32), 0 1px 3px rgba(6, 47, 84, 0.06);
+  --shadow-product-elevated: 0 24px 55px -28px rgba(6, 47, 84, 0.38), 0 8px 20px -14px rgba(6, 47, 84, 0.18);
+  --shadow-product-display: 0 35px 90px -30px rgba(3, 55, 94, 0.34);
 
   /* =============================================
      ANIMAÇÕES — Durações

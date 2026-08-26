@@ -11,13 +11,13 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variantClasses: Record<CardVariant, string> = {
   default:
-    'bg-surface-container-lowest border border-outline-variant/70 rounded-xl shadow-sm',
+    'bg-surface-container-lowest border border-outline-variant/70 rounded-product-card shadow-product-card',
   glass:
-    'glass-card rounded-2xl',
+    'glass-card rounded-product-panel shadow-product-card',
   metric:
-    'bg-surface-container-lowest border border-outline-variant/70 rounded-xl shadow-sm hover:-translate-y-1 transition-transform duration-300',
+    'bg-surface-container-lowest border border-outline-variant/70 rounded-product-card shadow-product-card hover:-translate-y-1 transition-transform duration-300',
   error:
-    'bg-surface-container-lowest border border-error/20 rounded-xl shadow-sm',
+    'bg-surface-container-lowest border border-error/20 rounded-product-card shadow-product-card',
 };
 
 export const Card: React.FC<CardProps> = ({

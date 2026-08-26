@@ -135,7 +135,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f8fbff] text-slate-950 selection:bg-secondary/25">
+    <div className="min-h-screen overflow-x-hidden bg-brand-canvas text-slate-950 selection:bg-secondary/25">
       <div className="relative isolate min-h-screen overflow-hidden">
         <div className="pointer-events-none absolute inset-0 home-grid-mask opacity-70" />
         <div className="pointer-events-none absolute -left-40 top-20 h-[32rem] w-[32rem] rounded-full bg-sky-200/45 blur-3xl" />
@@ -145,7 +145,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
           <div className={`pointer-events-none absolute inset-x-3 inset-y-1 -z-10 rounded-2xl border transition-all duration-300 ${navCompact ? 'border-white/80 bg-white/85 shadow-lg shadow-slate-900/5 backdrop-blur-xl' : 'border-transparent bg-transparent'}`} />
           <a href="#inicio" className="flex items-center gap-3" aria-label="Estudea — início">
             <img src={logoIcon} alt="" className="h-11 w-11 rounded-[14px] object-contain shadow-lg shadow-primary/10" />
-            <span className="font-heading text-xl font-extrabold tracking-[-0.04em] text-[#073b68]">estudea</span>
+            <span className="font-heading text-xl font-extrabold tracking-[-0.04em] text-brand-navy">estudea</span>
           </a>
 
           <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex" aria-label="Navegação principal">
@@ -165,7 +165,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
             <button
               type="button"
               onClick={onStudentSignup}
-              className="hidden rounded-xl bg-[#073b68] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/15 transition-all hover:-translate-y-0.5 hover:bg-primary sm:inline-flex"
+              className="hidden rounded-product-control bg-brand-navy px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/15 transition-all hover:-translate-y-0.5 hover:bg-primary sm:inline-flex"
             >
               Criar conta grátis
             </button>
@@ -186,7 +186,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               Educação digital que transforma
             </div>
 
-            <h1 className="font-heading text-[clamp(3rem,7vw,5.75rem)] font-extrabold leading-[0.96] tracking-[-0.065em] text-[#062f54]">
+            <h1 className="brand-display-title">
               Aprender tecnologia pode ser{' '}
               <span className="relative inline-block text-secondary">
                 incrível.
@@ -210,7 +210,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               <button
                 type="button"
                 onClick={onTeacherSignup}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/80 px-7 py-4 font-heading text-base font-extrabold text-[#073b68] shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/25 hover:bg-white"
+                className="inline-flex items-center justify-center gap-2 rounded-product-card border border-slate-200 bg-white/80 px-7 py-4 font-heading text-base font-extrabold text-brand-navy shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/25 hover:bg-white"
               >
                 <HugeiconsIcon icon={PlayIcon} size={19} />
                 Sou educador
@@ -228,8 +228,8 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
             <div className="absolute -left-8 top-10 h-28 w-28 rounded-full bg-secondary/20 blur-2xl" />
             <div className="absolute -right-6 bottom-10 h-36 w-36 rounded-full bg-sky-300/30 blur-3xl" />
 
-            <div className="relative rotate-[1.5deg] rounded-[2rem] border border-white/80 bg-white/75 p-3 shadow-[0_35px_90px_-30px_rgba(3,55,94,0.34)] backdrop-blur-xl transition-transform duration-500 hover:rotate-0 sm:p-4">
-              <div className="overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white">
+            <div className="relative rotate-[1.5deg] rounded-product-display border border-white/80 bg-white/75 p-3 shadow-product-display backdrop-blur-xl transition-transform duration-500 hover:rotate-0 sm:p-4">
+              <div className="overflow-hidden rounded-product-panel border border-slate-200/80 bg-white">
                 <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20">
@@ -246,7 +246,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
                 </div>
 
                 <div className="grid gap-4 bg-slate-50/70 p-4 sm:grid-cols-[1.25fr_0.75fr] sm:p-5">
-                  <div className="rounded-2xl bg-[#073b68] p-5 text-white shadow-lg shadow-blue-950/15">
+                  <div className="rounded-product-card bg-brand-navy p-5 text-white shadow-lg shadow-blue-950/15">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-200">Progresso geral</p>
@@ -339,7 +339,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               Muito além de assistir aulas
               <span className="h-px w-8 bg-secondary" />
             </span>
-            <h2 className="mt-5 font-heading text-4xl font-extrabold tracking-[-0.05em] text-[#062f54] sm:text-5xl lg:text-6xl">
+            <h2 className="brand-section-title mt-5">
               Um ecossistema inteiro para aprender tecnologia.
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
@@ -353,7 +353,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               return (
                 <article
                   key={feature.title}
-                  className={`home-animate group relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-gradient-to-br ${tone.wash} p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 sm:p-8`}
+                  className={`home-animate group relative overflow-hidden rounded-product-display border border-slate-200/80 bg-gradient-to-br ${tone.wash} p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 sm:p-8`}
                   style={{ transitionDelay: `${index * 65}ms` }}
                 >
                   <div className="relative z-10 flex h-full min-h-[350px] flex-col">
@@ -381,7 +381,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
                         </div>
                       )}
                       {feature.visual === 'arena' && (
-                        <div className="flex items-end justify-center gap-2 rounded-2xl bg-[#092f52] p-5 text-center text-white">
+                        <div className="flex items-end justify-center gap-2 rounded-product-card bg-brand-ink p-5 text-center text-white">
                           {[
                             { place: '2', name: 'Bia', height: 'h-16', color: 'bg-sky-400' },
                             { place: '1', name: 'Leo', height: 'h-24', color: 'bg-secondary' },
@@ -432,7 +432,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
         </div>
       </section>
 
-      <section id="para-quem" className="relative overflow-hidden bg-[#062f54] px-5 py-24 text-white sm:px-8 sm:py-32 lg:px-10">
+      <section id="para-quem" className="relative overflow-hidden bg-brand-ink px-5 py-24 text-white sm:px-8 sm:py-32 lg:px-10">
         <div className="pointer-events-none absolute -right-32 top-0 h-[32rem] w-[32rem] rounded-full bg-primary/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -left-32 h-[30rem] w-[30rem] rounded-full bg-orange-500/15 blur-3xl" />
         <div className="home-dark-grid pointer-events-none absolute inset-0 opacity-40" />
@@ -447,21 +447,21 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               <button
                 type="button"
                 onClick={() => setAudience('student')}
-                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition-all ${audience === 'student' ? 'bg-white text-[#062f54] shadow-lg' : 'text-blue-100 hover:bg-white/10'}`}
+                className={`flex items-center gap-2 rounded-product-control px-4 py-3 text-sm font-extrabold transition-all ${audience === 'student' ? 'bg-white text-brand-ink shadow-lg' : 'text-blue-100 hover:bg-white/10'}`}
               >
                 <HugeiconsIcon icon={UserIcon} size={18} /> Aluno
               </button>
               <button
                 type="button"
                 onClick={() => setAudience('teacher')}
-                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition-all ${audience === 'teacher' ? 'bg-white text-[#062f54] shadow-lg' : 'text-blue-100 hover:bg-white/10'}`}
+                className={`flex items-center gap-2 rounded-product-control px-4 py-3 text-sm font-extrabold transition-all ${audience === 'teacher' ? 'bg-white text-brand-ink shadow-lg' : 'text-blue-100 hover:bg-white/10'}`}
               >
                 <HugeiconsIcon icon={TeacherIcon} size={18} /> Educador
               </button>
             </div>
           </div>
 
-          <div className="home-animate mt-14 grid overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.07] shadow-2xl shadow-black/15 backdrop-blur-sm lg:grid-cols-[1fr_0.9fr]">
+          <div className="home-animate mt-14 grid overflow-hidden rounded-product-display border border-white/10 bg-white/[0.07] shadow-2xl shadow-black/15 backdrop-blur-sm lg:grid-cols-[1fr_0.9fr]">
             <div key={audience} className="home-tab-enter p-7 sm:p-10 lg:p-14">
               <span className="inline-flex items-center gap-2 rounded-full bg-orange-400/15 px-3 py-2 text-xs font-extrabold uppercase tracking-wider text-orange-300">
                 {audience === 'student' ? <HugeiconsIcon icon={UserIcon} size={15} /> : <HugeiconsIcon icon={SchoolIcon} size={15} />}
@@ -479,7 +479,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
               </div>
             </div>
 
-            <div className="relative flex min-h-[390px] items-center justify-center overflow-hidden border-t border-white/10 bg-[#052744] p-8 lg:border-l lg:border-t-0">
+            <div className="relative flex min-h-[390px] items-center justify-center overflow-hidden border-t border-white/10 bg-brand-deep p-8 lg:border-l lg:border-t-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,161,228,0.18),transparent_62%)]" />
               <div key={`${audience}-visual`} className="home-tab-enter relative w-full max-w-sm">
                 {audience === 'student' ? (
@@ -492,11 +492,11 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
                     <div className="mt-5 grid grid-cols-3 gap-3">
                       {[['1.840', 'XP'], ['12', 'ofensiva'], ['#4', 'ranking']].map(([value, label]) => <div key={label} className="rounded-xl bg-white/8 p-3 text-center"><p className="font-heading text-lg font-extrabold">{value}</p><p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-blue-200">{label}</p></div>)}
                     </div>
-                    <div className="home-float absolute -right-5 -top-5 flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[#062f54] shadow-xl"><HugeiconsIcon icon={FireIcon} size={18} className="text-orange-500" /><span className="text-xs font-extrabold">Sequência mantida!</span></div>
+                    <div className="home-float absolute -right-5 -top-5 flex items-center gap-2 rounded-product-control bg-white px-3 py-2 text-brand-ink shadow-xl"><HugeiconsIcon icon={FireIcon} size={18} className="text-orange-500" /><span className="text-xs font-extrabold">Sequência mantida!</span></div>
                   </div>
                 ) : (
                   <div className="relative rounded-[1.75rem] border border-white/15 bg-white p-5 text-slate-900 shadow-2xl">
-                    <div className="flex items-center justify-between"><div><p className="text-xs font-bold text-slate-400">Visão da turma</p><p className="mt-1 font-heading text-xl font-extrabold text-[#062f54]">Inclusão Digital</p></div><div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-600">84% ativos</div></div>
+                    <div className="flex items-center justify-between"><div><p className="text-xs font-bold text-slate-400">Visão da turma</p><p className="mt-1 font-heading text-xl font-extrabold text-brand-ink">Inclusão Digital</p></div><div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-600">84% ativos</div></div>
                     <div className="mt-6 grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-sky-50 p-4"><p className="text-[10px] font-bold uppercase text-slate-400">Progresso médio</p><p className="mt-2 font-heading text-2xl font-extrabold text-primary">68%</p></div>
                       <div className="rounded-xl bg-orange-50 p-4"><p className="text-[10px] font-bold uppercase text-slate-400">Para acompanhar</p><p className="mt-2 font-heading text-2xl font-extrabold text-orange-600">3 alunos</p></div>
@@ -511,13 +511,13 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
         </div>
       </section>
 
-      <section className="bg-[#fffaf3] px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
+      <section className="bg-brand-warm px-5 py-24 sm:px-8 sm:py-32 lg:px-10">
         <div className="mx-auto max-w-[1180px]">
           <div className="home-animate grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-white shadow-lg shadow-orange-500/20"><HugeiconsIcon icon={GameControllerIcon} size={27} /></span>
               <p className="mt-7 text-xs font-extrabold uppercase tracking-[0.18em] text-orange-600">Arena Estudea</p>
-              <h2 className="mt-4 font-heading text-4xl font-extrabold tracking-[-0.05em] text-[#062f54] sm:text-5xl">A sala inteira entra no jogo.</h2>
+              <h2 className="brand-section-title mt-4 !text-4xl sm:!text-5xl">A sala inteira entra no jogo.</h2>
               <p className="mt-6 text-lg leading-8 text-slate-600">Quizzes ao vivo com PIN, pontuação instantânea e pódio. O professor cria o momento; a turma aprende disputando, colaborando e celebrando.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 {['Tempo real', 'Pódio automático', 'Ranking da turma'].map((tag) => <span key={tag} className="rounded-full border border-orange-200 bg-white px-4 py-2 text-xs font-extrabold text-orange-700 shadow-sm">{tag}</span>)}
@@ -526,7 +526,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
 
             <div className="relative mx-auto w-full max-w-2xl">
               <div className="absolute -inset-5 rotate-2 rounded-[2.5rem] bg-gradient-to-br from-orange-300/45 to-sky-300/35 blur-sm" />
-              <div className="relative overflow-hidden rounded-[2rem] bg-[#081f38] p-5 shadow-2xl shadow-blue-950/25 sm:p-8">
+              <div className="relative overflow-hidden rounded-product-display bg-brand-deep p-5 shadow-2xl shadow-blue-950/25 sm:p-8">
                 <div className="flex items-center justify-between text-white"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.8)]" /><span className="text-xs font-extrabold uppercase tracking-wider text-blue-200">Arena ao vivo</span></div><span className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-extrabold">PIN 482 163</span></div>
                 <div className="mt-7 rounded-2xl bg-white p-5 text-center sm:p-7"><p className="text-xs font-extrabold uppercase tracking-wider text-violet-500">Pergunta 6 de 10</p><h3 className="mx-auto mt-3 max-w-md font-heading text-xl font-extrabold leading-snug text-slate-900 sm:text-2xl">Qual atalho usamos para copiar um arquivo?</h3><div className="mt-6 grid grid-cols-2 gap-3 text-sm font-extrabold"><div className="rounded-xl bg-sky-500 p-4 text-white">Ctrl + C</div><div className="rounded-xl bg-violet-500 p-4 text-white">Ctrl + V</div><div className="rounded-xl bg-orange-500 p-4 text-white">Alt + F4</div><div className="rounded-xl bg-emerald-500 p-4 text-white">Ctrl + Z</div></div></div>
                 <div className="mt-5 flex items-center justify-between text-xs font-bold text-blue-200"><span>24 respostas</span><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-secondary" /> 08 segundos</span></div>
@@ -540,11 +540,11 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
         <div className="mx-auto max-w-[1180px]">
           <div className="home-animate max-w-3xl">
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Simples para começar</p>
-            <h2 className="mt-4 font-heading text-4xl font-extrabold tracking-[-0.05em] text-[#062f54] sm:text-5xl">Do primeiro acesso ao próximo salto.</h2>
+            <h2 className="brand-section-title mt-4 !text-4xl sm:!text-5xl">Do primeiro acesso ao próximo salto.</h2>
           </div>
           <div className="mt-14 grid gap-4 lg:grid-cols-3">
             {journeySteps.map((step, index) => (
-              <div key={step.number} className="home-animate group relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50/70 p-7 transition-all hover:border-primary/20 hover:bg-white hover:shadow-xl hover:shadow-slate-900/5" style={{ transitionDelay: `${index * 80}ms` }}>
+              <div key={step.number} className="home-animate group relative overflow-hidden rounded-product-panel border border-slate-200 bg-slate-50/70 p-7 transition-all hover:border-primary/20 hover:bg-white hover:shadow-product-elevated" style={{ transitionDelay: `${index * 80}ms` }}>
                 <span className="font-heading text-5xl font-extrabold tracking-[-0.06em] text-slate-200 transition-colors group-hover:text-primary/20">{step.number}</span>
                 <h3 className="mt-10 font-heading text-xl font-extrabold text-slate-900">{step.title}</h3>
                 <p className="mt-3 leading-7 text-slate-600">{step.description}</p>
@@ -556,7 +556,7 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
       </section>
 
       <section id="open-source" className="px-5 pb-24 sm:px-8 sm:pb-32 lg:px-10">
-        <div className="home-animate relative mx-auto max-w-[1180px] overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#073b68] via-[#064d83] to-[#0872ad] px-6 py-16 text-white shadow-2xl shadow-blue-950/20 sm:px-12 lg:px-16 lg:py-20">
+        <div className="home-animate relative mx-auto max-w-[1180px] overflow-hidden rounded-product-display bg-gradient-to-br from-brand-navy via-brand-mid to-brand-bright px-6 py-16 text-white shadow-product-display sm:px-12 lg:px-16 lg:py-20">
           <div className="home-dark-grid pointer-events-none absolute inset-0 opacity-30" />
           <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
           <div className="relative grid gap-12 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -572,22 +572,22 @@ export function HomePage({ onLogin, onStudentSignup, onTeacherSignup }: HomePage
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#fff7ec] px-5 py-24 text-center sm:px-8 sm:py-32 lg:px-10">
+      <section className="relative overflow-hidden bg-brand-warm-strong px-5 py-24 text-center sm:px-8 sm:py-32 lg:px-10">
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28rem] w-[44rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-200/50 blur-3xl" />
         <div className="home-animate relative mx-auto max-w-4xl">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.35rem] bg-secondary text-white shadow-xl shadow-orange-500/20"><HugeiconsIcon icon={Rocket01Icon} size={30} /></div>
           <p className="mt-7 text-xs font-extrabold uppercase tracking-[0.18em] text-orange-600">Seu próximo passo começa aqui</p>
-          <h2 className="mt-4 font-heading text-4xl font-extrabold tracking-[-0.055em] text-[#062f54] sm:text-6xl">Pronto para aprender fazendo?</h2>
+          <h2 className="brand-section-title mt-4 sm:!text-6xl">Pronto para aprender fazendo?</h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">Entre para uma experiência de educação digital viva, prática e feita para acompanhar cada conquista.</p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
             <button type="button" onClick={onStudentSignup} className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-secondary px-8 py-4 font-heading font-extrabold text-white shadow-xl shadow-orange-500/20 transition-all hover:-translate-y-1 hover:bg-orange-500">Criar minha conta grátis <HugeiconsIcon icon={ArrowRight01Icon} size={19} className="transition-transform group-hover:translate-x-1" /></button>
-            <button type="button" onClick={onTeacherSignup} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-8 py-4 font-heading font-extrabold text-[#073b68] shadow-sm transition-all hover:-translate-y-1 hover:border-primary/25"><HugeiconsIcon icon={SchoolIcon} size={19} /> Levar para minha turma</button>
+            <button type="button" onClick={onTeacherSignup} className="inline-flex items-center justify-center gap-2 rounded-product-card border border-slate-200 bg-white px-8 py-4 font-heading font-extrabold text-brand-navy shadow-sm transition-all hover:-translate-y-1 hover:border-primary/25"><HugeiconsIcon icon={SchoolIcon} size={19} /> Levar para minha turma</button>
           </div>
           <button type="button" onClick={onLogin} className="mt-6 text-sm font-bold text-slate-500 transition-colors hover:text-primary">Já usa o Estudea? <span className="underline decoration-slate-300 underline-offset-4">Entrar na plataforma</span></button>
         </div>
       </section>
 
-      <footer className="bg-[#052744] px-5 py-10 text-blue-100 sm:px-8 lg:px-10">
+      <footer className="bg-brand-deep px-5 py-10 text-blue-100 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-[1180px] flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3"><img src={logoIcon} alt="" className="h-11 w-11 rounded-xl object-contain" /><div><p className="font-heading text-lg font-extrabold text-white">estudea</p><p className="text-xs font-semibold text-blue-200/70">Educação digital que transforma.</p></div></div>
           <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold"><a href="#recursos" className="transition-colors hover:text-white">Recursos</a><a href="#para-quem" className="transition-colors hover:text-white">Para quem</a><a href="#open-source" className="transition-colors hover:text-white">Open source</a><button type="button" onClick={onLogin} className="transition-colors hover:text-white">Entrar</button></div>

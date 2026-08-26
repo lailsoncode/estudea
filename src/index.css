@@ -77,6 +77,110 @@
   .app-input {
     @apply min-h-11 w-full rounded-lg border border-outline-variant/70 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-primary focus:ring-2 focus:ring-primary/20;
   }
+
+  /* =============================================
+     ESTUDEA PRODUCT UI — Padrões canônicos
+     ============================================= */
+  .product-page {
+    @apply w-full space-y-6 font-sans text-on-surface;
+  }
+
+  .product-page-header {
+    @apply relative overflow-hidden rounded-product-panel border border-outline-variant/70 p-5 shadow-product-card sm:p-6;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-surface-container-lowest)) 0%,
+      rgb(var(--color-product-canvas)) 100%
+    );
+  }
+
+  .product-icon-tile {
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] text-white shadow-lg shadow-primary/20;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-brand-navy)) 0%,
+      rgb(var(--color-primary)) 58%,
+      rgb(var(--color-secondary)) 100%
+    );
+  }
+
+  .product-eyebrow {
+    @apply inline-flex w-fit items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-primary;
+  }
+
+  .product-title {
+    @apply font-heading text-[26px] font-extrabold leading-tight tracking-[-0.035em] text-product-title sm:text-headline-lg;
+  }
+
+  .product-subtitle {
+    @apply mt-1 text-body-md leading-relaxed text-on-surface-variant;
+  }
+
+  .product-panel {
+    @apply rounded-product-panel border border-outline-variant/70 bg-surface-container-lowest shadow-product-card;
+  }
+
+  .product-card {
+    @apply rounded-product-card border border-outline-variant/70 bg-surface-container-lowest shadow-product-card transition-all duration-200;
+  }
+
+  .product-card-interactive {
+    @apply product-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-product-elevated;
+  }
+
+  .product-metric {
+    @apply flex min-h-[68px] items-center gap-2.5 rounded-product-control border border-outline-variant/70 bg-surface-container-low px-3 py-2;
+  }
+
+  .product-metric-label {
+    @apply block text-[11px] font-extrabold uppercase leading-tight text-on-surface-variant;
+  }
+
+  .product-metric-value {
+    @apply font-heading text-xl font-extrabold leading-tight text-on-surface;
+  }
+
+  .product-toolbar {
+    @apply flex flex-col gap-4 rounded-product-card border border-outline-variant/70 bg-surface-container-lowest p-4 shadow-product-card sm:p-5;
+  }
+
+  .product-control {
+    @apply min-h-11 w-full rounded-product-control border border-outline-variant/70 bg-surface-container-low px-3 py-2.5 text-sm font-semibold text-on-surface outline-none transition placeholder:text-on-surface-variant/70 focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+
+  .product-primary-action {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-product-control bg-brand-navy px-5 py-2.5 text-sm font-heading font-extrabold text-white shadow-md shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .product-secondary-action {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-product-control border border-outline-variant/70 bg-surface-container-lowest px-4 py-2.5 text-sm font-heading font-bold text-on-surface shadow-sm transition-all hover:bg-surface-container-low active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .product-icon-action {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-product-control text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/35;
+  }
+
+  .product-empty-state {
+    @apply flex min-h-40 flex-col items-center justify-center rounded-product-card border border-dashed border-outline-variant/70 bg-surface-container-low/50 p-5 text-center text-on-surface-variant;
+  }
+
+  .product-dialog {
+    @apply flex w-full max-w-2xl flex-col overflow-hidden rounded-product-panel border border-outline-variant/70 bg-surface-container-lowest shadow-2xl;
+  }
+
+  .product-dialog-header,
+  .product-dialog-footer {
+    @apply shrink-0 border-outline-variant/70 bg-surface-container-lowest p-4 sm:p-5;
+  }
+
+  .brand-display-title {
+    @apply font-heading font-extrabold leading-[0.96] tracking-[-0.065em] text-brand-ink;
+    font-size: clamp(3rem, 7vw, 5.75rem);
+  }
+
+  .brand-section-title {
+    @apply font-heading text-4xl font-extrabold tracking-[-0.05em] text-brand-ink sm:text-5xl lg:text-6xl;
+  }
 }
 
 :where(button, a, input, select, textarea):focus-visible {
