@@ -221,20 +221,21 @@
   outline-offset: 2px;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: rgb(var(--color-background));
   color: rgb(var(--color-on-background));
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
 }
 
 /* Homepage — ambient motion kept subtle and respectful of reduced-motion settings. */

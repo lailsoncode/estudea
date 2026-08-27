@@ -3697,20 +3697,20 @@ export const CourseBuilder: React.FC = () => {
           </div>
 
           {/* Sticky Bottom Actions Bar */}
-          <div className="fixed bottom-0 left-0 lg:left-[var(--sidebar-width,280px)] right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-40 flex justify-end gap-3 px-6">
+          <div className="fixed bottom-0 left-0 lg:left-[var(--sidebar-width,272px)] right-0 bg-surface-container-lowest/95 backdrop-blur-md border-t border-outline-variant/70 p-4 shadow-lg z-40 flex justify-end gap-3 px-6">
             <button
               onClick={() => setView('builder')}
-              className="px-6 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 font-heading font-semibold text-label-sm text-slate-700 transition-colors"
+              className="product-secondary-action text-xs"
             >
               Cancelar
             </button>
             <button
               onClick={handleSaveLesson}
               disabled={saving}
-              className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-heading font-bold text-label-sm shadow-md hover:shadow-lg disabled:opacity-50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-1.5"
+              className="product-primary-action text-xs"
             >
-              {saving ? 'Salvando...' : 'Salvar Aula'}
-              <HugeiconsIcon icon={Tick01Icon} size={18} />
+              <HugeiconsIcon icon={Tick01Icon} size={16} strokeWidth={2} />
+              <span>{saving ? 'Salvando...' : 'Salvar Aula'}</span>
             </button>
           </div>
         </div>

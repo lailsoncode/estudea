@@ -285,7 +285,7 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
   }
 
   return (
-    <div className="product-page max-w-5xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
+    <div className="product-page max-w-5xl mx-auto space-y-6 relative animate-fade-in pb-12">
       {/* Top Navigation */}
       <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

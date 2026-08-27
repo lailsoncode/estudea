@@ -81,7 +81,7 @@ const getSidebarSectionClass = (collapsed: boolean) =>
   `px-3 pt-3 text-[10px] font-extrabold uppercase tracking-[0.14em] text-on-surface-variant/70 ${collapsed ? 'lg:hidden' : ''}`;
 
 const getSidebarShellClass = (collapsed: boolean, mobileOpen: boolean) =>
-  `fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col overflow-hidden border-r border-outline-variant/70 bg-surface-container-lowest shadow-2xl shadow-black/10 transition-[width,transform] duration-300 lg:static lg:translate-x-0 lg:shadow-none ${collapsed ? 'lg:w-20' : 'lg:w-[272px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`;
+  `fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col overflow-hidden border-r border-outline-variant/70 bg-surface-container-lowest shadow-2xl shadow-black/10 transition-[width,transform] duration-300 lg:static lg:h-screen lg:max-h-screen lg:translate-x-0 lg:shadow-none ${collapsed ? 'lg:w-20' : 'lg:w-[272px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`;
 
 function App() {
   const location = useLocation();
@@ -902,7 +902,7 @@ function App() {
   // If teacher is logged in and viewing content dashboard, show full-screen admin layout with sidebar
   if (session && isAdmin && teacherView === 'content') {
     return (
-      <div className="min-h-screen w-full bg-background text-on-background flex font-sans overflow-hidden" style={shellStyle}>
+      <div className="h-screen w-full bg-background text-on-background flex font-sans overflow-hidden" style={shellStyle}>
         {/* Sidebar Nav */}
         {!arenaActive && teacherSidebarNav}
 
@@ -912,7 +912,7 @@ function App() {
         )}
 
         {/* Main Canvas */}
-        <div className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+        <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background">
           {/* Top Navbar */}
           <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-outline-variant/30 bg-surface-container-lowest flex justify-between items-center z-10 shadow-sm flex-shrink-0">
             <div className="flex items-center gap-3">
@@ -1081,7 +1081,7 @@ function App() {
 
   if (session && (!isAdmin || teacherView === 'preview')) {
     return (
-      <div className="flex min-h-screen w-full overflow-hidden bg-product-canvas font-sans text-on-background" style={shellStyle}>
+      <div className="flex h-screen w-full overflow-hidden bg-product-canvas font-sans text-on-background" style={shellStyle}>
         {/* Sidebar Nav do Aluno */}
         {!arenaActive && studentSidebarNav}
 
@@ -1091,7 +1091,7 @@ function App() {
         )}
 
         {/* Main Canvas do Aluno */}
-        <div className="flex h-screen flex-1 flex-col overflow-hidden bg-product-canvas">
+        <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-product-canvas">
           {/* Top Navbar do Aluno */}
           <header className="z-10 flex flex-shrink-0 items-center justify-between border-b border-outline-variant/40 bg-surface-container-lowest/95 px-4 py-3.5 shadow-sm backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
