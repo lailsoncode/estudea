@@ -1,86 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { usePendingCorrections } from '../hooks/usePendingCorrections';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  AddCircleIcon,
+  Alert01Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  BookOpen01Icon,
+  Calendar01Icon,
+  Cancel01Icon,
+  ChartHistogramIcon,
+  Chat01Icon,
+  CheckmarkCircle02Icon,
+  Download01Icon,
+  GameControllerIcon,
+  PlayCircleIcon,
+  SchoolIcon,
+  StarIcon,
+  UserGroupIcon,
+} from '@hugeicons/core-free-icons';
 interface DashboardProfessorOverviewProps {
   setActiveTab: (tab: 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'settings') => void;
   session: any;
   onStartArena: () => void;
 }
-
-// Inline SVGs matching design style
-const GroupIcon = () => (
-  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-
-const FactCheckIcon = () => (
-  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="m9 11 2 2 4-4" />
-    <path d="M8 16h8" />
-  </svg>
-);
-
-const EngagementIcon = () => (
-  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 20V10" />
-    <path d="M12 20V4" />
-    <path d="M6 20v-6" />
-  </svg>
-);
-
-const TrendingUpIcon = () => (
-  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-    <polyline points="17 6 23 6 23 12" />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 24 24">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const ForumIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const DownloadIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
-  </svg>
-);
-
-const PlayCircleIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polygon points="10 8 16 12 10 16 10 8" />
-  </svg>
-);
-
-const AddCircleIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="16" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-  </svg>
-);
-
-const ArrowForwardIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
 
 interface ScheduleItem {
   id: string;
@@ -103,16 +47,16 @@ const formatScheduleDate = (date: string) => {
 const getScheduleAccent = (type: ScheduleItem['type']) => {
   switch (type) {
     case 'live':
-      return { border: 'border-primary', text: 'text-primary', label: 'Live' };
+      return { surface: 'bg-primary/10 text-primary', text: 'text-primary', label: 'Live' };
     case 'deadline':
-      return { border: 'border-orange-500', text: 'text-orange-600', label: 'Prazo' };
+      return { surface: 'bg-orange-500/10 text-orange-700 dark:text-orange-400', text: 'text-orange-700 dark:text-orange-400', label: 'Prazo' };
     case 'exam':
-      return { border: 'border-red-600', text: 'text-red-600', label: 'Prova' };
+      return { surface: 'bg-error/10 text-error', text: 'text-error', label: 'Prova' };
     case 'mentorship':
-      return { border: 'border-purple-600', text: 'text-purple-600', label: 'Mentoria' };
+      return { surface: 'bg-secondary/10 text-secondary', text: 'text-secondary', label: 'Mentoria' };
     case 'activity':
     default:
-      return { border: 'border-emerald-500', text: 'text-emerald-600', label: 'Atividade' };
+      return { surface: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400', text: 'text-emerald-700 dark:text-emerald-400', label: 'Atividade' };
   }
 };
 
@@ -125,7 +69,7 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   return fallback;
 };
 
-export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, onStartArena }) => {
+export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProps> = ({ setActiveTab, session, onStartArena }) => {
 
   // DB States
   const [loading, setLoading] = useState(true);
@@ -567,421 +511,360 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
     }
   };
 
+  const teacherName = session?.user?.user_metadata?.nome || 'Professor(a)';
+  const teacherFirstName = teacherName.trim().split(/\s+/)[0] || 'Professor(a)';
+
   return (
-    <div className="app-page animate-fade-in relative pb-10">
-      
-
-
-      {/* 2. Bento Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* KPI 1: Active Students */}
-        <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between min-h-[140px]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 flex items-center justify-center">
-              <GroupIcon />
+    <div className="product-page animate-fade-in relative pb-10">
+      <section className="product-card p-4 sm:p-5" aria-labelledby="teacher-dashboard-title">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+              <HugeiconsIcon icon={SchoolIcon} size={22} strokeWidth={2} />
             </div>
-            <span className="flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200">
-              <TrendingUpIcon />
-              {loading ? '...' : `${activeThisWeekCount} ativos esta semana`}
-            </span>
+            <div className="min-w-0">
+              <span className="product-section-kicker">Painel docente</span>
+              <h1 id="teacher-dashboard-title" className="product-section-heading mt-0 text-xl sm:text-2xl">Olá, {teacherFirstName}</h1>
+              <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">Acompanhe suas turmas e priorize o que precisa de atenção hoje.</p>
+            </div>
           </div>
-          <div>
-            <p className="app-metric-label">Estudantes Ativos</p>
-            <h3 className="app-metric-value mt-2">{loading ? '...' : studentsCount}</h3>
-          </div>
-        </div>
 
-        {/* KPI 2: Pending Corrections */}
-        <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-error/5 rounded-bl-[100px] -z-0"></div>
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <div className="p-3 bg-error-container text-error rounded-lg border border-error/10 flex items-center justify-center">
-              <FactCheckIcon />
-            </div>
-            <span className={`flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border ${
-              pendingCorrections > 0 ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' : 'bg-surface-container text-on-surface-variant border-outline-variant/30'
-            }`}>
-              {pendingCorrections > 0 ? 'Requer Atenção' : 'Tudo em dia'}
-            </span>
-          </div>
-          <div className="relative z-10">
-            <p className="app-metric-label">Correções Pendentes</p>
-            <h3 className="app-metric-value mt-2">{loading ? '...' : pendingCorrections}</h3>
-          </div>
-        </div>
-
-        {/* KPI 3: Engagement Rate */}
-        <div className="app-card-padded hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between min-h-[140px]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-primary-container text-primary rounded-lg border border-primary/10 flex items-center justify-center">
-              <EngagementIcon />
-            </div>
-            <span className="flex items-center gap-1 font-sans text-label-sm font-extrabold px-2.5 py-1 rounded-md border text-primary bg-primary-container border-primary/20">
-              {loading ? '...' : `${totalCompletedLessonsCount} lições concluídas`}
-            </span>
-          </div>
-          <div>
-            <p className="app-metric-label">Taxa de Engajamento</p>
-            <div className="flex items-center justify-between gap-3 mt-1.5">
-              <h3 className="app-metric-value">{loading ? '...' : `${engagementRate}%`}</h3>
-              <div className="flex-1 h-2 bg-surface-container rounded-full overflow-hidden shadow-inner max-w-[120px]">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${engagementRate}%` }}></div>
-              </div>
-            </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            {pendingCorrections > 0 && (
+              <button onClick={() => setActiveTab('corrections')} className="product-secondary-action w-full sm:w-auto">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2} />
+                {pendingCorrections} {pendingCorrections === 1 ? 'correção pendente' : 'correções pendentes'}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (classes.length > 0) onStartArena();
+                else alert('Cadastre uma turma e um quiz antes de iniciar a Arena.');
+              }}
+              className="product-primary-action w-full sm:w-auto"
+            >
+              <HugeiconsIcon icon={GameControllerIcon} size={18} strokeWidth={2} />
+              Iniciar Arena Estudea
+            </button>
           </div>
         </div>
       </section>
 
-      {/* 3. Core Columns Grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Active Courses (Takes 2 Columns) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center pb-2 border-b border-outline-variant/20">
-            <h3 className="app-section-title">Cursos Sob Gestão</h3>
-            <button 
-              onClick={() => setActiveTab('assignments')}
-              className="font-sans font-bold text-label-md text-primary hover:underline"
-            >
-              Ir para Criador de Cursos
+      <section aria-label="Resumo da operação docente" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="product-metric sm:min-h-[86px] sm:p-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            <HugeiconsIcon icon={UserGroupIcon} size={21} strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <span className="product-metric-label">Estudantes</span>
+            <strong className="product-metric-value">{loading ? '...' : studentsCount}</strong>
+            <span className="block truncate text-[10px] font-semibold text-on-surface-variant">{loading ? 'Carregando atividade' : `${activeThisWeekCount} ativos na semana`}</span>
+          </div>
+        </div>
+        <div className="product-metric sm:min-h-[86px] sm:p-4">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control ${pendingCorrections > 0 ? 'bg-error/10 text-error' : 'bg-surface-container-high text-on-surface-variant'}`}>
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={21} strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <span className="product-metric-label">Correções pendentes</span>
+            <strong className="product-metric-value">{loading ? '...' : pendingCorrections}</strong>
+            <span className={`block truncate text-[10px] font-semibold ${pendingCorrections > 0 ? 'text-error' : 'text-on-surface-variant'}`}>{pendingCorrections > 0 ? 'Requer atenção' : 'Tudo em dia'}</span>
+          </div>
+        </div>
+        <div className="product-metric sm:min-h-[86px] sm:p-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+            <HugeiconsIcon icon={ChartHistogramIcon} size={21} strokeWidth={2} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="product-metric-label">Engajamento</span>
+            <strong className="product-metric-value">{loading ? '...' : `${engagementRate}%`}</strong>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label="Taxa de engajamento" aria-valuemin={0} aria-valuemax={100} aria-valuenow={engagementRate}>
+              <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${engagementRate}%` }} />
+            </div>
+          </div>
+        </div>
+        <div className="product-metric sm:min-h-[86px] sm:p-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary">
+            <HugeiconsIcon icon={SchoolIcon} size={21} strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <span className="product-metric-label">Turmas</span>
+            <strong className="product-metric-value">{loading ? '...' : classes.length}</strong>
+            <span className="block truncate text-[10px] font-semibold text-on-surface-variant">{totalCompletedLessonsCount} lições concluídas</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <section className="space-y-4 lg:col-span-8" aria-labelledby="managed-courses-title">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="product-section-kicker">Conteúdo em andamento</span>
+              <h2 id="managed-courses-title" className="product-section-heading">Cursos sob gestão</h2>
+            </div>
+            <button onClick={() => setActiveTab('assignments')} className="product-secondary-action w-full sm:w-auto">
+              Gerenciar cursos
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} strokeWidth={2} />
             </button>
           </div>
 
           {courses.length === 0 ? (
-            <div className="app-card-padded text-center text-on-surface-variant italic">
-              Nenhum curso ativo sob sua gestão no momento.
+            <div className="product-empty-state">
+              <HugeiconsIcon icon={BookOpen01Icon} size={28} className="mb-2 text-primary" />
+              <p className="font-heading text-sm font-extrabold text-on-surface">Nenhum curso ativo</p>
+              <p className="mt-1 text-sm">Crie ou vincule um curso para começar o acompanhamento.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {courses.map(course => (
-                <div 
+                <button
+                  type="button"
                   key={course.id}
                   onClick={() => setActiveTab('assignments')}
-                  className="app-card-padded hover:shadow-md hover:-translate-y-1 transition-all group cursor-pointer flex flex-col justify-between min-h-[290px]"
+                  className="product-card-interactive group flex min-h-[292px] flex-col justify-between p-4 text-left"
                 >
                   <div>
-                    <div className="h-32 rounded-lg bg-surface-container-highest mb-4 overflow-hidden relative border border-outline-variant/20">
-                      <div className="absolute inset-0 bg-gradient-to-tr from-primary/80 to-tertiary-container/80 mix-blend-multiply"></div>
-                      <img 
-                        alt="Course Cover" 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    <div className="relative mb-4 h-28 overflow-hidden rounded-product-control border border-outline-variant/70 bg-surface-container-highest">
+                      <img
+                        alt={`Capa do curso ${course.titulo}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         src={course.imagem_capa || "https://lh3.googleusercontent.com/aida-public/AB6AXuA4GC49br6MULJ_sNhA5Tr-TYpXEfl3rWzuNp18tC3_cXoCgu8Zv2wJ-iTMy3e_f8bf_UEV7OT7BIGi9RuzHsOQ7trg1Ii0mhHVxpy0GAA7ONY_BFOJNYpmUjg_FqmBw1S2Z8229jGC3oas4c66NXQSbU7X0KH3q__Sb3yfyjcwtYYakZpeDZaM2YmWTfwFQkr8tP5uFHyyY2qt0XzhkA-SNnEjPs-2hXmzWY_2rqapUhWjyauQUnJ6Q73TTp7x2_amCQE8A6KG5VY"}
                       />
-                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-md border border-white/50 shadow-sm">
-                        <span className="font-sans font-bold text-label-sm text-primary uppercase tracking-wide">
-                          {course.categoria || 'Desenvolvimento'}
-                        </span>
-                      </div>
-                    </div>
-                    <h4 className="font-heading font-extrabold text-body-lg text-on-surface mb-2 group-hover:text-primary transition-colors leading-tight">
-                      {course.titulo}
-                    </h4>
-                    <div className="flex items-center gap-4 text-on-surface-variant font-sans text-label-sm mb-4">
-                      <span className="flex items-center gap-1 font-medium">
-                        <svg className="w-4 h-4 text-outline" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493" />
-                        </svg>
-                        {course.studentCount} Alunos
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+                      <span className="absolute left-3 top-3 max-w-[85%] truncate rounded-full border border-white/30 bg-surface-container-lowest/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-primary backdrop-blur-sm">
+                        {course.categoria || 'Desenvolvimento'}
                       </span>
-                      <span className="flex items-center gap-1 font-medium">
-                        <StarIcon />
-                        {course.rating.toFixed(1)} / 5.0
+                    </div>
+                    <h3 className="font-heading text-base font-extrabold leading-tight text-on-surface transition-colors group-hover:text-primary">{course.titulo}</h3>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-on-surface-variant">
+                      <span className="flex items-center gap-1.5">
+                        <HugeiconsIcon icon={UserGroupIcon} size={15} strokeWidth={2} />
+                        {course.studentCount} alunos
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <HugeiconsIcon icon={StarIcon} size={15} strokeWidth={2} className="text-amber-600 dark:text-amber-400" />
+                        {course.rating.toFixed(1)} / 5,0
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-2 pt-2 border-t border-outline-variant/10">
-                    <div className="flex justify-between font-sans text-label-sm font-semibold">
-                      <span className="text-on-surface-variant">Progresso Médio</span>
-                      <span className="text-primary font-bold">{course.avgProgress}%</span>
+                  <div className="mt-5 border-t border-outline-variant/70 pt-4">
+                    <div className="flex justify-between gap-3 text-[11px] font-bold text-on-surface-variant">
+                      <span>Progresso médio</span>
+                      <span className="text-primary">{course.avgProgress}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-secondary rounded-full" style={{ width: `${course.avgProgress}%` }}></div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-label={`Progresso médio do curso ${course.titulo}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.avgProgress}>
+                      <div className="h-full rounded-full bg-secondary" style={{ width: `${course.avgProgress}%` }} />
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Right Column: Widgets */}
-        <div className="space-y-8">
-          
-          {/* Quick Actions Panel */}
-          <div className="app-card-padded relative overflow-hidden">
-            <h3 className="app-section-title mb-4">Ações Rápidas</h3>
-            <div className="space-y-2">
-              {/* Action 1: Create Course */}
-              <button 
-                onClick={() => setActiveTab('assignments')}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-primary-container/10 text-primary flex items-center justify-center border border-primary-container/20 shrink-0">
-                    <AddCircleIcon />
-                  </div>
-                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-primary transition-colors">Criar Novo Curso</span>
-                </div>
-                <ArrowForwardIcon />
+        <aside className="space-y-6 lg:col-span-4">
+          <section className="product-card p-5" aria-labelledby="quick-actions-title">
+            <div className="border-b border-outline-variant/70 pb-4">
+              <span className="product-section-kicker">Atalhos</span>
+              <h2 id="quick-actions-title" className="font-heading text-lg font-extrabold text-on-surface">Ações rápidas</h2>
+            </div>
+            <div className="divide-y divide-outline-variant/70">
+              <button onClick={() => setActiveTab('assignments')} className="group flex w-full items-center justify-between gap-3 py-3.5 text-left">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary"><HugeiconsIcon icon={AddCircleIcon} size={19} strokeWidth={2} /></span>
+                  <span className="text-sm font-bold text-on-surface transition-colors group-hover:text-primary">Criar novo curso</span>
+                </span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={17} className="shrink-0 text-on-surface-variant" />
               </button>
-
-              {/* Action 2: Start Live Class */}
-              <button 
+              <button
                 onClick={() => {
-                  if (classes.length > 0) {
-                    setShowLiveModal(true);
-                  } else {
-                    alert('Cadastre uma turma e um curso antes de iniciar uma aula ao vivo.');
-                  }
+                  if (classes.length > 0) setShowLiveModal(true);
+                  else alert('Cadastre uma turma e um curso antes de iniciar uma aula ao vivo.');
                 }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
+                className="group flex w-full items-center justify-between gap-3 py-3.5 text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/20 shrink-0">
-                    <PlayCircleIcon />
-                  </div>
-                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-red-500 transition-colors">Iniciar Aula Ao Vivo</span>
-                </div>
-                <ArrowForwardIcon />
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-error/10 text-error"><HugeiconsIcon icon={PlayCircleIcon} size={19} strokeWidth={2} /></span>
+                  <span className="text-sm font-bold text-on-surface transition-colors group-hover:text-primary">Iniciar aula ao vivo</span>
+                </span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={17} className="shrink-0 text-on-surface-variant" />
               </button>
-
-              {/* Action 3: Message Class */}
-              <button 
+              <button
                 onClick={() => {
-                  if (classes.length > 0) {
-                    setShowMessageModal(true);
-                  } else {
-                    alert('Nenhuma turma disponível para notificar.');
-                  }
+                  if (classes.length > 0) setShowMessageModal(true);
+                  else alert('Nenhuma turma disponível para notificar.');
                 }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
+                className="group flex w-full items-center justify-between gap-3 py-3.5 text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-tertiary-container/10 text-tertiary-container flex items-center justify-center border border-tertiary-container/20 shrink-0">
-                    <ForumIcon />
-                  </div>
-                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-tertiary-container transition-colors">Notificar Turma</span>
-                </div>
-                <ArrowForwardIcon />
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary"><HugeiconsIcon icon={Chat01Icon} size={19} strokeWidth={2} /></span>
+                  <span className="text-sm font-bold text-on-surface transition-colors group-hover:text-primary">Notificar turma</span>
+                </span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={17} className="shrink-0 text-on-surface-variant" />
               </button>
-
-              {/* Action: Start Arena Live (Kahoot) */}
-              <button 
-                onClick={() => {
-                  if (classes.length > 0) {
-                    onStartArena();
-                  } else {
-                    alert('Cadastre uma turma e um quiz antes de iniciar a Arena Live.');
-                  }
-                }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center border border-secondary/20 shrink-0">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
-                      <line x1="6" y1="12" x2="10" y2="12" />
-                      <line x1="8" y1="10" x2="8" y2="14" />
-                      <line x1="15" y1="13" x2="15.01" y2="13" />
-                      <line x1="18" y1="11" x2="18.01" y2="11" />
-                    </svg>
-                  </div>
-                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-secondary transition-colors">Iniciar Arena Estudea</span>
-                </div>
-                <ArrowForwardIcon />
-              </button>
-
-              {/* Action 4: Export CSV */}
-              <button 
-                onClick={exportProgressReport}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-surface-container-low transition-all group border border-transparent hover:border-outline-variant/40"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-secondary-container/10 text-secondary flex items-center justify-center border border-secondary-container/20 shrink-0">
-                    <DownloadIcon />
-                  </div>
-                  <span className="font-sans font-bold text-label-md text-on-surface group-hover:text-secondary transition-colors">Exportar Relatório</span>
-                </div>
-                <ArrowForwardIcon />
+              <button onClick={exportProgressReport} className="group flex w-full items-center justify-between gap-3 py-3.5 text-left">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary"><HugeiconsIcon icon={Download01Icon} size={19} strokeWidth={2} /></span>
+                  <span className="text-sm font-bold text-on-surface transition-colors group-hover:text-primary">Exportar relatório</span>
+                </span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={17} className="shrink-0 text-on-surface-variant" />
               </button>
             </div>
-          </div>
+          </section>
 
-          {/* Schedule Widget Card */}
-          <div id="schedule-card-widget" className="app-card-padded space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="app-section-title">Próximos Eventos</h3>
-              <button 
-                onClick={() => setShowScheduleModal(true)}
-                className="text-primary hover:bg-surface-container-low p-2 rounded-lg transition-colors border border-outline-variant/20 flex items-center gap-1 text-[11px] font-bold"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
+          <section id="schedule-card-widget" className="product-card p-5" aria-labelledby="schedule-title">
+            <div className="flex items-end justify-between gap-3 border-b border-outline-variant/70 pb-4">
+              <div>
+                <span className="product-section-kicker">Agenda</span>
+                <h2 id="schedule-title" className="font-heading text-lg font-extrabold text-on-surface">Próximos eventos</h2>
+              </div>
+              <button onClick={() => setShowScheduleModal(true)} className="product-secondary-action min-h-10 px-3 py-2 text-xs">
+                <HugeiconsIcon icon={AddCircleIcon} size={16} strokeWidth={2} />
                 Agendar
               </button>
             </div>
-            
-            <div className="relative pl-6 border-l-2 border-surface-container-high space-y-6">
-              {scheduleError ? (
-                <p className="text-error font-sans text-label-sm font-semibold pl-2">{scheduleError}</p>
-              ) : schedule.length === 0 ? (
-                <p className="text-on-surface-variant font-sans text-label-sm italic pl-2">Nenhum evento agendado.</p>
-              ) : (
-                schedule.map(item => {
+
+            {scheduleError ? (
+              <div className="mt-4 flex gap-2 rounded-product-control border border-error/25 bg-error/10 p-3 text-xs font-semibold text-error">
+                <HugeiconsIcon icon={Alert01Icon} size={16} className="shrink-0" />
+                {scheduleError}
+              </div>
+            ) : schedule.length === 0 ? (
+              <div className="product-empty-state mt-4 min-h-32">
+                <HugeiconsIcon icon={Calendar01Icon} size={24} className="mb-2 text-primary" />
+                <p className="text-sm font-bold text-on-surface">Agenda livre</p>
+                <p className="mt-1 text-xs">Nenhum evento programado.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-outline-variant/70">
+                {schedule.map(item => {
                   const accent = getScheduleAccent(item.type);
-
                   return (
-                    <div key={item.id} className="relative group/item">
-                      {/* Circle timeline anchor */}
-                      <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-white ring-2 ring-white shadow-sm border-4 ${accent.border}`} />
-
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className={`font-sans text-[11px] font-bold uppercase tracking-wider ${accent.text}`}>
-                          {formatScheduleDate(item.event_date)} • {item.time}
-                        </span>
-
-                        <span className={`text-[10px] text-white px-2 py-0.5 rounded font-extrabold uppercase tracking-widest ${
-                          item.type === 'live' ? 'bg-red-500 animate-pulse' :
-                          item.type === 'exam' ? 'bg-red-600' :
-                          item.type === 'deadline' ? 'bg-orange-500' :
-                          item.type === 'mentorship' ? 'bg-purple-600' :
-                          'bg-emerald-600'
-                        }`}>
-                          {accent.label}
-                        </span>
+                    <div key={item.id} className="group flex gap-3 py-4">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control ${accent.surface}`}>
+                        <HugeiconsIcon icon={Calendar01Icon} size={18} strokeWidth={2} />
                       </div>
-
-                      <h4 className="font-sans font-bold text-label-md text-on-surface group-hover/item:text-primary transition-colors leading-tight">
-                        {item.title}
-                      </h4>
-                      <p className="font-sans text-[11px] text-on-surface-variant mt-1.5 flex justify-between items-center">
-                        <span>{item.cohort} • {item.duration}</span>
-                        <button
-                          onClick={() => removeScheduleItem(item.id)}
-                          className="text-error opacity-0 group-hover/item:opacity-100 transition-opacity hover:underline font-bold text-[10px] ml-2"
-                        >
-                          Excluir
-                        </button>
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-[10px] font-extrabold uppercase tracking-[0.08em] ${accent.text}`}>{formatScheduleDate(item.event_date)} · {item.time}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] ${accent.surface}`}>{accent.label}</span>
+                        </div>
+                        <h3 className="mt-1 truncate text-sm font-bold text-on-surface">{item.title}</h3>
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <p className="truncate text-[11px] font-medium text-on-surface-variant">{item.cohort} · {item.duration}</p>
+                          <button onClick={() => removeScheduleItem(item.id)} className="product-icon-action h-8 w-8 shrink-0 text-error sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Excluir evento ${item.title}`} title="Excluir evento">
+                            <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
-                })
-              )}
-            </div>
-          </div>
-
-        </div>
-
-      </section>
+                })}
+              </div>
+            )}
+          </section>
+        </aside>
+      </div>
 
       {/* ======================================================== */}
       {/* MODAL 1: LIVE CLASS STREAM SIMULATOR */}
       {/* ======================================================== */}
       {showLiveModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-3xl overflow-hidden shadow-2xl relative space-y-6 text-white flex flex-col">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-start pb-4 border-b border-slate-800">
-              <div>
-                <h3 className="font-heading font-extrabold text-headline-md text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                  Transmissão de Aula Ao Vivo
-                </h3>
-                <p className="text-slate-400 text-label-sm mt-1">Configure sua câmera e selecione a turma para iniciar.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <div className="product-dialog max-h-[92vh] max-w-3xl">
+            <div className="product-dialog-header flex items-start justify-between gap-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-error/10 text-error">
+                  <HugeiconsIcon icon={PlayCircleIcon} size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-extrabold text-on-surface">Transmissão de aula ao vivo</h3>
+                  <p className="mt-1 text-xs text-on-surface-variant">Configure sua câmera e selecione a turma para iniciar.</p>
+                </div>
               </div>
               {!isLiveStreaming && (
-                <button 
+                <button
                   onClick={() => setShowLiveModal(false)}
-                  className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-xl transition-all"
+                  className="product-icon-action shrink-0"
+                  aria-label="Fechar transmissão"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <HugeiconsIcon icon={Cancel01Icon} size={19} strokeWidth={2} />
                 </button>
               )}
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 min-h-[350px] flex flex-col items-center justify-center relative bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
-              {isLiveStreaming ? (
-                <>
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
-                    className="w-full h-full object-cover max-h-[400px]"
-                  />
-                  {/* Streaming Overlays */}
-                  <div className="absolute top-4 left-4 bg-red-600 text-white font-mono font-bold text-xs uppercase px-3 py-1 rounded-md tracking-widest shadow flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    AO VIVO
-                  </div>
-                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur px-3 py-1 rounded-md text-[11px] font-mono shadow">
-                    Espectadores: {12 + Math.floor(Math.random() * 8)}
-                  </div>
-                  <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur px-3.5 py-2 rounded-xl text-xs flex gap-4 max-w-sm">
-                    <div>
-                      <p className="opacity-60 text-[10px] uppercase font-bold">Turma Ativa</p>
-                      <p className="font-bold text-primary-fixed-dim">{classes.find(c => c.id === selectedClassForLive)?.nome || 'Turma Selecionada'}</p>
+            <div className="overflow-y-auto p-4 sm:p-5">
+              <div className="relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-product-card border border-slate-800 bg-slate-950 text-white">
+                {isLiveStreaming ? (
+                  <>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="max-h-[400px] h-full w-full object-cover"
+                    />
+                    <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.08em] text-white shadow">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                      Ao vivo
                     </div>
-                  </div>
-                </>
-              ) : (
-                <div className="p-8 text-center max-w-md space-y-6">
-                  <div className="w-16 h-16 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto text-primary animate-pulse">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                    </svg>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-slate-300 font-sans font-bold text-label-sm block text-left">Selecione a Turma Alvo</label>
-                      <select 
-                        value={selectedClassForLive} 
+                    <div className="absolute right-4 top-4 rounded-full bg-black/65 px-3 py-1 text-[11px] font-bold backdrop-blur">
+                      {12 + Math.floor(Math.random() * 8)} espectadores
+                    </div>
+                    <div className="absolute bottom-4 left-4 max-w-sm rounded-product-control bg-black/65 px-3.5 py-2 text-xs backdrop-blur">
+                      <p className="text-[10px] font-bold uppercase text-white/65">Turma ativa</p>
+                      <p className="font-extrabold text-white">{classes.find(c => c.id === selectedClassForLive)?.nome || 'Turma selecionada'}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full max-w-md space-y-5 p-7 text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-product-control border border-slate-700 bg-slate-900 text-primary-fixed-dim">
+                      <HugeiconsIcon icon={UserGroupIcon} size={26} strokeWidth={2} />
+                    </div>
+                    <div className="space-y-1.5 text-left">
+                      <label className="block text-xs font-bold text-slate-200">Turma da transmissão</label>
+                      <select
+                        value={selectedClassForLive}
                         onChange={(e) => setSelectedClassForLive(e.target.value)}
-                        className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl focus:border-primary text-white text-body-md focus:ring-0 focus:outline-none"
+                        className="min-h-11 w-full rounded-product-control border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                       >
                         {classes.map(c => (
-                          <option key={c.id} value={c.id} className="bg-slate-900">{c.nome}</option>
+                          <option key={c.id} value={c.id}>{c.nome}</option>
                         ))}
                       </select>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="product-dialog-footer flex flex-col-reverse gap-2 border-t sm:flex-row sm:justify-end">
               {isLiveStreaming ? (
-                <button 
+                <button
                   onClick={stopLiveClass}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-heading font-extrabold text-label-md rounded-xl shadow transition-colors flex items-center gap-1.5"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-product-control bg-error px-5 py-2.5 text-sm font-heading font-extrabold text-on-error shadow-sm transition hover:opacity-90"
                 >
-                  Encerrar Transmissão
+                  <HugeiconsIcon icon={Cancel01Icon} size={17} strokeWidth={2} />
+                  Encerrar transmissão
                 </button>
               ) : (
                 <>
-                  <button 
+                  <button
                     onClick={() => setShowLiveModal(false)}
-                    className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-heading font-bold text-label-md rounded-xl transition-all"
+                    className="product-secondary-action"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     onClick={startLiveClass}
-                    className="px-6 py-3 bg-primary hover:bg-blue-700 text-white font-heading font-extrabold text-label-md rounded-xl shadow transition-colors"
+                    className="product-primary-action"
                   >
-                    Iniciar Transmissão
+                    <HugeiconsIcon icon={PlayCircleIcon} size={17} strokeWidth={2} />
+                    Iniciar transmissão
                   </button>
                 </>
               )}
             </div>
-
           </div>
         </div>
       )}
@@ -990,99 +873,106 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
       {/* MODAL 2: NOTIFY CLASS */}
       {/* ======================================================== */}
       {showMessageModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-outline-variant/40 rounded-xl p-6 w-full max-w-xl shadow-2xl relative space-y-5">
-            <div className="flex justify-between items-center pb-3 border-b border-outline-variant/20">
-              <h3 className="font-heading font-extrabold text-headline-md text-on-surface">Notificar Turma</h3>
-              <button 
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <div className="product-dialog max-w-xl">
+            <div className="product-dialog-header flex items-start justify-between gap-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={Chat01Icon} size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-extrabold text-on-surface">Notificar turma</h3>
+                  <p className="mt-1 text-xs text-on-surface-variant">Envie um comunicado para os estudantes selecionados.</p>
+                </div>
+              </div>
+              <button
                 onClick={closeMessageModal}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-lg transition-all"
+                className="product-icon-action shrink-0"
+                aria-label="Fechar comunicado"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <HugeiconsIcon icon={Cancel01Icon} size={19} strokeWidth={2} />
               </button>
             </div>
 
             {msgSuccess ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-inner">
-                  <svg className="w-7 h-7 animate-bounce" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
+              <div className="space-y-4 p-8 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={28} strokeWidth={2} />
                 </div>
-                <h4 className="font-heading font-extrabold text-headline-md text-emerald-700">Mensagem Enviada!</h4>
-                <p className="text-on-surface-variant text-label-md max-w-xs mx-auto">O comunicado já está disponível no sino de notificações dos alunos da turma.</p>
+                <h4 className="font-heading text-lg font-extrabold text-on-surface">Mensagem enviada</h4>
+                <p className="mx-auto max-w-xs text-sm text-on-surface-variant">O comunicado já está disponível nas notificações dos alunos da turma.</p>
               </div>
             ) : (
-              <form onSubmit={handleSendMessage} className="space-y-4">
-                {msgError && (
-                  <div className="p-3.5 rounded-xl bg-error-container/30 border border-error/20 text-error text-label-md">
-                    {msgError}
+              <form onSubmit={handleSendMessage}>
+                <div className="space-y-4 p-5 sm:p-6">
+                  {msgError && (
+                    <div className="flex gap-2 rounded-product-control border border-error/25 bg-error/10 p-3 text-sm font-semibold text-error">
+                      <HugeiconsIcon icon={Alert01Icon} size={17} className="mt-0.5 shrink-0" />
+                      {msgError}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="app-field-label">Turma</label>
+                    <select
+                      value={selectedClassForMsg}
+                      onChange={(e) => setSelectedClassForMsg(e.target.value)}
+                      disabled={sendingMsg}
+                      required
+                      className="app-input"
+                    >
+                      {classes.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
 
-                <div className="space-y-1.5">
-                  <label className="text-on-surface font-sans font-bold text-label-sm block">Selecione a Turma</label>
-                  <select 
-                    value={selectedClassForMsg} 
-                    onChange={(e) => setSelectedClassForMsg(e.target.value)}
-                    disabled={sendingMsg}
-                    required
-                    className="w-full p-3.5 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                  >
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
+                  <div className="space-y-1.5">
+                    <label className="app-field-label">Assunto</label>
+                    <input
+                      type="text"
+                      value={msgTitle}
+                      onChange={(e) => setMsgTitle(e.target.value)}
+                      placeholder="Ex.: Novo material liberado"
+                      disabled={sendingMsg}
+                      required
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="app-field-label">Mensagem</label>
+                    <textarea
+                      value={msgBody}
+                      onChange={(e) => setMsgBody(e.target.value)}
+                      placeholder="Escreva as instruções ou o comunicado para a turma..."
+                      rows={4}
+                      disabled={sendingMsg}
+                      required
+                      className="app-input resize-none"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-on-surface font-sans font-bold text-label-sm block">Assunto / Título</label>
-                  <input 
-                    type="text" 
-                    value={msgTitle} 
-                    onChange={(e) => setMsgTitle(e.target.value)}
-                    placeholder="Ex: Novo material liberado ou Link da Mentoria"
-                    disabled={sendingMsg}
-                    required
-                    className="w-full p-3.5 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-on-surface font-sans font-bold text-label-sm block">Mensagem</label>
-                  <textarea 
-                    value={msgBody} 
-                    onChange={(e) => setMsgBody(e.target.value)}
-                    placeholder="Escreva as instruções ou comunicados para a turma..."
-                    rows={4}
-                    disabled={sendingMsg}
-                    required
-                    className="w-full p-3.5 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button 
+                <div className="product-dialog-footer flex flex-col-reverse gap-2 border-t sm:flex-row sm:justify-end">
+                  <button
                     type="button"
                     onClick={closeMessageModal}
                     disabled={sendingMsg}
-                    className="px-5 py-2.5 bg-surface-container-high hover:bg-outline-variant/40 text-on-surface-variant font-heading font-bold text-label-md rounded-lg transition-all"
+                    className="product-secondary-action"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     disabled={sendingMsg}
-                    className="px-6 py-2.5 bg-primary hover:bg-blue-700 text-white font-heading font-extrabold text-label-md rounded-lg shadow disabled:opacity-60 transition-colors"
+                    className="product-primary-action"
                   >
-                    {sendingMsg ? 'Enviando...' : 'Enviar Comunicado'}
+                    {sendingMsg ? 'Enviando...' : 'Enviar comunicado'}
                   </button>
                 </div>
               </form>
             )}
-
           </div>
         </div>
       )}
@@ -1091,137 +981,144 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
       {/* MODAL 3: ADD SCHEDULE EVENT */}
       {/* ======================================================== */}
       {showScheduleModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-outline-variant/40 rounded-xl p-6 w-full max-w-md shadow-2xl relative space-y-5">
-            <div className="flex justify-between items-center pb-3 border-b border-outline-variant/20">
-              <h3 className="font-heading font-extrabold text-headline-md text-on-surface">Agendar Evento</h3>
-              <button 
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <div className="product-dialog max-h-[92vh] max-w-md">
+            <div className="product-dialog-header flex items-start justify-between gap-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control bg-secondary/10 text-secondary">
+                  <HugeiconsIcon icon={Calendar01Icon} size={20} strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-extrabold text-on-surface">Agendar evento</h3>
+                  <p className="mt-1 text-xs text-on-surface-variant">Organize uma atividade para uma ou mais turmas.</p>
+                </div>
+              </div>
+              <button
                 onClick={() => {
                   setShowScheduleModal(false);
                   resetScheduleForm();
                 }}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-lg transition-all"
+                className="product-icon-action shrink-0"
+                aria-label="Fechar agendamento"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <HugeiconsIcon icon={Cancel01Icon} size={19} strokeWidth={2} />
               </button>
             </div>
 
-            <form onSubmit={handleAddSchedule} className="space-y-4">
-              {scheduleError && (
-                <div className="bg-red-50 border border-red-200 text-error px-3 py-2 rounded-xl text-xs font-semibold">
-                  {scheduleError}
-                </div>
-              )}
+            <form onSubmit={handleAddSchedule} className="min-h-0 overflow-y-auto">
+              <div className="space-y-4 p-5 sm:p-6">
+                {scheduleError && (
+                  <div className="flex gap-2 rounded-product-control border border-error/25 bg-error/10 p-3 text-xs font-semibold text-error">
+                    <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+                    {scheduleError}
+                  </div>
+                )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="app-field-label">Data</label>
+                    <input
+                      type="date"
+                      value={schedDate}
+                      min={getTodayIsoDate()}
+                      onChange={(e) => setSchedDate(e.target.value)}
+                      required
+                      disabled={scheduleSaving}
+                      className="app-input"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="app-field-label">Horário</label>
+                    <input
+                      type="time"
+                      value={schedTime}
+                      onChange={(e) => setSchedTime(e.target.value)}
+                      required
+                      disabled={scheduleSaving}
+                      className="app-input"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-on-surface font-sans font-bold text-label-sm block">Data</label>
+                  <label className="app-field-label">Título do evento</label>
                   <input
-                    type="date"
-                    value={schedDate}
-                    min={getTodayIsoDate()}
-                    onChange={(e) => setSchedDate(e.target.value)}
+                    type="text"
+                    value={schedTitle}
+                    onChange={(e) => setSchedTitle(e.target.value)}
+                    placeholder="Ex.: Prova de digitação"
                     required
                     disabled={scheduleSaving}
-                    className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
+                    className="app-input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-on-surface font-sans font-bold text-label-sm block">Horário</label>
-                  <input
-                    type="time"
-                    value={schedTime}
-                    onChange={(e) => setSchedTime(e.target.value)}
-                    required
+                  <label className="app-field-label">Destino</label>
+                  <select
+                    value={schedTargetTurmaId}
+                    onChange={(e) => setSchedTargetTurmaId(e.target.value)}
                     disabled={scheduleSaving}
-                    className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
+                    className="app-input"
+                  >
+                    <option value="all">Todas as turmas</option>
+                    {classes.map((turma) => (
+                      <option key={turma.id} value={turma.id}>{turma.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="app-field-label">Duração ou detalhes</label>
+                  <input
+                    type="text"
+                    value={schedDuration}
+                    onChange={(e) => setSchedDuration(e.target.value)}
+                    placeholder="Ex.: 45 min ou entrega prática"
+                    disabled={scheduleSaving}
+                    className="app-input"
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Título do Evento</label>
-                <input 
-                  type="text" 
-                  value={schedTitle} 
-                  onChange={(e) => setSchedTitle(e.target.value)}
-                  placeholder="Ex: Prova de digitação, entrega de atividade, aula ao vivo"
-                  required
-                  disabled={scheduleSaving}
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                />
+
+                <div className="space-y-1.5">
+                  <label className="app-field-label">Tipo do evento</label>
+                  <select
+                    value={schedType}
+                    onChange={(e) => setSchedType(e.target.value as ScheduleItem['type'])}
+                    disabled={scheduleSaving}
+                    className="app-input"
+                  >
+                    <option value="live">Live / Aula síncrona</option>
+                    <option value="deadline">Prazo / Atividade</option>
+                    <option value="exam">Prova / Avaliação</option>
+                    <option value="activity">Atividade / Exercício</option>
+                    <option value="mentorship">Mentoria individual</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Destino</label>
-                <select
-                  value={schedTargetTurmaId}
-                  onChange={(e) => setSchedTargetTurmaId(e.target.value)}
-                  disabled={scheduleSaving}
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none font-sans"
-                >
-                  <option value="all">Todas as turmas</option>
-                  {classes.map((turma) => (
-                    <option key={turma.id} value={turma.id}>
-                      {turma.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Duração / Detalhes</label>
-                <input 
-                  type="text" 
-                  value={schedDuration} 
-                  onChange={(e) => setSchedDuration(e.target.value)}
-                  placeholder="Ex: 45 min, Entrega prática, 2 questões discursivas"
-                  disabled={scheduleSaving}
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-on-surface font-sans font-bold text-label-sm block">Tipo do Evento</label>
-                <select 
-                  value={schedType} 
-                  onChange={(e) => setSchedType(e.target.value as ScheduleItem['type'])}
-                  disabled={scheduleSaving}
-                  className="w-full p-3 bg-surface rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-0 text-on-surface text-body-md focus:bg-white transition-all outline-none font-sans"
-                >
-                  <option value="live">Live / Aula Síncrona</option>
-                  <option value="deadline">Prazo Limite / Atividade</option>
-                  <option value="exam">Prova / Avaliação</option>
-                  <option value="activity">Atividade / Exercício</option>
-                  <option value="mentorship">Mentoria Individual</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button 
+              <div className="product-dialog-footer flex flex-col-reverse gap-2 border-t sm:flex-row sm:justify-end">
+                <button
                   type="button"
                   onClick={() => {
                     setShowScheduleModal(false);
                     resetScheduleForm();
                   }}
                   disabled={scheduleSaving}
-                  className="px-4 py-2 bg-surface-container-high text-on-surface-variant font-heading font-bold text-label-md rounded-lg"
+                  className="product-secondary-action"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={scheduleSaving}
-                  className="px-5 py-2 bg-primary text-white font-heading font-extrabold text-label-md rounded-lg shadow hover:bg-blue-700 transition-colors"
+                  className="product-primary-action"
                 >
-                  {scheduleSaving ? 'Salvando...' : 'Confirmar Evento'}
+                  {scheduleSaving ? 'Salvando...' : 'Confirmar evento'}
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}

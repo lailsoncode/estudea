@@ -65,16 +65,22 @@ type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'tur
 type UserTab = 'dashboard' | 'achievements' | 'profile' | 'arena_ranking' | 'digitacao' | 'mouse' | 'kanban' | 'projeto_integrador' | 'windows11';
 
 const getSidebarItemClass = (active: boolean, collapsed = false) =>
-  `relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-label-md transition-all w-full text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''
+  `relative flex min-h-10 w-full items-center gap-3 rounded-product-control border px-3 py-2 text-left text-sm font-bold transition-all ${collapsed ? 'lg:justify-center lg:px-0' : ''
   } ${active
-    ? 'bg-primary text-on-primary shadow-sm shadow-primary/15'
-    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+    ? 'border-primary/25 bg-primary/10 text-primary shadow-sm'
+    : 'border-transparent text-on-surface-variant hover:border-outline-variant/50 hover:bg-surface-container-low hover:text-on-surface'
   }`;
 
 const sidebarActionClass =
-  'w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-label-md font-heading font-bold transition-all';
+  'flex min-h-10 w-full items-center justify-center gap-2 rounded-product-control border px-3 py-2 text-sm font-heading font-bold transition-all';
 
 const getSidebarLabelClass = (collapsed: boolean) => collapsed ? 'lg:hidden' : '';
+
+const getSidebarSectionClass = (collapsed: boolean) =>
+  `px-3 pt-3 text-[10px] font-extrabold uppercase tracking-[0.14em] text-on-surface-variant/70 ${collapsed ? 'lg:hidden' : ''}`;
+
+const getSidebarShellClass = (collapsed: boolean, mobileOpen: boolean) =>
+  `fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col overflow-hidden border-r border-outline-variant/70 bg-surface-container-lowest shadow-2xl shadow-black/10 transition-[width,transform] duration-300 lg:static lg:translate-x-0 lg:shadow-none ${collapsed ? 'lg:w-20' : 'lg:w-[272px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`;
 
 function App() {
   const location = useLocation();
@@ -521,34 +527,38 @@ function App() {
   };
 
   const teacherSidebarNav = (
-    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-      <div className="overflow-y-auto flex-1">
-        <div className={`px-4 py-4 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-          <div
+    <nav className={getSidebarShellClass(sidebarCollapsed, mobileMenuOpen)} aria-label="Navegação do painel do professor">
+      <div className="flex-1 overflow-y-auto">
+        <div className={`flex items-center justify-between gap-2 border-b border-outline-variant/70 p-3 ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-2' : ''}`}>
+          <button
+            type="button"
             onClick={() => { navigate('/admin/overview'); setMobileMenuOpen(false); }}
-            className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-all select-none"
+            className={`group flex min-w-0 flex-1 items-center gap-2.5 rounded-product-control p-1 text-left transition-colors hover:bg-surface-container-low ${sidebarCollapsed ? 'lg:flex-none lg:justify-center' : ''}`}
             title="Ir para o Início (Visão Geral)"
           >
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm group-hover:scale-105 transition-transform" />
-            <div className={getSidebarLabelClass(sidebarCollapsed)}>
-              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none group-hover:text-primary transition-colors">Estudea</h1>
-              <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">Painel do Professor</p>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control border border-primary/20 bg-primary/10">
+              <img src={logoIcon} alt="" className="h-9 w-9 object-contain transition-transform group-hover:scale-105" />
+            </span>
+            <div className={`min-w-0 ${getSidebarLabelClass(sidebarCollapsed)}`}>
+              <span className="block truncate font-heading text-base font-extrabold leading-tight text-on-surface transition-colors group-hover:text-primary">Estudea</span>
+              <span className="mt-0.5 block truncate text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Painel do professor</span>
             </div>
-          </div>
+          </button>
           <button
-            className="hidden lg:inline-flex app-icon-button"
+            className="product-icon-action hidden shrink-0 border border-outline-variant/70 bg-surface-container-lowest shadow-sm lg:inline-flex"
             onClick={() => setSidebarCollapsed((value) => !value)}
             title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
             <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
           </button>
-          <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
+          <button className="product-icon-action shrink-0 lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">
             <HugeiconsIcon icon={Cancel01Icon} size={20} />
           </button>
         </div>
 
-        <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+        <div className={`flex flex-col gap-1 px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Acompanhamento</span>
           <button
             onClick={() => { navigate('/admin/overview'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'overview', sidebarCollapsed)}
@@ -582,6 +592,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Diário de Classe</span>
           </button>
 
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Ensino</span>
           <button
             onClick={() => {
               navigate('/admin/lessons');
@@ -635,6 +646,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Projeto Integrador</span>
           </button>
 
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Gestão</span>
           <button
             onClick={() => { navigate('/admin/turmas'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'turmas', sidebarCollapsed)}
@@ -655,6 +667,7 @@ function App() {
             </button>
           )}
 
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Experiências</span>
           <button
             onClick={() => { navigate('/admin/arena-ranking'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'arena_ranking', sidebarCollapsed)}
@@ -690,8 +703,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Materiais de Apoio</span>
           </button>
 
-          <div className={`my-2 border-t border-outline-variant/30 ${sidebarCollapsed ? 'lg:mx-1' : 'mx-4'}`}></div>
-
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Conta</span>
           <button
             onClick={() => { navigate('/admin/perfil'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeTeacherTab === 'settings', sidebarCollapsed)}
@@ -703,10 +715,10 @@ function App() {
         </div>
       </div>
 
-      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+      <div className={`border-t border-outline-variant/70 bg-surface-container-lowest p-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
         <button
           onClick={handleLogout}
-          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error-container/40`}
+          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border-error/20 bg-error/5 text-error hover:bg-error/10`}
           title="Sair"
         >
           <HugeiconsIcon icon={Logout01Icon} size={20} strokeWidth={2} />
@@ -717,34 +729,38 @@ function App() {
   );
 
   const studentSidebarNav = (
-    <nav className={`fixed inset-y-0 left-0 z-50 w-[280px] ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-[280px]'} bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between transform transition-[width,transform] duration-300 lg:translate-x-0 lg:static ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-      <div>
-        <div className={`px-5 py-6 flex items-center gap-3 justify-between ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-3' : ''}`}>
-          <div
+    <nav className={getSidebarShellClass(sidebarCollapsed, mobileMenuOpen)} aria-label="Navegação do painel do aluno">
+      <div className="flex-1 overflow-y-auto">
+        <div className={`flex items-center justify-between gap-2 border-b border-outline-variant/70 p-3 ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-2' : ''}`}>
+          <button
+            type="button"
             onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
-            className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-all select-none"
+            className={`group flex min-w-0 flex-1 items-center gap-2.5 rounded-product-control p-1 text-left transition-colors hover:bg-surface-container-low ${sidebarCollapsed ? 'lg:flex-none lg:justify-center' : ''}`}
             title="Ir para o Início (Minhas Aulas)"
           >
-            <img src={logoIcon} alt="Estudea Logo" className="w-11 h-11 object-contain shrink-0 shadow-sm group-hover:scale-105 transition-transform" />
-            <div className={getSidebarLabelClass(sidebarCollapsed)}>
-              <h1 className="font-heading font-extrabold text-body-lg text-on-surface leading-none group-hover:text-primary transition-colors">Estudea</h1>
-              <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">Portal do Aluno</p>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-product-control border border-primary/20 bg-primary/10">
+              <img src={logoIcon} alt="" className="h-9 w-9 object-contain transition-transform group-hover:scale-105" />
+            </span>
+            <div className={`min-w-0 ${getSidebarLabelClass(sidebarCollapsed)}`}>
+              <span className="block truncate font-heading text-base font-extrabold leading-tight text-on-surface transition-colors group-hover:text-primary">Estudea</span>
+              <span className="mt-0.5 block truncate text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Portal do aluno</span>
             </div>
-          </div>
+          </button>
           <button
-            className="hidden lg:inline-flex app-icon-button"
+            className="product-icon-action hidden shrink-0 border border-outline-variant/70 bg-surface-container-lowest shadow-sm lg:inline-flex"
             onClick={() => setSidebarCollapsed((value) => !value)}
             title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
             <HugeiconsIcon icon={sidebarCollapsed ? ArrowRight01Icon : ArrowLeft01Icon} size={18} strokeWidth={2} />
           </button>
-          <button className="lg:hidden text-outline-variant hover:text-on-surface" onClick={() => setMobileMenuOpen(false)}>
+          <button className="product-icon-action shrink-0 lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu">
             <HugeiconsIcon icon={Cancel01Icon} size={20} />
           </button>
         </div>
 
-        <div className={`flex flex-col gap-1.5 px-4 mt-4 ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+        <div className={`flex flex-col gap-1 px-3 py-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Jornada</span>
           <button
             onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'dashboard', sidebarCollapsed)}
@@ -772,6 +788,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Meu Kanban</span>
           </button>
 
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Desenvolvimento</span>
           <button
             onClick={() => { navigate('/conquistas'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'achievements', sidebarCollapsed)}
@@ -817,6 +834,7 @@ function App() {
             <span className={getSidebarLabelClass(sidebarCollapsed)}>Ranking da Arena</span>
           </button>
 
+          <span className={getSidebarSectionClass(sidebarCollapsed)}>Conta</span>
           <button
             onClick={() => { navigate('/perfil'); setMobileMenuOpen(false); }}
             className={getSidebarItemClass(activeUserTab === 'profile', sidebarCollapsed)}
@@ -828,11 +846,11 @@ function App() {
         </div>
       </div>
 
-      <div className={`p-4 border-t border-outline-variant/30 bg-surface-container-lowest ${sidebarCollapsed ? 'lg:px-3' : ''}`}>
+      <div className={`border-t border-outline-variant/70 bg-surface-container-lowest p-3 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
         {isAdmin && teacherView === 'preview' && (
           <button
             onClick={() => { setTeacherView('content'); setMobileMenuOpen(false); }}
-            className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border border-primary/50 text-primary hover:bg-primary/5 mb-3`}
+            className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} mb-2 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10`}
             title="Voltar ao Painel"
           >
             <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} />
@@ -842,7 +860,7 @@ function App() {
 
         <button
           onClick={handleLogout}
-          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} bg-error-container/20 border border-error/20 text-error hover:bg-error/10`}
+          className={`${sidebarActionClass} ${sidebarCollapsed ? 'lg:px-0' : ''} border-error/20 bg-error/5 text-error hover:bg-error/10`}
           title="Sair da Conta"
         >
           <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} />
@@ -872,7 +890,7 @@ function App() {
 
         {/* Overlay for mobile drawer */}
         {!arenaActive && mobileMenuOpen && (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm lg:hidden" onClick={() => setMobileMenuOpen(false)} />
         )}
 
         {/* Main Canvas */}
@@ -1051,7 +1069,7 @@ function App() {
 
         {/* Overlay for mobile drawer */}
         {!arenaActive && mobileMenuOpen && (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm lg:hidden" onClick={() => setMobileMenuOpen(false)} />
         )}
 
         {/* Main Canvas do Aluno */}
