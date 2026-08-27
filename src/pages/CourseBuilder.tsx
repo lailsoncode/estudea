@@ -350,7 +350,7 @@ export const CourseBuilder: React.FC = () => {
       return null; // Not our template
     }
     
-    const tags = ['[TÍTULO]', '[DESCRIÇÃO]', '[CONTEÚDO]', '[LINK_ARQUIVO]', '[ATIVIDADE]', '[QUESTÕES]'];
+    const tags = ['[TÍTULO]', '[DESCRIÇÃO]', '[CONTEÚDO]', '[LINK_ARQUIVO]', '[ATIVIDADE]', '[QUESTÕES]', '[ARENA_QUESTÕES]', '[ARENA]'];
     const sections: { [key: string]: string } = {};
     
     const tagIndices = tags
@@ -396,9 +396,15 @@ export const CourseBuilder: React.FC = () => {
       if (isAtiva) {
         has_atividade = true;
         
-        const materialMatch = atividadeContent.match(/Material de Apoio:\s*([^\n]+)/i);
+        const materialMatch = atividadeContent.match(/Material(?:\s+de\s+Apoio)?:\s*([^\n]+)/i);
         if (materialMatch) {
-          atividade_material_url = materialMatch[1].trim();
+          const rawMat = materialMatch[1].trim();
+          if (rawMat.toLowerCase() === 'nenhum' || rawMat.toLowerCase() === 'none' || rawMat.toLowerCase() === 'não' || rawMat.toLowerCase() === 'nao') {
+            atividade_material_url = '';
+          } else {
+            const urlMatch = rawMat.match(/https?:\/\/[^\s]+/);
+            atividade_material_url = urlMatch ? urlMatch[0] : rawMat;
+          }
         }
 
         let enunciadoText = '';
@@ -407,11 +413,15 @@ export const CourseBuilder: React.FC = () => {
           let endIdx = atividadeContent.length;
           const entregaIdx = atividadeContent.indexOf('Tipo de Entrega:');
           const quizIdx = atividadeContent.indexOf('Questionário Próprio:');
+          const matIdx = atividadeContent.search(/Material(?:\s+de\s+Apoio)?:/i);
           if (entregaIdx !== -1 && entregaIdx > enunciadoStart) {
             endIdx = Math.min(endIdx, entregaIdx);
           }
           if (quizIdx !== -1 && quizIdx > enunciadoStart) {
             endIdx = Math.min(endIdx, quizIdx);
+          }
+          if (matIdx !== -1 && matIdx > enunciadoStart) {
+            endIdx = Math.min(endIdx, matIdx);
           }
           enunciadoText = atividadeContent.substring(enunciadoStart + 10, endIdx).trim();
         }
@@ -428,55 +438,93 @@ export const CourseBuilder: React.FC = () => {
         const quizProprioMatch = atividadeContent.match(/Questionário Próprio:\s*(Sim|Não|yes|no)/i);
         if (quizProprioMatch) {
           atividade_quiz_proprio = quizProprioMatch[1].toLowerCase() === 'sim' || quizProprioMatch[1].toLowerCase() === 'yes';
+        } else if (atividade_tipo_entrega === 'quiz') {
+          atividade_quiz_proprio = true;
         }
       }
     }
     
-    // Parse QUESTÕES
-    const questoesList: any[] = [];
-    const questoesContent = sections['QUESTÕES'] || '';
-    if (questoesContent) {
-      const questionBlocks = questoesContent.split(/\n\s*---\s*\n|\n\s*---\s*$/);
+    // Helper to parse question blocks
+    const parseQuestionBlocks = (content: string, defaultDestino: 'aula' | 'atividade' | 'arena' = 'aula') => {
+      const result: any[] = [];
+      if (!content || !content.trim()) return result;
+
+      let rawBlocks = content.split(/\n\s*---\s*\n|\n\s*---\s*$/).filter(b => b.trim().length > 0);
       
-      for (const block of questionBlocks) {
-        if (!block.trim()) continue;
-        
-        const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        
-        let enunciado = '';
-        let tipo = 'multipla_escolha';
-        let pertence_a_atividade = false;
-        const opcoes: string[] = [];
-        let resposta_correta = '';
-        
-        let gabaritoRecomendado = '';
-        let palavrasChave = '';
+      if (rawBlocks.length === 1) {
+        const lines = rawBlocks[0].split('\n');
+        const splitBlocks: string[] = [];
+        let currentBlock: string[] = [];
         
         for (const line of lines) {
-          if (line.match(/^Pergunta\s*\d+:/i)) {
-            enunciado = line.replace(/^Pergunta\s*\d+:\s*/i, '').trim();
+          if (line.match(/^(?:Pergunta|Questão)\s*\d*:/i) && currentBlock.length > 0) {
+            splitBlocks.push(currentBlock.join('\n'));
+            currentBlock = [line];
+          } else {
+            currentBlock.push(line);
+          }
+        }
+        if (currentBlock.length > 0) {
+          splitBlocks.push(currentBlock.join('\n'));
+        }
+        if (splitBlocks.length > 1) {
+          rawBlocks = splitBlocks;
+        }
+      }
+
+      for (const block of rawBlocks) {
+        if (!block.trim()) continue;
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+        let enunciado = '';
+        let tipo = 'multipla_escolha';
+        let para_arena = defaultDestino === 'arena';
+        let pertence_a_atividade = defaultDestino === 'atividade';
+        const opcoes: string[] = [];
+        let resposta_correta = '';
+        let gabaritoRecomendado = '';
+        let palavrasChave = '';
+
+        for (const line of lines) {
+          if (line.match(/^(?:Pergunta|Questão)\s*\d*:/i)) {
+            enunciado = line.replace(/^(?:Pergunta|Questão)\s*\d*:\s*/i, '').trim();
           } else if (line.startsWith('Tipo:')) {
             const val = line.replace(/^Tipo:\s*/i, '').trim().toLowerCase();
             if (['multipla_escolha', 'verdadeiro_falso', 'aberta', 'multipla_selecao'].includes(val)) {
               tipo = val;
+            } else if (val.includes('verdadeiro') || val.includes('falso') || val === 'vf' || val === 'v_f') {
+              tipo = 'verdadeiro_falso';
+            } else if (val.includes('aberta') || val.includes('dissertativa')) {
+              tipo = 'aberta';
+            } else if (val.includes('multipla_selecao') || val.includes('multiplas_respostas') || val.includes('selecao')) {
+              tipo = 'multipla_selecao';
             }
           } else if (line.startsWith('Destino:')) {
             const val = line.replace(/^Destino:\s*/i, '').trim().toLowerCase();
-            pertence_a_atividade = (val === 'atividade' || val === 'atividades');
-          } else if (line.startsWith('*') || line.startsWith('-')) {
-            const optText = line.replace(/^[*•-]\s*/, '').trim();
+            if (val.includes('arena')) {
+              para_arena = true;
+              pertence_a_atividade = false;
+            } else if (val.includes('atividade')) {
+              pertence_a_atividade = true;
+              para_arena = false;
+            } else if (val.includes('aula')) {
+              pertence_a_atividade = false;
+              para_arena = false;
+            }
+          } else if (line.startsWith('*') || line.startsWith('-') || line.match(/^[a-eA-E][).]\s+/)) {
+            const optText = line.replace(/^[*•-]\s*|^[a-eA-E][).]\s*/, '').trim();
             if (optText) {
               opcoes.push(optText);
             }
-          } else if (line.startsWith('Resposta Correta:')) {
-            resposta_correta = line.replace(/^Resposta Correta:\s*/i, '').trim();
-          } else if (line.startsWith('Gabarito Recomendado')) {
-            gabaritoRecomendado = line.replace(/^Gabarito Recomendado.*:\s*/i, '').trim();
-          } else if (line.startsWith('Palavras-chave de aprovação')) {
-            palavrasChave = line.replace(/^Palavras-chave de aprovação.*:\s*/i, '').trim();
+          } else if (line.startsWith('Resposta Correta:') || line.startsWith('Resposta:')) {
+            resposta_correta = line.replace(/^Resposta(?:\s+Correta)?:\s*/i, '').trim();
+          } else if (line.startsWith('Gabarito Recomendado') || line.startsWith('Gabarito:')) {
+            gabaritoRecomendado = line.replace(/^Gabarito(?:\s+Recomendado)?.*:\s*/i, '').trim();
+          } else if (line.startsWith('Palavras-chave de aprovação') || line.startsWith('Palavras-chave:')) {
+            palavrasChave = line.replace(/^Palavras-chave(?:\s+de\s+aprovação)?.*:\s*/i, '').trim();
           }
         }
-        
+
         if (tipo === 'aberta') {
           opcoes.length = 0;
           opcoes.push(gabaritoRecomendado || 'Escreva aqui o gabarito ou explicação da resposta correta.');
@@ -490,19 +538,42 @@ export const CourseBuilder: React.FC = () => {
             resposta_correta = 'Verdadeiro';
           }
         }
-        
-        questoesList.push({
-          enunciado,
-          opcoes,
-          resposta_correta,
-          tipo,
-          pertence_a_atividade
-        });
+
+        if (enunciado || opcoes.length > 0) {
+          result.push({
+            enunciado: enunciado || 'Pergunta...',
+            opcoes,
+            resposta_correta,
+            tipo,
+            para_arena,
+            pertence_a_atividade
+          });
+        }
       }
+
+      return result;
+    };
+
+    // Parse standard / activity questions
+    const questoesContent = sections['QUESTÕES'] || '';
+    const questoesList = parseQuestionBlocks(questoesContent, 'aula');
+
+    // Parse arena questions
+    const arenaContent = sections['ARENA_QUESTÕES'] || sections['ARENA'] || '';
+    if (arenaContent) {
+      const arenaQuestions = parseQuestionBlocks(arenaContent, 'arena');
+      questoesList.push(...arenaQuestions);
+    }
+
+    // Auto-enable activity if there are questions for activity
+    if (questoesList.some(q => q.pertence_a_atividade)) {
+      has_atividade = true;
+      atividade_tipo_entrega = 'quiz';
+      atividade_quiz_proprio = true;
     }
     
     let tipo = 'texto';
-    if (questoesList.some(q => !q.pertence_a_atividade)) {
+    if (questoesList.some(q => !q.pertence_a_atividade && !q.para_arena)) {
       tipo = 'quiz';
     } else if (arquivo_url) {
       tipo = 'arquivo';
@@ -547,18 +618,19 @@ export const CourseBuilder: React.FC = () => {
         if (localParsed.arquivo_url) updatedForm.arquivo_url = localParsed.arquivo_url;
         if (localParsed.atividade_material_url) updatedForm.atividade_material_url = localParsed.atividade_material_url;
         
-        if (localParsed.has_atividade !== undefined) {
-          updatedForm.has_atividade = !!localParsed.has_atividade;
-          if (localParsed.has_atividade) {
+        if (localParsed.has_atividade !== undefined || localParsed.questoes?.some((q: any) => q.pertence_a_atividade)) {
+          const isAtividadeAtiva = !!localParsed.has_atividade || (localParsed.questoes && localParsed.questoes.some((q: any) => q.pertence_a_atividade));
+          updatedForm.has_atividade = isAtividadeAtiva;
+          if (isAtividadeAtiva) {
             const tempId = 'temp_activity_questions_id';
             setAtividadesList([
               {
                 tempId,
-                enunciado: localParsed.atividade_enunciado || '',
+                enunciado: localParsed.atividade_enunciado || 'Responda ao questionário da atividade prática.',
                 tipo_entrega: localParsed.atividade_tipo_entrega || 'texto',
                 pontua: true,
                 permite_refazer: true,
-                atividade_quiz_proprio: !!localParsed.atividade_quiz_proprio,
+                atividade_quiz_proprio: !!localParsed.atividade_quiz_proprio || (localParsed.questoes && localParsed.questoes.some((q: any) => q.pertence_a_atividade)),
                 material_url: localParsed.atividade_material_url || ''
               }
             ]);
@@ -567,12 +639,15 @@ export const CourseBuilder: React.FC = () => {
           }
         }
 
+        const hasStandardQuiz = localParsed.questoes && localParsed.questoes.some((q: any) => !q.pertence_a_atividade && !q.para_arena);
+        const hasArenaQuestions = localParsed.questoes && localParsed.questoes.some((q: any) => q.para_arena);
+
         if (localParsed.tipo) {
           updatedForm.tipo = localParsed.tipo as 'video' | 'texto' | 'quiz' | 'arquivo';
           setActiveTypes({
             video: localParsed.tipo === 'video' || !!localParsed.video_url,
             texto: localParsed.tipo === 'texto' || !!localParsed.conteudo,
-            quiz: localParsed.tipo === 'quiz' || (localParsed.questoes && localParsed.questoes.length > 0 && !localParsed.questoes.every((q: any) => q.pertence_a_atividade)),
+            quiz: localParsed.tipo === 'quiz' || !!hasStandardQuiz || !!hasArenaQuestions,
             arquivo: localParsed.tipo === 'arquivo' || !!localParsed.arquivo_url
           });
         }
@@ -586,6 +661,7 @@ export const CourseBuilder: React.FC = () => {
             resposta_correta: q.resposta_correta || '',
             ordem: index + 1,
             tipo: q.tipo || 'multipla_escolha',
+            para_arena: !!q.para_arena,
             atividade_id: q.pertence_a_atividade ? 'temp_activity_questions_id' : null
           }));
           setQuestoes(formattedQuestions);
@@ -646,11 +722,13 @@ export const CourseBuilder: React.FC = () => {
 
       if (parsedData.tipo) {
         updatedForm.tipo = parsedData.tipo;
+        const hasStdQuiz = parsedData.questoes && parsedData.questoes.some((q: any) => !q.pertence_a_atividade && !q.para_arena);
+        const hasArenaQ = parsedData.questoes && parsedData.questoes.some((q: any) => q.para_arena);
         // Also update activeTypes toggles accordingly
         setActiveTypes({
           video: parsedData.tipo === 'video' || !!parsedData.video_url,
           texto: parsedData.tipo === 'texto' || !!parsedData.conteudo,
-          quiz: parsedData.tipo === 'quiz' || (parsedData.questoes && parsedData.questoes.length > 0 && !parsedData.questoes.every((q: any) => q.pertence_a_atividade)),
+          quiz: parsedData.tipo === 'quiz' || !!hasStdQuiz || !!hasArenaQ,
           arquivo: parsedData.tipo === 'arquivo' || !!parsedData.arquivo_url
         });
       }
@@ -664,6 +742,7 @@ export const CourseBuilder: React.FC = () => {
           resposta_correta: q.resposta_correta || '',
           ordem: index + 1,
           tipo: q.tipo || 'multipla_escolha',
+          para_arena: !!q.para_arena,
           atividade_id: q.pertence_a_atividade ? 'temp_activity_questions_id' : null
         }));
         setQuestoes(formattedQuestions);
