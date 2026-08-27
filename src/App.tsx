@@ -59,6 +59,7 @@ import { ProjetoIntegradorProfessor } from './pages/ProjetoIntegradorProfessor';
 import { CursoWindows11 } from './pages/CursoWindows11';
 import { GestaoProfessores } from './pages/GestaoProfessores';
 import { HomePage } from './pages/HomePage';
+import { OAuthConsent } from './pages/OAuthConsent';
 import logoIcon from './assets/logo-compact.png';
 
 type TeacherTab = 'overview' | 'progress' | 'corrections' | 'assignments' | 'turmas' | 'professores' | 'settings' | 'materials' | 'arena_ranking' | 'diario' | 'lessons' | 'chat' | 'projeto_integrador' | 'ptd';
@@ -340,6 +341,13 @@ function App() {
     if (!profileLoaded) return;
 
     const path = location.pathname;
+
+    // Supabase OAuth returns to this public route. Keep it in place while the
+    // professor signs in and while the profile permissions are loaded.
+    if (path === '/oauth/consent') {
+      setAuthView('login');
+      return;
+    }
 
     // 1. Not Authenticated Flow
     if (!session) {
@@ -878,6 +886,16 @@ function App() {
           <p className="text-label-md font-bold">Carregando perfil...</p>
         </div>
       </div>
+    );
+  }
+
+  if (location.pathname === '/oauth/consent') {
+    return (
+      <OAuthConsent
+        session={session}
+        profileRole={profileRole}
+        profileLoaded={profileLoaded}
+      />
     );
   }
 

@@ -16,12 +16,20 @@ interface LoginAlunoProps {
   onNavigateToSignup: () => void;
   onNavigateToTeacherSignup?: () => void;
   onAuthSuccess: () => void;
+  title?: string;
+  description?: string;
+  submitLabel?: string;
+  hideRegistration?: boolean;
 }
 
 export const LoginAluno: React.FC<LoginAlunoProps> = ({
   onNavigateToSignup,
   onNavigateToTeacherSignup,
-  onAuthSuccess
+  onAuthSuccess,
+  title = 'Acessar Estudea',
+  description = 'Faça login para entrar na sua conta de estudante.',
+  submitLabel = 'Entrar na Plataforma',
+  hideRegistration = false
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,7 +73,7 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
       setTimeout(() => {
         onAuthSuccess();
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErrorMessage('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
       console.error(err);
     } finally {
@@ -81,10 +89,10 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
       <div className="text-center space-y-2">
         <img src={logoIcon} alt="Estudea Logo" className="w-14 h-14 rounded-2xl mx-auto object-contain shadow-xs" />
         <h3 className="font-heading font-extrabold text-xl text-on-surface">
-          Acessar Estudea
+          {title}
         </h3>
         <p className="text-xs text-on-surface-variant font-medium">
-          Faça login para entrar na sua conta de estudante.
+          {description}
         </p>
       </div>
 
@@ -152,34 +160,36 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
           disabled={loading || !isFormValid}
           className="w-full product-primary-action text-xs justify-center"
         >
-          <span>{loading ? 'Entrando...' : 'Entrar na Plataforma'}</span>
+          <span>{loading ? 'Entrando...' : submitLabel}</span>
           <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
         </button>
       </form>
 
       {/* Switch Screen Link */}
-      <div className="text-center pt-3 space-y-2 border-t border-outline-variant/60 mt-3">
-        <p className="text-xs text-on-surface-variant">
-          Não possui uma conta?{' '}
-          <button
-            onClick={onNavigateToSignup}
-            className="text-primary font-bold hover:underline focus:outline-none cursor-pointer"
-          >
-            Cadastrar como Aluno
-          </button>
-        </p>
-        {onNavigateToTeacherSignup && (
+      {!hideRegistration && (
+        <div className="text-center pt-3 space-y-2 border-t border-outline-variant/60 mt-3">
           <p className="text-xs text-on-surface-variant">
-            É professor ou instrutor?{' '}
+            Não possui uma conta?{' '}
             <button
-              onClick={onNavigateToTeacherSignup}
-              className="text-secondary font-bold hover:underline focus:outline-none cursor-pointer"
+              onClick={onNavigateToSignup}
+              className="text-primary font-bold hover:underline focus:outline-none cursor-pointer"
             >
-              Cadastre-se como Docente
+              Cadastrar como Aluno
             </button>
           </p>
-        )}
-      </div>
+          {onNavigateToTeacherSignup && (
+            <p className="text-xs text-on-surface-variant">
+              É professor ou instrutor?{' '}
+              <button
+                onClick={onNavigateToTeacherSignup}
+                className="text-secondary font-bold hover:underline focus:outline-none cursor-pointer"
+              >
+                Cadastre-se como Docente
+              </button>
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

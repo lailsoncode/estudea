@@ -19,7 +19,7 @@ app.get('/health', (_request, response) => {
   response.json({ service: 'estudea-mcp', status: 'ok', auth_mode: config.authMode });
 });
 
-app.get('/.well-known/oauth-protected-resource', (_request, response) => {
+const protectedResourceMetadata = (_request: Request, response: Response) => {
   if (config.authMode !== 'oauth' || !config.publicBaseUrl || !config.authorizationServerUrl) {
     response.status(404).json({ error: 'oauth_not_configured' });
     return;
@@ -28,15 +28,21 @@ app.get('/.well-known/oauth-protected-resource', (_request, response) => {
   response.json({
     resource: `${config.publicBaseUrl}/mcp`,
     authorization_servers: [config.authorizationServerUrl],
-    scopes_supported: ['courses:read', 'lessons:write', 'lessons:publish'],
+    scopes_supported: ['openid', 'email', 'profile'],
+    bearer_methods_supported: ['header'],
   });
-});
+};
+
+app.get(
+  ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'],
+  protectedResourceMetadata,
+);
 
 const sendAuthError = (response: Response, error: McpAuthError) => {
   if (config.authMode === 'oauth' && config.publicBaseUrl) {
     response.setHeader(
       'WWW-Authenticate',
-      `Bearer resource_metadata="${config.publicBaseUrl}/.well-known/oauth-protected-resource", scope="courses:read lessons:write"`,
+      `Bearer resource_metadata="${config.publicBaseUrl}/.well-known/oauth-protected-resource/mcp", scope="openid email profile"`,
     );
   }
   response.status(error.status).json({

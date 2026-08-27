@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { McpIntegrationCard } from '../components/McpIntegrationCard';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   UserIcon,
@@ -535,6 +536,9 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
           </div>
         </div>
       </div>
+
+      {isAdmin && <McpIntegrationCard />}
+
     </div>
   );
 };

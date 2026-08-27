@@ -111,18 +111,69 @@ Prompt de liberação:
 
 ## 5. Produção com OAuth
 
-O modo de produção já está preparado para receber um Bearer token e publicar o protected-resource metadata do MCP:
+Em produção, o próprio Supabase Auth funciona como Authorization Server OAuth 2.1. Cada professor entra com a conta normal do Estudea e autoriza sua própria conexão. Não é necessário copiar JWT, criar segredo por professor nem usar `service_role`.
+
+### 5.1 Ativar no Supabase
+
+No Dashboard do projeto:
+
+1. abra **Authentication → URL Configuration** e confira se a **Site URL** é o endereço público do Estudea;
+2. abra **Authentication → OAuth Server** e habilite o servidor OAuth 2.1;
+3. defina **Authorization Path** como `/oauth/consent`;
+4. habilite **Dynamic Client Registration**, necessário para o ChatGPT registrar a conexão automaticamente;
+5. mantenha uma chave JWT assimétrica, como ES256 ou RS256.
+
+A URL completa da tela de consentimento será formada pela Site URL, por exemplo:
+
+```text
+https://app.estudea.example/oauth/consent
+```
+
+### 5.2 Variáveis do frontend
+
+No serviço web do Estudea, acrescente:
+
+```dotenv
+VITE_MCP_PUBLIC_URL=https://mcp.estudea.example/mcp
+```
+
+Como variáveis `VITE_` são incorporadas durante o build, publique uma nova build do frontend depois de configurá-la.
+
+### 5.3 Variáveis do MCP no EasyPanel
+
+Troque o serviço MCP para estas variáveis:
 
 ```dotenv
 MCP_AUTH_MODE=oauth
 MCP_HOST=0.0.0.0
 PORT=3001
 MCP_PUBLIC_BASE_URL=https://mcp.estudea.example
-MCP_AUTHORIZATION_SERVER_URL=https://auth.estudea.example
+MCP_AUTHORIZATION_SERVER_URL=https://your-project-id.supabase.co/auth/v1
 MCP_ALLOWED_HOSTS=mcp.estudea.example
+ESTUDEA_APP_URL=https://app.estudea.example
 ```
 
-Ainda será necessário configurar um Authorization Server OAuth 2.1 compatível com MCP para emitir um token aceito pelo Supabase ou adicionar uma camada segura de troca de identidade. Essa é a próxima evolução antes de uso real por múltiplos professores.
+Continue fornecendo `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Remova `MCP_CONNECTION_SECRET` e `MCP_SUPABASE_ACCESS_TOKEN`: eles pertencem somente ao modo temporário de desenvolvimento.
+
+Depois do redeploy, valide:
+
+```bash
+curl https://mcp.estudea.example/health
+curl https://mcp.estudea.example/.well-known/oauth-protected-resource/mcp
+curl https://your-project-id.supabase.co/.well-known/oauth-authorization-server/auth/v1
+```
+
+O primeiro endpoint deve informar `auth_mode: oauth`. Os outros dois devem retornar os metadados OAuth em JSON.
+
+### 5.4 Experiência do professor
+
+No Estudea, o professor abre **Minha Conta → Criar aulas pelo ChatGPT** e:
+
+1. clica em **Conectar ao ChatGPT**;
+2. adiciona o endereço MCP que já foi copiado;
+3. entra no Estudea e clica em **Autorizar conexão**.
+
+As conexões autorizadas aparecem na mesma tela e podem ser revogadas pelo próprio professor. O token emitido é individual, e o MCP ainda valida se o perfil é `teacher` ou `admin` antes de executar qualquer ferramenta.
 
 ## Verificações do projeto
 
