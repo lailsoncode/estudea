@@ -81,11 +81,27 @@ const ensureValidLesson = (lesson: unknown) => {
 
 const optionId = (index: number) => String.fromCharCode(97 + index);
 
-const questionForMcp = (question: Record<string, unknown>): Record<string, unknown> & {
+export const questionForMcp = (question: Record<string, unknown>): Record<string, unknown> & {
   opcoes: unknown[];
   respostas_corretas: unknown[];
 } => {
   const texts = Array.isArray(question.opcoes) ? question.opcoes.map(String) : [];
+  if (question.tipo === 'aberta') {
+    const recommendedAnswer = String(question.gabarito_recomendado || texts[0] || '').trim();
+    const rawKeywords = Array.isArray(question.palavras_chave_aprovacao)
+      ? question.palavras_chave_aprovacao.map(String)
+      : String(question.palavras_chave_aprovacao || texts[1] || '').split(',');
+    const keywords = rawKeywords.map((keyword) => keyword.trim()).filter(Boolean);
+
+    return {
+      ...question,
+      opcoes: [],
+      respostas_corretas: [],
+      resposta_correta: '',
+      gabarito_recomendado: recommendedAnswer,
+      palavras_chave_aprovacao: keywords,
+    };
+  }
   const structured = Array.isArray(question.opcoes_estruturadas) && question.opcoes_estruturadas.length > 0
     ? question.opcoes_estruturadas
     : texts.map((texto, index) => ({ id: optionId(index), texto }));

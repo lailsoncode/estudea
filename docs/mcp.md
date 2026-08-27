@@ -92,6 +92,7 @@ O MCP é stateless e não chama outro modelo de IA. O modelo conectado produz ar
 | Aula | `listar_aulas` | Leitura | Retorna IDs, situação, contagens, turmas e revisões |
 | Aula | `consultar_aula` | Leitura | Retorna conteúdo, materiais, atividades, quiz, Arena e liberações |
 | Aula | `validar_aula` | Leitura | Devolve erros e alertas sem gravar nada |
+| Importação | `interpretar_importacao_formatada` | Leitura | Converte o formato com tags para JSON e valida sem gravar |
 | Aula | `criar_aula_rascunho` | Escrita | Cria uma aula completa atomicamente, sem liberar |
 | Aula | `atualizar_aula_rascunho` | Escrita | Substitui seções do rascunho com `revision_id` |
 | Aula | `reordenar_aulas` | Escrita | Atualiza ordem e numeração atomicamente |
@@ -103,6 +104,8 @@ O MCP é stateless e não chama outro modelo de IA. O modelo conectado produz ar
 | Turma | `retirar_aula_da_turma` | Escrita confirmada | Retira o acesso sem apagar a aula |
 
 Não existe exclusão definitiva pelo MCP. Arquivamento é reversível no banco e retirada de turma não remove conteúdo.
+
+O servidor também publica o recurso `estudea://guias/criacao-aulas`, com o contrato pedagógico, e o prompt `preparar_aula_estudea`. As restrições críticas continuam nos schemas e validadores, portanto a segurança não depende de o cliente abrir o recurso.
 
 ### 3.1 Estrutura recomendada das questões
 
@@ -122,6 +125,19 @@ Use IDs estáveis para as opções e respostas:
 ```
 
 O formato antigo com `opcoes` como textos e `resposta_correta` continua aceito para compatibilidade. Novas aulas devem usar o formato estruturado. O servidor rejeita respostas inexistentes, múltipla seleção com somente uma resposta, todas as opções corretas e alternativas/IDs duplicados.
+
+Questões abertas usam campos próprios, sem transformar gabarito em alternativa:
+
+```json
+{
+  "enunciado": "Explique o conceito de variável.",
+  "tipo": "aberta",
+  "gabarito_recomendado": "Uma variável associa um nome a um valor.",
+  "palavras_chave_aprovacao": ["nome", "valor"]
+}
+```
+
+Na persistência, o MCP converte esses campos para a estrutura legada que a interface já compreende e os reconstrói em `consultar_aula`.
 
 ### 3.2 Arena e materiais
 
@@ -150,6 +166,33 @@ Uma aula pode ter quiz e Arena independentes:
 ```
 
 O Estudea congela a ordem sorteada das questões e alternativas ao iniciar cada sessão da Arena. Na trilha, as alternativas são reorganizadas a cada carregamento/tentativa sem alterar o gabarito.
+
+Regras validadas para `arena.questoes`:
+
+- somente `multipla_escolha` e `verdadeiro_falso`;
+- enunciado de até 120 caracteres;
+- no máximo quatro opções para múltipla escolha e exatamente `Verdadeiro`/`Falso` no outro tipo;
+- exatamente uma resposta correta;
+- alerta quando a Arena habilitada possui entre uma e quatro questões.
+
+Ao gerar conteúdo novo, prefira de 5 a 10 questões e exatamente quatro alternativas na múltipla escolha. Ao importar material com questões existentes, preserve todas, até o limite técnico de 100.
+
+### 3.3 Formato com tags versus JSON do MCP
+
+Os documentos `GUIA_FORMATO_IMPORTACAO_IA.md` e `instrucoes_ia.md` descrevem o formato humano usado ao copiar e colar conteúdo na interface. As ferramentas de criação e atualização do MCP usam JSON estruturado.
+
+Quando o professor fornecer um texto com `[TÍTULO]`, `[CONTEÚDO]`, `[QUESTÕES]` ou `[ARENA_QUESTÕES]`, use o fluxo:
+
+```text
+texto com tags
+  → interpretar_importacao_formatada
+  → corrigir erros e revisar alertas
+  → validar_aula
+  → apresentar resumo ao professor
+  → criar_aula_rascunho, somente quando solicitado
+```
+
+`interpretar_importacao_formatada` nunca grava dados. O retorno contém `aula`, `validacao`, `alertas_importacao` e `resumo_importacao`. A ferramenta interpreta uma aula por chamada; ao encontrar outro `[TÍTULO]`, mantém somente a primeira aula e emite um alerta para que o conteúdo seja dividido.
 
 ## 4. Pré-requisitos
 
@@ -372,6 +415,7 @@ Produção deve retornar:
 ```json
 {
   "service": "estudea-mcp",
+  "version": "0.3.0",
   "status": "ok",
   "auth_mode": "oauth"
 }
@@ -431,7 +475,7 @@ https://mcp.estudea.com.br/mcp
 ```
 
 6. crie a conexão;
-7. revise as 18 ferramentas encontradas;
+7. revise as 19 ferramentas encontradas;
 8. conclua o login e o consentimento no Estudea.
 
 Não selecione **No authentication** em produção. O ChatGPT deve descobrir o OAuth a partir do `401` e dos documentos `.well-known`.
@@ -448,7 +492,13 @@ Teste primeiro com curso, módulo e turma que possam receber dados de homologaç
 
 > Liste os módulos do curso de Informática e mostre os respectivos IDs.
 
-### 12.2 Criação de rascunho
+### 12.2 Conversão do formato com tags
+
+> Converta este conteúdo do formato de importação do Estudea. Mostre o JSON, os erros e os alertas. Não salve nada.
+
+Confirme que `interpretar_importacao_formatada` reconhece as seções, separa questões da aula, atividade e Arena e não cria registros no banco.
+
+### 12.3 Criação de rascunho
 
 > Prepare uma aula textual sobre organização de arquivos no Windows 11, com uma atividade prática e cinco questões. Mostre o resumo antes de salvar. Salve somente como rascunho e não libere para nenhuma turma.
 
@@ -459,7 +509,7 @@ Depois, confirme no Estudea que:
 - a aula ainda não foi liberada;
 - o log de auditoria foi criado.
 
-### 12.3 Validação, edição e lote
+### 12.4 Validação, edição e lote
 
 > Valide uma aula sobre tratamento de imagens. Não salve nada; mostre todos os erros e alertas encontrados.
 
@@ -469,17 +519,17 @@ Depois, confirme no Estudea que:
 
 Confirme que uma edição feita com `revision_id` antigo falha, em vez de sobrescrever a versão mais recente.
 
-### 12.4 Liberação controlada
+### 12.5 Liberação controlada
 
 > Consulte a aula que acabamos de criar e liste as turmas compatíveis. Mostre exatamente qual turma será afetada e peça minha confirmação antes de liberar.
 
 Confirme somente em uma turma de teste. A ferramenta exige confirmação explícita e deve rejeitar uma tentativa ambígua.
 
-### 12.5 Isolamento entre professores
+### 12.6 Isolamento entre professores
 
 Repita a conexão com um segundo professor e confirme que ele não consegue editar cursos ou turmas aos quais não possui acesso.
 
-### 12.6 Revogação
+### 12.7 Revogação
 
 No Estudea, abra **Minha Conta → Criar aulas pelo ChatGPT**, desconecte o aplicativo e confirme que novas chamadas deixam de funcionar até uma nova autorização.
 

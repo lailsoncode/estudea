@@ -1,6 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import * as z from 'zod/v4';
 import type { AuthenticatedMcpContext } from './auth.js';
 import type { McpConfig } from './config.js';
+import { ESTUDEA_CREATION_GUIDE, ESTUDEA_CREATION_GUIDE_URI } from './content-guide.js';
+import { interpretTaggedLesson } from './import-format.js';
 import {
   archiveLesson,
   archiveModule,
@@ -28,6 +31,7 @@ import {
   CreateLessonsBatchInputSchema,
   CreateModuleInputSchema,
   GetLessonInputSchema,
+  InterpretImportInputSchema,
   ListClassesInputSchema,
   ListCoursesInputSchema,
   ListLessonsInputSchema,
@@ -41,6 +45,7 @@ import {
   ValidateLessonInputSchema,
   WithdrawLessonInputSchema,
 } from './schemas.js';
+import { MCP_SERVER_VERSION } from './version.js';
 
 const success = (message: string, data: unknown) => ({
   content: [{ type: 'text' as const, text: message }],
@@ -73,17 +78,55 @@ export const createEstudeaMcpServer = (
   config: McpConfig,
 ) => {
   const server = new McpServer(
-    { name: 'estudea', version: '0.2.0' },
+    { name: 'estudea', version: MCP_SERVER_VERSION },
     {
       instructions: [
         'Localize curso, módulo, aula e turma pelas ferramentas de listagem; nunca invente IDs.',
         'Antes de criar ou atualizar uma aula, use validar_aula e apresente erros, alertas e um resumo ao professor.',
         'Criações ficam como rascunho. Só libere, retire acesso ou arquive após pedido e confirmação explícita do usuário.',
         'Use opções estruturadas {id,texto} e respostas_corretas com IDs. Prefira arena.questoes a para_arena.',
+        'Em questões abertas, use gabarito_recomendado e palavras_chave_aprovacao.',
+        'Na Arena, use somente múltipla escolha ou verdadeiro/falso, enunciado de até 120 caracteres, no máximo quatro opções e uma resposta correta.',
+        `As regras pedagógicas completas estão no recurso ${ESTUDEA_CREATION_GUIDE_URI}.`,
         'Ao editar, reutilize o revision_id mais recente retornado pela consulta para não sobrescrever outra edição.',
       ].join(' '),
     },
   );
+
+  server.registerResource('guia-criacao-aulas', ESTUDEA_CREATION_GUIDE_URI, {
+    title: 'Guia de criação de aulas do Estudea',
+    description: 'Contrato pedagógico e estrutural para produzir aulas, atividades, questões, materiais e Arena pelo MCP.',
+    mimeType: 'text/markdown',
+  }, async () => ({
+    contents: [{
+      uri: ESTUDEA_CREATION_GUIDE_URI,
+      mimeType: 'text/markdown',
+      text: ESTUDEA_CREATION_GUIDE,
+    }],
+  }));
+
+  server.registerPrompt('preparar_aula_estudea', {
+    title: 'Preparar aula para o Estudea',
+    description: 'Orienta a preparação e validação de uma aula estruturada, mantendo a gravação como etapa separada.',
+    argsSchema: {
+      tema: z.string().trim().min(3).max(300).describe('Tema ou título provisório da aula.'),
+      orientacoes: z.string().trim().max(5000).optional().describe('Objetivos, público, duração ou requisitos adicionais.'),
+    },
+  }, async ({ tema, orientacoes }) => ({
+    messages: [{
+      role: 'user',
+      content: {
+        type: 'text',
+        text: [
+          `Prepare uma aula do Estudea sobre: ${tema}.`,
+          orientacoes ? `Orientações adicionais: ${orientacoes}` : '',
+          `Siga o contrato do recurso ${ESTUDEA_CREATION_GUIDE_URI}.`,
+          'Trabalhe no JSON estruturado do MCP, valide a aula e apresente o resumo antes de qualquer gravação.',
+          'Não libere a aula para uma turma sem pedido e confirmação explícitos.',
+        ].filter(Boolean).join('\n'),
+      },
+    }],
+  }));
 
   server.registerTool('listar_cursos', {
     title: 'Listar cursos editáveis',
@@ -178,6 +221,23 @@ export const createEstudeaMcpServer = (
     (result) => result.valida
       ? `Aula válida, com ${result.alertas.length} alerta(s). Nada foi gravado.`
       : `Aula inválida, com ${result.erros.length} erro(s). Nada foi gravado.`,
+  ));
+
+  server.registerTool('interpretar_importacao_formatada', {
+    title: 'Interpretar importação formatada sem gravar',
+    description: [
+      'Converte texto com tags do importador ([TÍTULO], [CONTEÚDO], [ATIVIDADE], [QUESTÕES] e [ARENA_QUESTÕES]) em uma aula JSON estruturada.',
+      'É somente leitura: retorna aula, validacao, alertas_importacao e resumo_importacao; nunca cria nem altera dados.',
+      'Interpreta uma aula por chamada; se houver outro bloco [TÍTULO], retorna somente a primeira e emite alerta.',
+      'Respostas que não correspondem às opções permanecem visíveis nos alertas e erros para correção antes de validar e criar o rascunho.',
+    ].join(' '),
+    inputSchema: InterpretImportInputSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+  }, async ({ conteudo_formatado }) => runTool(
+    () => interpretTaggedLesson(conteudo_formatado),
+    (result) => result.validacao.valida
+      ? `Importação interpretada e válida, com ${result.alertas_importacao.length + result.validacao.alertas.length} alerta(s). Nada foi gravado.`
+      : `Importação interpretada com ${result.validacao.erros.length} erro(s). Nada foi gravado.`,
   ));
 
   server.registerTool('criar_aula_rascunho', {

@@ -1,6 +1,6 @@
 # 🎓 Aulas Geradas para o Curso de Windows 11 (2 Dias)
 
-Este arquivo contém o conteúdo completo do curso de **Windows 11 Básico** desmembrado e estruturado em exatamente **duas aulas** (material planejado para dois dias de aula). O formato segue rigorosamente o interpretador de conteúdos da plataforma **Estudea**, conforme as diretrizes do [fazer.txt](file:///d:/estudea/docs/fazer.txt).
+Este arquivo contém o conteúdo completo do curso de **Windows 11 Básico** desmembrado e estruturado em exatamente **duas aulas** (material planejado para dois dias de aula). O formato segue o importador de conteúdos da plataforma **Estudea**, conforme o [guia canônico](GUIA_FORMATO_IMPORTACAO_IA.md).
 
 ---
 

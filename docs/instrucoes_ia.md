@@ -4,6 +4,8 @@ Este documento centraliza os prompts padronizados para você copiar e colar em I
 
 Utilize estes prompts para fazer com que a IA externa organize as informações conceituais, atividades práticas (com seus links de apoio), quiz de fixação e arena antes de colá-las no **Estudea**. Isso permite que a plataforma interprete seu material com 100% de precisão e crie a aula instantaneamente!
 
+> Estes prompts produzem o formato com tags usado no importador da interface. Em uma conversa conectada ao MCP, prefira as ferramentas JSON; use `interpretar_importacao_formatada` apenas quando o conteúdo recebido já estiver neste formato textual.
+
 ---
 
 ## 🚀 1. Prompt Unificado Completo (Tudo em 1: Aula + Material + Atividade + Quiz + Arena)
@@ -18,10 +20,10 @@ Seu trabalho é ler o material bruto fornecido (PDF da aula, slides, transcriç�
 1. **Profundidade Teórica (Não resuma superficialmente)**: O conteúdo teórico na seção `[CONTEÚDO]` deve ser **rico, denso e aprofundado**. Explique detalhadamente os conceitos, use analogias claras e forneça blocos de exemplos práticos reais (se o tema envolver código, use trechos de código estruturados e explicados em Markdown).
 2. **Material de Apoio da Aula**: Na seção `[LINK_ARQUIVO]`, informe o link do PDF/slide conceitual caso exista no material original, ou escreva "Nenhum".
 3. **Atividade Prática com Material de Apoio**: Na seção `[ATIVIDADE]`, crie um exercício que represente um **desafio prático e realista** (simulando demandas de mercado ou projetos reais).
-   - Defina com clareza o Enunciado, o Tipo de Entrega (texto, imagem, multipla ou quiz) e o Material de Apoio da Atividade (link do GitHub, Figma, planilha base, dataset, PDF de exercícios ou "Nenhum").
+   - Defina com clareza o Enunciado, o Tipo de Entrega (texto, imagem, multipla, quiz ou arquivo) e o Material de Apoio da Atividade (link do GitHub, Figma, planilha base, dataset, PDF de exercícios ou "Nenhum").
    - Se a atividade consistir em perguntas/questionário prático, defina o Tipo de Entrega como "quiz", `Questionário Próprio: Sim` e coloque as perguntas exclusivas da atividade prática na seção `[QUESTÕES]` com `Destino: Atividade`.
 4. **Questões de Fixação (Quiz Geral e da Atividade)**: No campo `[QUESTÕES]`, extraia/crie as perguntas de fixação e autoavaliação. Use `Destino: Aula` para o quiz geral da aula, ou `Destino: Atividade` para perguntas que compõem a entrega da atividade prática do aluno.
-5. **Questões Rápidas e Competitivas da Arena Live**: No campo `[ARENA_QUESTÕES]`, crie ou extraia de 5 a 10 perguntas dinâmicas e competitivas (estilo Kahoot) com enunciados curtos (máximo 120 caracteres) e opções rápidas de múltipla escolha ou verdadeiro/falso.
+5. **Questões Rápidas e Competitivas da Arena Live**: No campo `[ARENA_QUESTÕES]`, gere de 5 a 10 perguntas novas ou preserve todas as perguntas já existentes no material. Use enunciados curtos (máximo 120 caracteres) e opções rápidas de múltipla escolha ou verdadeiro/falso.
 
 O material final deve seguir RIGOROSAMENTE a estrutura abaixo, delimitada por tags, para que o interpretador da plataforma Estudea consiga mapear cada seção automaticamente:
 
@@ -44,11 +46,12 @@ Estruture o texto usando Markdown simples:
 [ATIVIDADE]
 Ativa: Sim
 Enunciado: (Descreva as instruções completas da atividade prática com contextualização do desafio, critérios de sucesso e passo a passo claro)
-Tipo de Entrega: (Escreva APENAS uma das opções a seguir: texto, imagem, multipla ou quiz)
+Tipo de Entrega: (Escreva APENAS uma das opções a seguir: texto, imagem, multipla, quiz ou arquivo)
 - Escolha "texto" se o aluno envia código ou resposta escrita.
 - Escolha "imagem" se o aluno envia um print ou imagem.
 - Escolha "multipla" se o aluno envia texto/código E um print juntos.
 - Escolha "quiz" se a atividade consiste em responder ao questionário de perguntas.
+- Escolha "arquivo" se o aluno envia um documento, planilha, código compactado ou apresentação.
 Material de Apoio: (URL de arquivo base, repositório GitHub, link do Google Drive, Figma ou PDF de exercícios específico da prática. Se não houver, escreva: Nenhum)
 Questionário Próprio: (Escreva "Sim" se for atividade com questionário exclusivo ou "Não" caso contrário)
 
@@ -70,7 +73,7 @@ Palavras-chave de aprovação (apenas se tipo for aberta): (Palavras obrigatóri
 ---
 
 [ARENA_QUESTÕES]
-(Gere de 5 a 10 questões rápidas e competitivas para a Arena Live multiplayer em tempo real:)
+(Gere de 5 a 10 questões novas para a Arena Live. Se o material já trouxer questões, preserve todas:)
 
 Pergunta 1: (Texto curto da pergunta - máximo 120 caracteres)
 Tipo: multipla_escolha
@@ -130,11 +133,12 @@ Estruture o texto usando Markdown simples:
 [ATIVIDADE]
 Ativa: Sim
 Enunciado: (Descreva as instruções completas da atividade prática com contextualização do desafio, critérios de sucesso e passo a passo claro)
-Tipo de Entrega: (Escreva APENAS uma das opções a seguir: texto, imagem, multipla ou quiz)
+Tipo de Entrega: (Escreva APENAS uma das opções a seguir: texto, imagem, multipla, quiz ou arquivo)
 - Escolha "texto" se o aluno envia código ou resposta escrita.
 - Escolha "imagem" se o aluno envia um print ou imagem.
 - Escolha "multipla" se o aluno envia texto/código E um print juntos.
 - Escolha "quiz" se a atividade consiste em responder a perguntas.
+- Escolha "arquivo" se o aluno envia um documento, planilha, código compactado ou apresentação.
 Material de Apoio: (URL de arquivo base, repositório GitHub, link do Google Drive, Figma ou PDF de exercícios específico da prática. Se não houver, escreva: Nenhum)
 Questionário Próprio: (Escreva "Sim" se você criar perguntas exclusivas para a atividade prática abaixo, ou "Não" caso contrário)
 
@@ -161,7 +165,7 @@ Abaixo está o material de apoio cru para você analisar e estruturar:
 
 ## 🏆 3. Prompt de Preparação da Arena Live (Kahoot)
 
-Use este prompt para extrair questões competitivas, de rápida leitura e dinâmicas da sua aula para o quiz multiplayer em tempo real, sem limites de quantidade.
+Use este prompt para extrair questões competitivas, de rápida leitura e dinâmicas da sua aula. Preserve todas as perguntas já existentes; quando for necessário criar perguntas novas, gere de 5 a 10.
 
 ```text
 Você é um designer instrucional encarregado de preparar perguntas competitivas para a "Arena Live" (um quiz multiplayer em tempo real similar ao Kahoot) na plataforma "Estudea".

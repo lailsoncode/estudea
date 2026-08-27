@@ -38,6 +38,7 @@ test('anuncia a superfície MCP esperada com anotações de segurança', async (
       'criar_aula_rascunho',
       'criar_aulas_em_lote',
       'criar_modulo',
+      'interpretar_importacao_formatada',
       'liberar_aula_para_turma',
       'listar_aulas',
       'listar_cursos',
@@ -62,9 +63,33 @@ test('anuncia a superfície MCP esperada com anotações de segurança', async (
       true,
     );
     assert.equal(
+      tools.find((tool) => tool.name === 'interpretar_importacao_formatada')?.annotations?.readOnlyHint,
+      true,
+    );
+    assert.equal(
       tools.find((tool) => tool.name === 'retirar_aula_da_turma')?.annotations?.destructiveHint,
       true,
     );
+
+    const { resources } = await client.listResources();
+    assert.equal(resources.some((resource) => resource.uri === 'estudea://guias/criacao-aulas'), true);
+    const { prompts } = await client.listPrompts();
+    assert.equal(prompts.some((prompt) => prompt.name === 'preparar_aula_estudea'), true);
+
+    const conversion = await client.callTool({
+      name: 'interpretar_importacao_formatada',
+      arguments: {
+        conteudo_formatado: [
+          '[TÍTULO]',
+          'Aula convertida',
+          '[CONTEÚDO]',
+          'Conteúdo didático suficientemente detalhado para validação.',
+        ].join('\n'),
+      },
+    });
+    const data = (conversion.structuredContent as { data?: { aula?: { titulo?: string } } } | undefined)?.data;
+    assert.equal(conversion.isError, undefined);
+    assert.equal(data?.aula?.titulo, 'Aula convertida');
   } finally {
     await client.close();
     await server.close();

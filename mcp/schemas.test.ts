@@ -7,7 +7,8 @@ import {
   UpdateLessonInputSchema,
   WithdrawLessonInputSchema,
 } from './schemas.js';
-import { validateLessonPayload } from './lesson-validation.js';
+import { questionForMcp } from './estudea.js';
+import { normalizeQuestionForPersistence, validateLessonPayload } from './lesson-validation.js';
 
 const moduleId = '123e4567-e89b-42d3-a456-426614174000';
 const lessonId = '123e4567-e89b-42d3-a456-426614174001';
@@ -76,6 +77,69 @@ test('rejeita múltipla seleção quando todas as opções estão corretas', () 
   });
 
   assert.equal(result.success, false);
+});
+
+test('preserva campos semânticos de questão aberta no formato legado', () => {
+  const normalized = normalizeQuestionForPersistence({
+    enunciado: 'Explique o conceito de variável.',
+    tipo: 'aberta',
+    gabarito_recomendado: 'Uma variável associa um nome a um valor.',
+    palavras_chave_aprovacao: ['nome', 'valor'],
+  }, 'aula');
+  const restored = questionForMcp(normalized);
+
+  assert.deepEqual(normalized.opcoes, ['Uma variável associa um nome a um valor.', 'nome, valor']);
+  assert.deepEqual(normalized.opcoes_estruturadas, []);
+  assert.equal(restored.gabarito_recomendado, 'Uma variável associa um nome a um valor.');
+  assert.deepEqual(restored.palavras_chave_aprovacao, ['nome', 'valor']);
+  assert.deepEqual(restored.opcoes, []);
+});
+
+test('aplica regras específicas às questões da Arena', () => {
+  const result = validateLessonPayload({
+    titulo: 'Aula com Arena',
+    tipo: 'video',
+    video_url: 'https://example.com/video',
+    arena: {
+      habilitada: true,
+      questoes: [{
+        enunciado: 'A'.repeat(121),
+        tipo: 'multipla_selecao',
+        opcoes: [
+          { id: 'a', texto: 'A' },
+          { id: 'b', texto: 'B' },
+          { id: 'c', texto: 'C' },
+          { id: 'd', texto: 'D' },
+          { id: 'e', texto: 'E' },
+        ],
+        respostas_corretas: ['a', 'b'],
+      }],
+    },
+  });
+
+  assert.equal(result.valida, false);
+  assert.equal(result.erros.some((error) => error.includes('120 caracteres')), true);
+  assert.equal(result.erros.some((error) => error.includes('somente múltipla escolha')), true);
+});
+
+test('rejeita mais de quatro alternativas na múltipla escolha da Arena', () => {
+  const result = validateLessonPayload({
+    titulo: 'Aula com Arena',
+    tipo: 'video',
+    video_url: 'https://example.com/video',
+    arena: {
+      habilitada: true,
+      questoes: [{
+        enunciado: 'Qual alternativa está correta?',
+        tipo: 'multipla_escolha',
+        opcoes: ['A', 'B', 'C', 'D', 'E'],
+        resposta_correta: 'A',
+      }],
+    },
+  });
+
+  assert.equal(result.valida, false);
+  assert.equal(result.erros.some((error) => error.includes('no máximo quatro')), true);
 });
 
 test('validador relata duplicidade e sequência longa de verdadeiro/falso sem gravar', () => {

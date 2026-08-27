@@ -24,6 +24,10 @@ const QuestionBaseSchema = z.object({
     .describe('IDs das opções corretas. Use dois ou mais IDs em múltipla seleção.'),
   resposta_correta: z.string().trim().max(2000).default('')
     .describe('Formato legado. Prefira respostas_corretas com IDs estáveis.'),
+  gabarito_recomendado: z.string().trim().max(10000).optional()
+    .describe('Resposta-modelo opcional para questões abertas.'),
+  palavras_chave_aprovacao: z.array(z.string().trim().min(1).max(200)).max(50).optional()
+    .describe('Termos esperados na correção de uma questão aberta.'),
   para_arena: z.boolean().default(false)
     .describe('Compatibilidade legada. Para novas aulas, use arena.questoes.'),
   ordem: z.number().int().positive().max(10000).optional(),
@@ -177,6 +181,11 @@ export const GetLessonInputSchema = z.object({
 export const ValidateLessonInputSchema = z.object({
   aula: z.record(z.string(), z.unknown())
     .describe('Aula a conferir. Aceita conteúdo incompleto para devolver erros e alertas sem gravar.'),
+});
+
+export const InterpretImportInputSchema = z.object({
+  conteudo_formatado: z.string().trim().min(1).max(500000)
+    .describe('Texto completo no formato com tags [TÍTULO], [CONTEÚDO], [QUESTÕES] e [ARENA_QUESTÕES].'),
 });
 
 export const CreateLessonInputSchema = z.object({

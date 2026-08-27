@@ -30,9 +30,17 @@ const asArray = (value: unknown) => Array.isArray(value) ? value : [];
 const asText = (value: unknown) => typeof value === 'string' ? value.trim() : '';
 const comparable = (value: unknown) => asText(value).toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
 const questionTypes = new Set(['multipla_escolha', 'verdadeiro_falso', 'aberta', 'multipla_selecao']);
+const arenaQuestionTypes = new Set(['multipla_escolha', 'verdadeiro_falso']);
+
+const normalizedKeywords = (value: unknown) => {
+  if (Array.isArray(value)) return value.map(asText).filter(Boolean);
+  return asText(value).split(',').map((keyword) => keyword.trim()).filter(Boolean);
+};
 
 const labelPath = (path: Array<string | number>) => {
-  if (path[0] === 'arena' && path[1] === 'questoes') return `Arena — questão ${Number(path[2]) + 1}`;
+  if (path[0] === 'arena' && path[1] === 'questoes') {
+    return typeof path[2] === 'number' ? `Arena — questão ${path[2] + 1}` : 'Arena';
+  }
   if (path[0] === 'atividades' && path[2] === 'questoes') {
     return `Atividade ${Number(path[1]) + 1} — questão ${Number(path[3]) + 1}`;
   }
@@ -78,6 +86,7 @@ const validateQuestion = (
   path: Array<string | number>,
   errors: ValidationIssue[],
   warnings: ValidationIssue[],
+  questionContext: 'aula' | 'atividade' | 'arena',
 ) => {
   if (!isRecord(value)) {
     errors.push({ path, message: 'estrutura inválida.' });
@@ -91,6 +100,14 @@ const validateQuestion = (
 
   if (prompt.length < 3) errors.push({ path, message: 'o enunciado está vazio ou curto demais.' });
   if (!questionTypes.has(type)) errors.push({ path, message: `tipo “${type || 'vazio'}” não reconhecido.` });
+
+  if (questionContext === 'arena') {
+    if (prompt.length > 120) errors.push({ path, message: 'o enunciado da Arena deve ter no máximo 120 caracteres.' });
+    if (!arenaQuestionTypes.has(type)) {
+      errors.push({ path, message: 'a Arena aceita somente múltipla escolha ou verdadeiro/falso.' });
+    }
+  }
+
   if (type === 'aberta') return { prompt, type, options, answerIds };
 
   if (options.length < 2) errors.push({ path, message: 'questões objetivas precisam de pelo menos duas alternativas.' });
@@ -113,6 +130,9 @@ const validateQuestion = (
 
   if (type === 'multipla_escolha' && answerIds.length !== 1) {
     errors.push({ path, message: 'escolha única exige exatamente uma resposta correta.' });
+  }
+  if (questionContext === 'arena' && type === 'multipla_escolha' && options.length > 4) {
+    errors.push({ path, message: 'múltipla escolha na Arena aceita no máximo quatro alternativas.' });
   }
   if (type === 'multipla_selecao') {
     if (answerIds.length < 2) errors.push({ path, message: 'múltipla seleção exige pelo menos duas respostas corretas.' });
@@ -185,7 +205,7 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
   const standardQuestions = asArray(value.questoes);
   standardQuestions.forEach((question, index) => {
     const path: Array<string | number> = ['questoes', index];
-    const checked = validateQuestion(question, path, errors, warnings);
+    const checked = validateQuestion(question, path, errors, warnings, 'aula');
     if (checked) checkedQuestions.push({ path, ...checked });
   });
 
@@ -205,7 +225,7 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
     activityQuestions.forEach((question, questionIndex) => {
       activityQuestionCount += 1;
       const path: Array<string | number> = ['atividades', activityIndex, 'questoes', questionIndex];
-      const checked = validateQuestion(question, path, errors, warnings);
+      const checked = validateQuestion(question, path, errors, warnings, 'atividade');
       if (checked) checkedQuestions.push({ path, ...checked });
     });
   });
@@ -214,11 +234,17 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
   const arenaQuestions = arena ? asArray(arena.questoes) : [];
   arenaQuestions.forEach((question, index) => {
     const path: Array<string | number> = ['arena', 'questoes', index];
-    const checked = validateQuestion(question, path, errors, warnings);
+    const checked = validateQuestion(question, path, errors, warnings, 'arena');
     if (checked) checkedQuestions.push({ path, ...checked });
   });
   if (arena?.habilitada === true && arenaQuestions.length === 0) {
     warnings.push({ path: ['arena'], message: 'a Arena está habilitada, mas não possui questões próprias; será usado o fallback legado.' });
+  }
+  if (arena?.habilitada === true && arenaQuestions.length > 0 && arenaQuestions.length < 5) {
+    warnings.push({
+      path: ['arena', 'questoes'],
+      message: 'a Arena possui menos de cinco questões; para conteúdo gerado, recomenda-se criar de 5 a 10.',
+    });
   }
 
   const materials = asArray(value.materiais);
@@ -299,6 +325,28 @@ export const normalizeQuestionForPersistence = (value: UnknownRecord, context: '
     options.find((option) => comparable(option.id) === comparable(answerId))?.texto || answerId
   ));
   const type = asText(value.tipo) || 'multipla_escolha';
+
+  if (type === 'aberta') {
+    const recommendedAnswer = asText(value.gabarito_recomendado)
+      || asText(value.resposta_correta)
+      || options[0]?.texto
+      || '';
+    const keywords = normalizedKeywords(value.palavras_chave_aprovacao);
+    const legacyKeywords = keywords.length > 0 ? keywords : normalizedKeywords(options[1]?.texto);
+
+    return {
+      ...value,
+      tipo: type,
+      gabarito_recomendado: recommendedAnswer,
+      palavras_chave_aprovacao: legacyKeywords,
+      opcoes: [recommendedAnswer, legacyKeywords.join(', ')],
+      opcoes_estruturadas: [],
+      respostas_corretas: [],
+      resposta_correta: '',
+      para_arena: context === 'arena' || value.para_arena === true,
+      contexto: context,
+    };
+  }
 
   return {
     ...value,

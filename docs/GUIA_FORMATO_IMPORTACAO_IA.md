@@ -2,6 +2,8 @@
 
 Este documento foi elaborado para que você possa **ensinar qualquer Inteligência Artificial (ChatGPT, Gemini, Claude, LLaMA, DeepSeek, etc.)** ou configurar como **System Prompt / Custom GPT / Projeto no Claude** a gerar conteúdos perfeitamente compatíveis com o importador automatizado do **Estudea**.
 
+> Este é o formato humano de **copiar e colar na interface**. Quando o ChatGPT estiver conectado ao servidor MCP do Estudea, ele deve usar o JSON estruturado das ferramentas. Se receber este texto com tags pelo MCP, deve primeiro chamar `interpretar_importacao_formatada`, revisar a validação e somente depois criar um rascunho.
+
 ---
 
 ## 🎯 Visão Geral
@@ -38,6 +40,7 @@ O importador do Estudea utiliza um parser baseado em delimitadores por tags (`[T
   - `imagem`: Aluno envia print ou foto da tarefa.
   - `multipla`: Aluno envia texto/código + print da execução juntos.
   - `quiz`: A atividade prática consiste no preenchimento de um questionário avaliativo.
+  - `arquivo`: Aluno envia um arquivo como documento, planilha, código compactado ou apresentação.
 - `Material de Apoio:` Link de dataset, repositório GitHub, arquivo base, Figma ou PDF específico da prática (ou `Nenhum`).
 - `Questionário Próprio:` `Sim` ou `Não` (deve ser `Sim` se `Tipo de Entrega` for `quiz`).
 
@@ -66,6 +69,7 @@ Perguntas competitivas em tempo real estilo Kahoot:
 - Enunciados curtos e diretos (máximo **120 caracteres**).
 - Opções curtas (máximo 4 opções para `multipla_escolha`, ou exatamente `Verdadeiro` e `Falso` para `verdadeiro_falso`).
 - Apenas 1 resposta correta por questão.
+- Ao gerar perguntas novas, crie de 5 a 10. Ao converter perguntas já existentes no material, preserve todas, respeitando o limite técnico de 100 por aula.
 
 ---
 
@@ -101,7 +105,7 @@ https://link-do-slide-ou-pdf-da-aula.pdf (ou "Nenhum")
 [ATIVIDADE]
 Ativa: Sim
 Enunciado: Enunciado detalhado do desafio prático com requisitos e orientações.
-Tipo de Entrega: texto | imagem | multipla | quiz
+Tipo de Entrega: texto | imagem | multipla | quiz | arquivo
 Material de Apoio: https://link-do-material-da-atividade.zip (ou "Nenhum")
 Questionário Próprio: Sim | Não
 

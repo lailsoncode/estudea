@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { authenticateMcpRequest, McpAuthError } from './auth.js';
 import { loadMcpConfig } from './config.js';
 import { createEstudeaMcpServer } from './mcp-server.js';
+import { MCP_SERVER_VERSION } from './version.js';
 
 try {
   loadEnvFile('.env.mcp');
@@ -16,7 +17,12 @@ const config = loadMcpConfig();
 const app = createMcpExpressApp({ host: config.host, allowedHosts: config.allowedHosts });
 
 app.get('/health', (_request, response) => {
-  response.json({ service: 'estudea-mcp', status: 'ok', auth_mode: config.authMode });
+  response.json({
+    service: 'estudea-mcp',
+    version: MCP_SERVER_VERSION,
+    status: 'ok',
+    auth_mode: config.authMode,
+  });
 });
 
 const protectedResourceMetadata = (_request: Request, response: Response) => {
@@ -104,7 +110,7 @@ const listener = app.listen(config.port, config.host, () => {
   const endpoint = config.authMode === 'development'
     ? `http://${config.host}:${config.port}/mcp/<MCP_CONNECTION_SECRET>`
     : `${config.publicBaseUrl}/mcp`;
-  console.log(`Estudea MCP 0.1.0 disponível em ${endpoint}`);
+  console.log(`Estudea MCP ${MCP_SERVER_VERSION} disponível em ${endpoint}`);
   if (config.authMode === 'development') {
     console.warn('MCP_AUTH_MODE=development é apenas para testes. Use HTTPS e OAuth em produção.');
   }

@@ -21,7 +21,9 @@ O Estudea possui um servidor MCP para professores criarem e revisarem aulas dire
 
 - administra módulos e localiza aulas com IDs e revisões;
 - valida e cria aulas completas, individualmente ou em lote, sempre como rascunho;
+- converte com segurança o formato textual com tags antes de qualquer gravação;
 - mantém questões do Estudea e da Arena independentes, com opções identificadas;
+- preserva gabarito e palavras-chave de questões abertas e valida as regras rápidas da Arena;
 - atualiza rascunhos sem sobrescrever edições recentes;
 - exige confirmação explícita antes de liberar, retirar ou arquivar;
 - respeita RLS, papel do perfil e vínculos do professor;
