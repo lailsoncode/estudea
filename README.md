@@ -17,7 +17,15 @@ Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democra
 
 ## 🔌 Integração MCP
 
-O MVP do servidor MCP para criar aulas pelo ChatGPT Work está documentado em [docs/mcp.md](docs/mcp.md).
+O Estudea possui um servidor MCP para professores criarem e revisarem aulas diretamente pelo ChatGPT. Em produção, cada professor conecta sua própria conta por OAuth 2.1 do Supabase, sem copiar JWT ou compartilhar senha.
+
+- consulta cursos, módulos, turmas e aulas;
+- cria aulas completas primeiro como rascunho;
+- exige confirmação explícita antes de liberar para uma turma;
+- respeita RLS, papel do perfil e vínculos do professor;
+- oferece consentimento e revogação dentro de **Minha Conta**.
+
+O guia completo de arquitetura, Supabase, EasyPanel, ChatGPT, testes e troubleshooting está em [docs/mcp.md](docs/mcp.md).
 
 ---
 
@@ -53,6 +61,7 @@ Milhões de brasileiros ainda não têm acesso pleno ao universo digital. O Estu
 | Área | O que você pode fazer |
 |---|---|
 | 🏗️ **Criação de Cursos** | Crie trilhas de TI com módulos, aulas em vídeo, texto, quiz e atividades práticas |
+| ✨ **Criação pelo ChatGPT** | Conecte a conta do professor via OAuth e prepare aulas completas usando o servidor MCP do Estudea |
 | 👨‍🎓 **Trilha Gamificada do Aluno** | Progresso sequencial, conquistas, XP e ranking motivam a aprendizagem em TI |
 | 🎮 **Arena Estudea (Kahoot)** | Quizzes multijogador em tempo real com PIN de acesso, pódio e ranking de turma automático |
 | 📊 **Dashboard do Professor** | Métricas em tempo real de progresso, frequência, digitação e engajamento por turma |
@@ -116,7 +125,7 @@ O **Status de Risco** é calculado automaticamente no banco de dados e atualizad
 
 ### Pré-requisitos
 
-- [Node.js](https://nodejs.org) v18 ou superior
+- [Node.js](https://nodejs.org) v22.12 ou superior
 - Uma conta gratuita no [Supabase](https://supabase.com)
 
 ### 1. Clone o repositório
@@ -197,6 +206,9 @@ estudea/
 │   ├── hooks/          # Custom hooks (notificações, correções pendentes)
 │   ├── types/          # Tipos TypeScript (schema do Supabase)
 │   └── utils/          # Utilitários (celebração, helpers)
+├── mcp/                 # Servidor MCP, autenticação e ferramentas do ChatGPT
+├── docs/
+│   └── mcp.md           # Guia de OAuth, EasyPanel, operação e troubleshooting
 ├── supabase/
 │   └── migrations/     # Migrations SQL com triggers automáticos
 └── public/             # Assets estáticos
