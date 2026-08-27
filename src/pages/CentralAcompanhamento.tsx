@@ -1106,11 +1106,45 @@ export const CentralAcompanhamento: React.FC<CentralAcompanhamentoProps> = ({
                               Abrir
                             </a>
                           </div>
-                        ) : (
-                          <p className="font-mono text-xs text-on-surface bg-surface-container-low p-3 rounded-product-control border border-outline-variant/60 leading-relaxed whitespace-pre-wrap">
-                            {entrega.resposta}
-                          </p>
-                        )}
+                        ) : (() => {
+                          try {
+                            const parsed = JSON.parse(entrega.resposta);
+                            if (parsed && (parsed.respostas !== undefined || parsed.score !== undefined)) {
+                              return (
+                                <div className="bg-surface-container-low p-3.5 rounded-product-control border border-outline-variant/60 space-y-2 text-xs">
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    {parsed.score !== null && parsed.score !== undefined && (
+                                      <span className="font-bold text-primary">Nota: {parsed.score}/100</span>
+                                    )}
+                                    {parsed.correctCount !== null && parsed.correctCount !== undefined && (
+                                      <span className="font-semibold text-on-surface">Acertos: {parsed.correctCount} de {parsed.totalQuestions ?? '?'}</span>
+                                    )}
+                                    {parsed.passed !== undefined && (
+                                      <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${parsed.passed ? 'bg-emerald-500/15 text-emerald-600' : 'bg-rose-500/15 text-rose-600'}`}>
+                                        {parsed.passed ? 'Aprovado' : 'Abaixo da Média'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {parsed.respostas && typeof parsed.respostas === 'object' && (
+                                    <div className="pt-1 border-t border-outline-variant/40 space-y-1">
+                                      <p className="text-[10px] font-mono text-on-surface-variant uppercase font-bold">Respostas Registradas:</p>
+                                      {Object.entries(parsed.respostas).map(([key, val], idx) => (
+                                        <p key={key} className="text-xs text-on-surface">
+                                          <span className="font-mono text-secondary font-bold">Q{idx + 1}:</span> {String(val)}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                          } catch {}
+                          return (
+                            <p className="font-mono text-xs text-on-surface bg-surface-container-low p-3 rounded-product-control border border-outline-variant/60 leading-relaxed whitespace-pre-wrap">
+                              {entrega.resposta}
+                            </p>
+                          );
+                        })()}
                       </div>
 
                       {hasFeedback ? (

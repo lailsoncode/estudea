@@ -486,6 +486,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
   const [contextDone, setContextDone] = useState(false);
   // 3.1 Drag & Drop Files
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [selectedFileToMove, setSelectedFileToMove] = useState<string | null>(null);
   const [droppedFiles, setDroppedFiles] = useState<{ docs: string[]; images: string[]; trash: string[] }>({
     docs: [], images: [], trash: []
   });
@@ -508,36 +509,64 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
   }, [volume]);
 
   useEffect(() => {
-    if (session?.user?.id) fetchProgressos();
-  }, [session]);
+    fetchProgressos();
+  }, [session?.user?.id]);
 
   const fetchProgressos = async () => {
-    if (!session?.user?.id) return;
-    const { data } = await supabase
-      .from('sessoes_mouse')
-      .select('modulo_id, acuracia, pontuacao, tempo_reacao_ms, concluido')
-      .eq('aluno_id', session.user.id)
-      .order('created_at', { ascending: false });
-
-    if (!data) return;
-    const mapa: Record<number, ProgressoModuloMouse> = {};
-    for (const row of data) {
-      const modId = row.modulo_id;
-      if (!mapa[modId]) {
-        mapa[modId] = {
-          modulo_id: modId,
-          melhor_acuracia: Number(row.acuracia) || 0,
-          melhor_pontuacao: Number(row.pontuacao) || 0,
-          melhor_tempo_reacao_ms: Number(row.tempo_reacao_ms) || 0,
-          concluido: Boolean(row.concluido)
-        };
-      } else {
-        mapa[modId].melhor_acuracia = Math.max(mapa[modId].melhor_acuracia, Number(row.acuracia) || 0);
-        mapa[modId].melhor_pontuacao = Math.max(mapa[modId].melhor_pontuacao, Number(row.pontuacao) || 0);
-        mapa[modId].concluido = mapa[modId].concluido || Boolean(row.concluido);
+    const storageKey = `estudea_mouse_progress_${session?.user?.id || 'guest'}`;
+    
+    // 1. Carrega imediatamente do cache local para resposta instantânea
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProgressos(parsed);
+        }
       }
+    } catch (err) {
+      console.warn('Erro ao ler cache local de mouse:', err);
     }
-    setProgressos(Object.values(mapa));
+
+    if (!session?.user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sessoes_mouse')
+        .select('modulo_id, acuracia, pontuacao, tempo_reacao_ms, concluido')
+        .eq('aluno_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error || !data) return;
+
+      const mapa: Record<number, ProgressoModuloMouse> = {};
+      for (const row of data) {
+        const modId = row.modulo_id;
+        if (!mapa[modId]) {
+          mapa[modId] = {
+            modulo_id: modId,
+            melhor_acuracia: Number(row.acuracia) || 0,
+            melhor_pontuacao: Number(row.pontuacao) || 0,
+            melhor_tempo_reacao_ms: Number(row.tempo_reacao_ms) || 0,
+            concluido: Boolean(row.concluido)
+          };
+        } else {
+          mapa[modId].melhor_acuracia = Math.max(mapa[modId].melhor_acuracia, Number(row.acuracia) || 0);
+          mapa[modId].melhor_pontuacao = Math.max(mapa[modId].melhor_pontuacao, Number(row.pontuacao) || 0);
+          mapa[modId].concluido = mapa[modId].concluido || Boolean(row.concluido);
+        }
+      }
+
+      const list = Object.values(mapa);
+      if (list.length > 0) {
+        setProgressos(list);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(list));
+        } catch {}
+      }
+    } catch (err) {
+      console.warn('Erro ao sincronizar progresso do mouse com Supabase:', err);
+    }
   };
 
   const isModuloDesbloqueado = (moduloId: number) => {
@@ -576,6 +605,8 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     setContextMenuPos(null);
     setContextDone(false);
     setDroppedFiles({ docs: [], images: [], trash: [] });
+    setDraggedItem(null);
+    setSelectedFileToMove(null);
     setSelectedItems(new Set());
     setFormData({ check1: false, check2: false, radio: '', select: '', slider: 50 });
     setAimScore(0);
@@ -651,7 +682,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     if (acuraciaCalculada >= 95 && mediaReacao < 450) grade = 'S+';
     else if (acuraciaCalculada >= 90) grade = 'S';
     else if (acuraciaCalculada >= 80) grade = 'A';
-    else if (acuraciaCalculada >= 70) grade = 'B';
+    else if (acuraciaCalculada >= 60) grade = 'B';
 
     const res: ResultadoSessaoMouse = {
       moduloId: moduloAtivo.id,
@@ -663,6 +694,26 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     };
     setResultado(res);
 
+    // Atualiza imediatamente o estado e cache local garantindo o desbloqueio do próximo módulo
+    const modId = moduloAtivo.id;
+    setProgressos(prev => {
+      const existing = prev.find(p => p.modulo_id === modId);
+      const updated: ProgressoModuloMouse = {
+        modulo_id: modId,
+        melhor_acuracia: existing ? Math.max(existing.melhor_acuracia, acuraciaCalculada) : acuraciaCalculada,
+        melhor_pontuacao: existing ? Math.max(existing.melhor_pontuacao, pontuacao) : pontuacao,
+        melhor_tempo_reacao_ms: existing && existing.melhor_tempo_reacao_ms > 0 ? Math.min(existing.melhor_tempo_reacao_ms, mediaReacao) : mediaReacao,
+        concluido: true
+      };
+      const filtered = prev.filter(p => p.modulo_id !== modId);
+      const nextList = [...filtered, updated];
+      try {
+        const storageKey = `estudea_mouse_progress_${session?.user?.id || 'guest'}`;
+        localStorage.setItem(storageKey, JSON.stringify(nextList));
+      } catch {}
+      return nextList;
+    });
+
     if (session?.user?.id) {
       try {
         await supabase.from('sessoes_mouse').insert({
@@ -672,11 +723,10 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
           tempo_reacao_ms: mediaReacao,
           pontuacao,
           duracao_segundos: duracaoTotal,
-          concluido: acuraciaCalculada >= 70
+          concluido: true
         });
-        await fetchProgressos();
       } catch (err) {
-        console.error('Erro ao salvar sessão de mouse:', err);
+        console.error('Erro ao salvar sessão de mouse no Supabase:', err);
       }
     }
   };
@@ -688,7 +738,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     if (num === nextDot) {
       handleAcerto(50);
       if (num === 5) {
-        handleAvancarDesafio();
+        setTimeout(handleAvancarDesafio, 400);
       } else {
         setNextDot(num + 1);
       }
@@ -725,14 +775,19 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     const diff = now - lastClickTimestamp;
     setLastClickTimestamp(now);
 
-    if (diff < 450) {
+    if (diff < 500) {
       // Valid double click!
-      setOpenedFolders(prev => new Set(prev).add(id));
-      setDoubleClickFeedback('Perfeito! Duplo clique rápido!');
-      handleAcerto(120);
-      if (soundEnabled) playMouseSound('double_click', volume);
-      if (openedFolders.size + 1 >= 3) {
-        setTimeout(handleAvancarDesafio, 700);
+      if (!openedFolders.has(id)) {
+        const nextSet = new Set(openedFolders).add(id);
+        setOpenedFolders(nextSet);
+        setDoubleClickFeedback('Perfeito! Duplo clique rápido!');
+        handleAcerto(120);
+        if (soundEnabled) playMouseSound('double_click', volume);
+        if (nextSet.size >= 3) {
+          setTimeout(handleAvancarDesafio, 700);
+        }
+      } else {
+        setDoubleClickFeedback('Esta pasta já foi aberta! Abra as demais.');
       }
     } else {
       setDoubleClickFeedback('Primeiro clique registrado... dê o 2º clique mais rápido!');
@@ -758,16 +813,27 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
     }
   };
 
-  // 3.1 Drag and Drop
+  // 3.1 Drag and Drop & Click-to-Move
   const handleDragStart = (item: string) => {
     setDraggedItem(item);
   };
 
+  const handleSelectFileToMove = (item: string) => {
+    if (selectedFileToMove === item) {
+      setSelectedFileToMove(null);
+      setDraggedItem(null);
+    } else {
+      setSelectedFileToMove(item);
+      setDraggedItem(item);
+    }
+  };
+
   const handleDropOnFolder = (folderType: 'docs' | 'images' | 'trash') => {
-    if (!draggedItem) return;
-    const isDoc = draggedItem.includes('relatorio') || draggedItem.includes('aula');
-    const isImg = draggedItem.includes('foto') || draggedItem.includes('logo');
-    const isTrash = draggedItem.includes('virus') || draggedItem.includes('rascunho_velho');
+    const itemToPlace = draggedItem || selectedFileToMove;
+    if (!itemToPlace) return;
+    const isDoc = itemToPlace.includes('relatorio') || itemToPlace.includes('aula');
+    const isImg = itemToPlace.includes('foto') || itemToPlace.includes('logo');
+    const isTrash = itemToPlace.includes('virus') || itemToPlace.includes('rascunho') || itemToPlace.includes('lixo');
 
     const correct =
       (folderType === 'docs' && isDoc) ||
@@ -775,21 +841,23 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
       (folderType === 'trash' && isTrash);
 
     if (correct) {
-      setDroppedFiles(prev => ({
-        ...prev,
-        [folderType]: [...prev[folderType], draggedItem]
-      }));
+      const nextDocs = folderType === 'docs' ? [...droppedFiles.docs, itemToPlace] : droppedFiles.docs;
+      const nextImages = folderType === 'images' ? [...droppedFiles.images, itemToPlace] : droppedFiles.images;
+      const nextTrash = folderType === 'trash' ? [...droppedFiles.trash, itemToPlace] : droppedFiles.trash;
+      setDroppedFiles({ docs: nextDocs, images: nextImages, trash: nextTrash });
       handleAcerto(100);
       if (soundEnabled) playMouseSound('drop', volume);
       setDraggedItem(null);
+      setSelectedFileToMove(null);
 
-      const totalDropped = droppedFiles.docs.length + droppedFiles.images.length + droppedFiles.trash.length + 1;
+      const totalDropped = nextDocs.length + nextImages.length + nextTrash.length;
       if (totalDropped >= 4) {
         setTimeout(handleAvancarDesafio, 600);
       }
     } else {
       handleErro();
       setDraggedItem(null);
+      setSelectedFileToMove(null);
     }
   };
 
@@ -817,12 +885,10 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
 
     setSelectionBox(prev => prev ? { ...prev, w, h } : null);
 
-    // Check intersecting items
-    const nextSelected = new Set<number>();
-    [0, 1, 2, 3].forEach(idx => {
-      nextSelected.add(idx);
-    });
-    setSelectedItems(nextSelected);
+    // Se a caixa de seleção tiver tamanho significativo, seleciona todos
+    if (Math.abs(w) > 30 && Math.abs(h) > 25) {
+      setSelectedItems(new Set([0, 1, 2, 3]));
+    }
   };
 
   const handleMouseUpSelect = () => {
@@ -833,6 +899,17 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
         handleAcerto(150);
         setTimeout(handleAvancarDesafio, 600);
       }
+    }
+  };
+
+  const handleToggleSelectItem = (idx: number) => {
+    const nextSet = new Set(selectedItems);
+    if (nextSet.has(idx)) nextSet.delete(idx);
+    else nextSet.add(idx);
+    setSelectedItems(nextSet);
+    if (nextSet.size >= 4) {
+      handleAcerto(150);
+      setTimeout(handleAvancarDesafio, 600);
     }
   };
 
@@ -1021,6 +1098,15 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
               >
                 <HugeiconsIcon icon={RefreshIcon} size={18} />
               </button>
+
+              <button
+                onClick={handleAvancarDesafio}
+                className="px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/40 text-on-surface font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs"
+                title="Pular ou concluir desafio atual"
+              >
+                <span>Avançar</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={2} />
+              </button>
             </div>
           </div>
 
@@ -1102,7 +1188,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                 >
                   <div
                     onMouseEnter={() => setMazeStarted(true)}
-                    className="w-16 h-28 bg-primary/20 hover:bg-primary/30 text-primary border-2 border-primary/40 rounded-xl flex items-center justify-center font-bold text-xs text-center z-10"
+                    className="w-16 h-28 bg-primary/20 hover:bg-primary/30 text-primary border-2 border-primary/40 rounded-xl flex items-center justify-center font-bold text-xs text-center z-10 cursor-pointer"
                   >
                     {mazeStarted ? 'Em Curso' : 'Início'}
                   </div>
@@ -1119,7 +1205,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                         setTimeout(handleAvancarDesafio, 600);
                       }
                     }}
-                    className="w-16 h-28 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 border-2 border-emerald-500/40 rounded-xl flex items-center justify-center font-bold text-xs text-center z-10"
+                    className="w-16 h-28 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 border-2 border-emerald-500/40 rounded-xl flex items-center justify-center font-bold text-xs text-center z-10 cursor-pointer"
                   >
                     Chegada 🏁
                   </div>
@@ -1187,6 +1273,12 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
               <div className="space-y-4 text-center">
                 <div
                   onContextMenu={(e) => handleItemContextMenu(e)}
+                  onClick={(e) => {
+                    // Touch/Fallback support
+                    if (!contextMenuPos) {
+                      handleItemContextMenu(e);
+                    }
+                  }}
                   className="w-36 h-36 mx-auto rounded-2xl bg-surface-container-low border-2 border-dashed border-orange-500/50 hover:border-orange-500 flex flex-col items-center justify-center p-3 cursor-context-menu"
                 >
                   <span className="text-4xl mb-1">📄</span>
@@ -1234,8 +1326,12 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
             {/* 3.1 Drag and Drop de Arquivos */}
             {desafioAtual.tipo === 'drag_drop' && (
               <div className="w-full max-w-xl space-y-6">
-                {/* File items to drag */}
-                <div className="flex gap-3 justify-center">
+                <p className="text-center text-xs text-on-surface-variant font-semibold">
+                  {selectedFileToMove ? 'Arquivo selecionado! Agora clique na pasta de destino correspondente.' : 'Arraste o arquivo ou clique nele para selecionar e depois clique na pasta.'}
+                </p>
+
+                {/* File items to drag or click */}
+                <div className="flex gap-3 justify-center flex-wrap">
                   {[
                     { id: 'relatorio_senac.pdf', icon: '📄', label: 'relatorio.pdf' },
                     { id: 'foto_turma.jpg', icon: '🖼️', label: 'foto.jpg' },
@@ -1248,7 +1344,12 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                         key={f.id}
                         draggable
                         onDragStart={() => handleDragStart(f.id)}
-                        className="px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/40 shadow-xs cursor-grab active:cursor-grabbing flex items-center gap-2 text-xs font-bold text-on-surface hover:scale-105 transition-transform"
+                        onClick={() => handleSelectFileToMove(f.id)}
+                        className={`px-3 py-2 rounded-xl border shadow-xs cursor-pointer flex items-center gap-2 text-xs font-bold transition-all ${
+                          selectedFileToMove === f.id
+                            ? 'bg-primary text-white border-primary scale-110 shadow-md ring-2 ring-primary/30'
+                            : 'bg-surface-container border-outline-variant/40 text-on-surface hover:scale-105'
+                        }`}
                       >
                         <span>{f.icon}</span>
                         <span>{f.label}</span>
@@ -1261,7 +1362,8 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDropOnFolder('docs')}
-                    className="p-4 rounded-2xl bg-sky-500/10 border-2 border-dashed border-sky-500/40 text-center flex flex-col items-center justify-center min-h-[110px]"
+                    onClick={() => handleDropOnFolder('docs')}
+                    className="p-4 rounded-2xl bg-sky-500/10 border-2 border-dashed border-sky-500/40 text-center flex flex-col items-center justify-center min-h-[110px] cursor-pointer hover:bg-sky-500/20 transition-all"
                   >
                     <span className="text-3xl mb-1">📁</span>
                     <span className="text-xs font-bold text-sky-700 dark:text-sky-400">Pasta Documentos</span>
@@ -1271,7 +1373,8 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDropOnFolder('images')}
-                    className="p-4 rounded-2xl bg-amber-500/10 border-2 border-dashed border-amber-500/40 text-center flex flex-col items-center justify-center min-h-[110px]"
+                    onClick={() => handleDropOnFolder('images')}
+                    className="p-4 rounded-2xl bg-amber-500/10 border-2 border-dashed border-amber-500/40 text-center flex flex-col items-center justify-center min-h-[110px] cursor-pointer hover:bg-amber-500/20 transition-all"
                   >
                     <span className="text-3xl mb-1">🖼️</span>
                     <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Pasta Imagens</span>
@@ -1281,7 +1384,8 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDropOnFolder('trash')}
-                    className="p-4 rounded-2xl bg-rose-500/10 border-2 border-dashed border-rose-500/40 text-center flex flex-col items-center justify-center min-h-[110px]"
+                    onClick={() => handleDropOnFolder('trash')}
+                    className="p-4 rounded-2xl bg-rose-500/10 border-2 border-dashed border-rose-500/40 text-center flex flex-col items-center justify-center min-h-[110px] cursor-pointer hover:bg-rose-500/20 transition-all"
                   >
                     <span className="text-3xl mb-1">🗑️</span>
                     <span className="text-xs font-bold text-rose-700 dark:text-rose-400">Lixeira</span>
@@ -1301,21 +1405,25 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                 className="w-full max-w-lg h-72 relative border-2 border-dashed border-amber-500/30 rounded-2xl bg-amber-500/5 p-4 cursor-crosshair overflow-hidden"
               >
                 <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-3 text-center">
-                  Clique e arraste para envolver todos os 4 itens com o retângulo azul ({selectedItems.size}/4 selecionados)
+                  Clique e arraste para envolver os itens ou clique neles para selecionar ({selectedItems.size}/4 selecionados)
                 </p>
 
                 <div className="grid grid-cols-2 gap-8 p-4">
                   {['documento_1.pdf', 'documento_2.pdf', 'planilha_senac.xlsx', 'apresentacao.pptx'].map((name, i) => (
                     <div
                       key={i}
-                      className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all ${
+                      onClick={() => handleToggleSelectItem(i)}
+                      className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                         selectedItems.has(i)
-                          ? 'bg-primary/20 border-primary text-primary shadow-xs scale-105'
-                          : 'bg-surface-container border-outline-variant/30 text-on-surface'
+                          ? 'bg-primary/20 border-primary text-primary shadow-xs scale-105 ring-2 ring-primary/30'
+                          : 'bg-surface-container border-outline-variant/30 text-on-surface hover:border-primary/40'
                       }`}
                     >
                       <span>📄</span>
                       <span className="truncate">{name}</span>
+                      {selectedItems.has(i) && (
+                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} className="ml-auto text-primary" strokeWidth={2} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1334,9 +1442,9 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
               </div>
             )}
 
-            {/* 4.1 Scroll Deep Exploration */}
-            {desafioAtual.tipo === 'scroll' && (
-              <div className="w-full max-w-md h-64 overflow-y-auto rounded-2xl border border-outline-variant/40 p-4 space-y-8 bg-surface-container-low">
+            {/* 4.1 Scroll Deep Exploration (Vertical) */}
+            {desafioAtual.tipo === 'scroll' && desafioAtual.id === '4_1' && (
+              <div className="w-full max-w-md h-64 overflow-y-auto rounded-2xl border border-outline-variant/40 p-4 space-y-8 bg-surface-container-low scrollbar-thin">
                 <div className="p-3 bg-surface-container rounded-xl text-xs font-semibold">
                   📜 Início do Documento — Role a página para baixo com a roda do mouse...
                 </div>
@@ -1354,10 +1462,88 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                       handleAcerto(150);
                       setTimeout(handleAvancarDesafio, 600);
                     }}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs"
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all active:scale-95"
                   >
                     Coletar Selo 🏆
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* 4.2 Scroll Horizontal Showcase */}
+            {desafioAtual.tipo === 'scroll' && desafioAtual.id === '4_2' && (
+              <div className="w-full max-w-xl space-y-4">
+                <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold px-2">
+                  <span>↔️ Role horizontalmente com a roda do mouse ou arraste a barra</span>
+                  <span className="text-secondary font-extrabold">Objetivo: Certificado Senac</span>
+                </div>
+                <div className="w-full h-64 overflow-x-auto overflow-y-hidden rounded-2xl border border-outline-variant/40 p-4 bg-surface-container-low flex items-center gap-4 scrollbar-thin">
+                  <div className="min-w-[170px] h-48 rounded-xl bg-surface-container border border-outline-variant/30 p-4 flex flex-col justify-between shrink-0 shadow-xs">
+                    <span className="text-2xl">⌨️</span>
+                    <div>
+                      <h4 className="font-bold text-xs text-on-surface">Digitação Ágil</h4>
+                      <p className="text-[10px] text-on-surface-variant">Prática da Linha Central</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-outline uppercase">Módulo 1</span>
+                  </div>
+
+                  <div className="min-w-[170px] h-48 rounded-xl bg-surface-container border border-outline-variant/30 p-4 flex flex-col justify-between shrink-0 shadow-xs">
+                    <span className="text-2xl">🖱️</span>
+                    <div>
+                      <h4 className="font-bold text-xs text-on-surface">Treino de Mouse</h4>
+                      <p className="text-[10px] text-on-surface-variant">Coordenação Motora</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-outline uppercase">Módulo 2</span>
+                  </div>
+
+                  <div className="min-w-[170px] h-48 rounded-xl bg-surface-container border border-outline-variant/30 p-4 flex flex-col justify-between shrink-0 shadow-xs">
+                    <span className="text-2xl">🪟</span>
+                    <div>
+                      <h4 className="font-bold text-xs text-on-surface">Windows 11</h4>
+                      <p className="text-[10px] text-on-surface-variant">Atalhos e Pastas</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-outline uppercase">Módulo 3</span>
+                  </div>
+
+                  {/* TARGET CARD: SENAC CERTIFICATE */}
+                  <div className="min-w-[200px] h-48 rounded-xl bg-gradient-to-br from-secondary/15 via-primary/10 to-amber-500/15 border-2 border-secondary/50 p-4 flex flex-col justify-between shrink-0 shadow-md ring-2 ring-secondary/20">
+                    <div className="flex justify-between items-start">
+                      <span className="text-3xl">🎓</span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-secondary text-white">Alvo</span>
+                    </div>
+                    <div>
+                      <h4 className="font-heading font-extrabold text-xs text-on-surface">Certificado Oficial Senac</h4>
+                      <p className="text-[10px] text-on-surface-variant">Qualificação Profissional</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleAcerto(200);
+                        setTimeout(handleAvancarDesafio, 600);
+                      }}
+                      className="w-full py-1.5 bg-secondary hover:bg-secondary/90 text-white font-bold text-xs rounded-lg shadow-xs flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+                    >
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} strokeWidth={2} />
+                      <span>Selecionar Certificado</span>
+                    </button>
+                  </div>
+
+                  <div className="min-w-[170px] h-48 rounded-xl bg-surface-container border border-outline-variant/30 p-4 flex flex-col justify-between shrink-0 shadow-xs">
+                    <span className="text-2xl">🚀</span>
+                    <div>
+                      <h4 className="font-bold text-xs text-on-surface">Projeto Integrador</h4>
+                      <p className="text-[10px] text-on-surface-variant">Soluções Práticas</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-outline uppercase">Módulo 4</span>
+                  </div>
+
+                  <div className="min-w-[170px] h-48 rounded-xl bg-surface-container border border-outline-variant/30 p-4 flex flex-col justify-between shrink-0 shadow-xs">
+                    <span className="text-2xl">💼</span>
+                    <div>
+                      <h4 className="font-bold text-xs text-on-surface">Mercado de Trabalho</h4>
+                      <p className="text-[10px] text-on-surface-variant">Carreira & Autonomia</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-outline uppercase">Módulo 5</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1499,17 +1685,32 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => iniciarModulo(moduloAtivo)}
-                  className="flex-1 py-3 px-4 border border-outline-variant/40 hover:bg-surface-container text-on-surface font-heading font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  onClick={() => {
+                    setResultado(null);
+                    setModuloAtivo(null);
+                  }}
+                  className="py-3 px-4 border border-outline-variant/40 hover:bg-surface-container text-on-surface font-heading font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
                 >
-                  <HugeiconsIcon icon={RefreshIcon} size={16} />
-                  <span>Repetir Módulo</span>
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                  <span>Lista de Módulos</span>
                 </button>
 
                 <button
                   onClick={() => {
+                    setResultado(null);
+                    iniciarModulo(moduloAtivo);
+                  }}
+                  className="py-3 px-4 border border-outline-variant/40 hover:bg-surface-container text-on-surface font-heading font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  <HugeiconsIcon icon={RefreshIcon} size={16} />
+                  <span>Repetir</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setResultado(null);
                     if (moduloAtivo.id < MODULOS_MOUSE.length) {
                       const next = MODULOS_MOUSE.find(m => m.id === moduloAtivo.id + 1);
                       if (next) iniciarModulo(next);
@@ -1519,7 +1720,7 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                   }}
                   className="flex-1 py-3 px-4 bg-primary hover:bg-primary/90 text-white font-heading font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
-                  <span>Próximo Módulo</span>
+                  <span>{moduloAtivo.id < MODULOS_MOUSE.length ? 'Próximo Módulo' : 'Concluir Treinamento'}</span>
                   <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
                 </button>
               </div>

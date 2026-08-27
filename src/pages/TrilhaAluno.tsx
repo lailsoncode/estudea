@@ -803,28 +803,99 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
     }
   };
 
-  const isQuestionCorrect = (q: Questao, answer: string) => {
-    if (!answer || !answer.trim()) return false;
-    
-    if (q.tipo === 'aberta') {
-      const keywordsStr = q.opcoes?.[1] || '';
-      if (!keywordsStr.trim()) {
-        return true;
-      }
-      
-      const keywords = keywordsStr.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
-      const studentAnswer = answer.toLowerCase();
-      
-      // Verifica se o aluno escreveu TODAS as palavras-chave na resposta
-      return keywords.every(k => studentAnswer.includes(k));
+  const resolveOption = (val: string, opcoes?: string[]): string => {
+    if (!val) return '';
+    const trimmed = String(val).trim();
+    if (!opcoes || opcoes.length === 0) return trimmed.toLowerCase();
+
+    const directIdx = opcoes.findIndex(o => o.trim().toLowerCase() === trimmed.toLowerCase());
+    if (directIdx !== -1) return opcoes[directIdx].trim().toLowerCase();
+
+    const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    const letterIdx = letters.indexOf(trimmed.toLowerCase());
+    if (letterIdx !== -1 && letterIdx < opcoes.length) {
+      return opcoes[letterIdx].trim().toLowerCase();
+    }
+
+    const num = parseInt(trimmed, 10);
+    if (!isNaN(num) && num >= 0 && num < opcoes.length) {
+      return opcoes[num].trim().toLowerCase();
+    }
+
+    return trimmed.toLowerCase();
+  };
+
+  const isQuestionCorrect = (q: Questao, answer: string): boolean => {
+    if (!answer && answer !== '0') return false;
+    const gabarito = (q.resposta_correta || '').trim();
+    const resp = answer.trim();
+
+    if (!gabarito && q.tipo !== 'aberta') return true;
+
+    if (q.tipo === 'verdadeiro_falso') {
+      const isTrue = (s: string) => ['verdadeiro', 'v', 'true', '1', 'sim'].includes(s.trim().toLowerCase());
+      const isFalse = (s: string) => ['falso', 'f', 'false', '0', 'nao', 'não'].includes(s.trim().toLowerCase());
+      if (isTrue(resp) && isTrue(gabarito)) return true;
+      if (isFalse(resp) && isFalse(gabarito)) return true;
+      return resp.toLowerCase() === gabarito.toLowerCase();
     }
 
     if (q.tipo === 'multipla_selecao') {
-      const correctParts = (q.resposta_correta || '').split(';').map(p => p.trim().toLowerCase()).filter(p => p.length > 0).sort();
-      const answerParts = answer.split(';').map(p => p.trim().toLowerCase()).filter(p => p.length > 0).sort();
-      return correctParts.length === answerParts.length && correctParts.every((val, index) => val === answerParts[index]);
+      const splitTokens = (str: string) =>
+        str
+          .split(/[;,\n]/)
+          .map(s => resolveOption(s, q.opcoes))
+          .filter(Boolean)
+          .sort();
+      const respTokens = splitTokens(resp);
+      const gabTokens = splitTokens(gabarito);
+      if (respTokens.length === 0 && gabTokens.length === 0) return true;
+      if (respTokens.length !== gabTokens.length) return false;
+      return respTokens.every((token, idx) => token === gabTokens[idx]);
     }
-    
+
+    if (q.tipo === 'aberta') {
+      const normGabarito = (q.opcoes?.[0] || q.resposta_correta || '').trim().toLowerCase();
+      if (normGabarito && resp.toLowerCase().includes(normGabarito)) return true;
+
+      const keywordsStr = q.opcoes?.[1] || '';
+      if (keywordsStr.trim()) {
+        const keywords = keywordsStr
+          .split(',')
+          .map((k: string) => k.trim().toLowerCase())
+          .filter(Boolean);
+        if (keywords.length > 0) {
+          const matchCount = keywords.filter((k: string) => resp.toLowerCase().includes(k)).length;
+          return matchCount >= Math.ceil(keywords.length * 0.5);
+        }
+      }
+      return resp.length > 0;
+    }
+
+    // multipla_escolha
+    const resolvedResp = resolveOption(resp, q.opcoes);
+    const resolvedGab = resolveOption(gabarito, q.opcoes);
+    return resolvedResp === resolvedGab;
+  };
+
+  const getStudentAnswerForQuestion = (payload: any, q: any, qIdx: number): string => {
+    if (!payload) return '';
+    const answers = payload.respostas || payload;
+    if (!answers || typeof answers !== 'object') return '';
+
+    if (answers[q.id] !== undefined && answers[q.id] !== null) {
+      return String(answers[q.id]);
+    }
+    if (Array.isArray(answers) && answers[qIdx] !== undefined) {
+      return String(answers[qIdx]);
+    }
+    if (answers[String(qIdx)] !== undefined && answers[String(qIdx)] !== null) {
+      return String(answers[String(qIdx)]);
+    }
+    if (q.enunciado && answers[q.enunciado] !== undefined) {
+      return String(answers[q.enunciado]);
+    }
+    return '';
   };
 
   const handleToggleAnswerMulti = (qId: string, option: string) => {
@@ -3779,7 +3850,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                                 <div className="space-y-2">
                                                   <p className="text-[11px] text-on-surface-variant font-mono font-bold">Detalhamento das Respostas:</p>
                                                   {activeQuestions && activeQuestions.map((q, qIdx) => {
-                                                    const alunoResp = payload.respostas?.[q.id] || '';
+                                                    const alunoResp = getStudentAnswerForQuestion(payload, q, qIdx);
                                                     const isCorrect = isGraded ? isQuestionCorrect(q, alunoResp) : false;
                                                     return (
                                                       <div key={q.id} className="p-3 bg-surface rounded-lg border border-outline-variant/20 space-y-1 text-left">
