@@ -159,6 +159,7 @@ interface Aula {
   nota_aprovacao: number;
   obrigatorio: boolean;
   embaralhar_questoes: boolean;
+  embaralhar_opcoes?: boolean;
   tempo_limite: number | null;
   numero_aula: number;
   titulo: string;
@@ -166,6 +167,16 @@ interface Aula {
   liberada: boolean;
   atividades?: Atividade[];
   questoes?: Questao[];
+  aula_materiais?: MaterialAula[];
+}
+
+interface MaterialAula {
+  id: string;
+  titulo: string;
+  url: string;
+  tipo: 'imagem' | 'arquivo' | 'video' | 'link' | 'referencia';
+  uso: 'atividade_pratica' | 'consulta' | 'leitura' | 'download' | 'referencia';
+  obrigatorio: boolean;
 }
 
 interface Atividade {
@@ -207,6 +218,15 @@ interface Entrega {
   nota: number | null;
   feedback_professor: string | null;
 }
+
+const shuffledCopy = <T,>(items: T[]): T[] => {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+  }
+  return result;
+};
 
 // Ícones para status de módulo
 const ArchitectureIcon = () => (
@@ -401,6 +421,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         .from('modulos')
         .select('*')
         .eq('curso_id', turmaData.curso_id)
+        .is('arquivado_em', null)
         .order('ordem', { ascending: true });
 
       if (modulosError) throw modulosError;
@@ -414,9 +435,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
           .from('aulas')
           .select(`
             *,
-            atividades(*)
+            atividades(*),
+            aula_materiais(*)
           `)
-          .in('modulo_id', moduloIds);
+          .in('modulo_id', moduloIds)
+          .is('arquivado_em', null);
 
         if (aulasError) throw aulasError;
 
@@ -448,7 +471,12 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
         setAulas(sortedAulas.map(aula => ({
           ...aula,
-          questoes: questionsByLesson.get(aula.id) || []
+          questoes: (questionsByLesson.get(aula.id) || []).map((question) => ({
+            ...question,
+            opcoes: aula.embaralhar_opcoes && question.tipo !== 'aberta'
+              ? shuffledCopy(question.opcoes || [])
+              : question.opcoes,
+          })),
         })));
       }
 
@@ -626,7 +654,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         setActiveLessonTab('conteudo');
       } else if (selectedAula.questoes && selectedAula.questoes.length > 0 && !hasActivityQuiz) {
         setActiveLessonTab('quiz');
-      } else if (selectedAula.arquivo_url) {
+      } else if (selectedAula.arquivo_url || (selectedAula.aula_materiais?.length || 0) > 0) {
         setActiveLessonTab('arquivos');
       } else if (selectedAula.atividades && selectedAula.atividades.length > 0) {
         if (selectedAula.atividades.length === 1) {
@@ -3078,7 +3106,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           <span>Conteúdo</span>
                         </button>
 
-                        {selectedAula.arquivo_url && (
+                        {(selectedAula.arquivo_url || (selectedAula.aula_materiais?.length || 0) > 0) && (
                           <button
                             onClick={() => setActiveLessonTab('arquivos')}
                             className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 ${
@@ -3290,7 +3318,36 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                         );
                       })()}
 
-                      {/* Tab 2: Materiais — PDF inline viewer ou download */}
+                      {activeLessonTab === 'arquivos' && (selectedAula.aula_materiais?.length || 0) > 0 && (
+                        <div className="product-card p-5 sm:p-6 space-y-4 animate-fade-in">
+                          <h4 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
+                            <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" />
+                            Materiais da aula
+                          </h4>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {selectedAula.aula_materiais?.map((material) => (
+                              <a
+                                key={material.id}
+                                href={material.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-start justify-between gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-4 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                              >
+                                <div>
+                                  <p className="font-heading font-bold text-on-surface">{material.titulo}</p>
+                                  <p className="mt-1 text-xs text-on-surface-variant">
+                                    {material.uso.replaceAll('_', ' ')} · {material.tipo}
+                                    {material.obrigatorio ? ' · obrigatório' : ''}
+                                  </p>
+                                </div>
+                                <HugeiconsIcon icon={ArrowRight01Icon} size={17} className="text-primary shrink-0 mt-1" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tab 2: material legado — PDF inline viewer ou download */}
                       {activeLessonTab === 'arquivos' && selectedAula.arquivo_url && (() => {
                         const embedInfo = getArquivoEmbedInfo(selectedAula.arquivo_url);
 

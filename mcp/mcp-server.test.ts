@@ -30,12 +30,24 @@ test('anuncia a superfície MCP esperada com anotações de segurança', async (
     const names = tools.map((tool) => tool.name).sort();
 
     assert.deepEqual(names, [
+      'arquivar_aula',
+      'arquivar_modulo',
+      'atualizar_aula_rascunho',
+      'atualizar_modulo',
       'consultar_aula',
       'criar_aula_rascunho',
+      'criar_aulas_em_lote',
+      'criar_modulo',
       'liberar_aula_para_turma',
+      'listar_aulas',
       'listar_cursos',
       'listar_modulos',
       'listar_turmas',
+      'registrar_aula_ministrada',
+      'reordenar_aulas',
+      'reordenar_modulos',
+      'retirar_aula_da_turma',
+      'validar_aula',
     ]);
     assert.equal(
       tools.find((tool) => tool.name === 'listar_cursos')?.annotations?.readOnlyHint,
@@ -43,6 +55,14 @@ test('anuncia a superfície MCP esperada com anotações de segurança', async (
     );
     assert.equal(
       tools.find((tool) => tool.name === 'liberar_aula_para_turma')?.annotations?.openWorldHint,
+      true,
+    );
+    assert.equal(
+      tools.find((tool) => tool.name === 'validar_aula')?.annotations?.readOnlyHint,
+      true,
+    );
+    assert.equal(
+      tools.find((tool) => tool.name === 'retirar_aula_da_turma')?.annotations?.destructiveHint,
       true,
     );
   } finally {

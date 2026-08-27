@@ -17,6 +17,8 @@ const friendlyErrors: Record<string, string> = {
   module_has_released_lessons: 'O módulo possui aulas liberadas. Retire as liberações antes de arquivá-lo.',
   duplicate_lesson_order_in_batch: 'O lote contém aulas com a mesma ordem.',
   duplicate_lesson_number_in_batch: 'O lote contém aulas com o mesmo número.',
+  duplicate_lesson_title_in_batch: 'O lote contém aulas com o mesmo título.',
+  lesson_batch_conflicts_with_existing: 'Uma aula do lote repete título, número ou ordem de uma aula ativa que já existe no módulo.',
 };
 
 const throwOnError = (error: { message: string; code?: string } | null) => {
@@ -136,7 +138,10 @@ export const listModules = async (
   if (!includeArchived) query = query.is('arquivado_em', null);
   const { data, error } = await query;
   throwOnError(error);
-  return { curso: course, modulos: data || [] };
+  return {
+    curso: course,
+    modulos: (data || []).map((module) => ({ ...module, revision_id: module.updated_at })),
+  };
 };
 
 export const createModule = (
@@ -417,6 +422,24 @@ export const createLessonsBatch = async (
   };
   if (duplicate('ordem')) throw new EstudeaToolError('O lote possui duas ou mais aulas com a mesma ordem.');
   if (duplicate('numero_aula')) throw new EstudeaToolError('O lote possui duas ou mais aulas com o mesmo número.');
+  const titles = normalized.map((lesson) => String(lesson.titulo || '').trim().toLocaleLowerCase('pt-BR'));
+  if (new Set(titles).size !== titles.length) {
+    throw new EstudeaToolError('O lote possui duas ou mais aulas com o mesmo título.');
+  }
+
+  const existing = (await listLessons(context, moduleId, false)).aulas;
+  normalized.forEach((lesson, index) => {
+    const conflict = existing.find((current) => (
+      String(current.titulo).trim().toLocaleLowerCase('pt-BR') === String(lesson.titulo).trim().toLocaleLowerCase('pt-BR')
+      || (lesson.ordem !== undefined && current.ordem === lesson.ordem)
+      || (lesson.numero_aula !== undefined && current.numero_aula === lesson.numero_aula)
+    ));
+    if (conflict) {
+      throw new EstudeaToolError(
+        `Aula ${index + 1} (“${String(lesson.titulo)}”) conflita com a aula existente “${String(conflict.titulo)}” (ID ${String(conflict.id)}).`,
+      );
+    }
+  });
 
   return callRpc(context, 'mcp_create_lessons_batch', {
     p_modulo_id: moduleId,

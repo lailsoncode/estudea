@@ -42,7 +42,7 @@ Depois que o administrador publica e configura a integração uma única vez, ca
 5. entra no Estudea, caso ainda não esteja autenticado;
 6. revisa as permissões e clica em **Autorizar conexão**.
 
-Depois disso, o professor pode pedir ao ChatGPT para localizar cursos e módulos, criar aulas como rascunho, revisar o conteúdo e liberá-lo para uma turma.
+Depois disso, o professor pode pedir ao ChatGPT para administrar módulos, validar e criar aulas individuais ou em lote, corrigir rascunhos, configurar a Arena, anexar materiais e liberar o conteúdo para uma turma. Criação e liberação continuam sendo etapas separadas.
 
 Na mesma área do Estudea, o professor pode visualizar e revogar os aplicativos OAuth que autorizou. A senha do usuário nunca é compartilhada com o ChatGPT.
 
@@ -81,16 +81,75 @@ O MCP é stateless e não chama outro modelo de IA. O modelo conectado produz ar
 
 ## 3. Ferramentas MCP
 
-| Ferramenta | Tipo | Resultado |
-| --- | --- | --- |
-| `listar_cursos` | Leitura | Lista os cursos que o professor pode editar |
-| `listar_modulos` | Leitura | Lista módulos e IDs de um curso |
-| `listar_turmas` | Leitura | Lista turmas compatíveis com o professor e o curso |
-| `consultar_aula` | Leitura | Retorna aula, atividades e questões para revisão |
-| `criar_aula_rascunho` | Escrita | Cria aula, atividades e questões atomicamente, sem liberar |
-| `liberar_aula_para_turma` | Escrita | Libera a aula somente após confirmação explícita |
+| Grupo | Ferramenta | Tipo | Resultado |
+| --- | --- | --- | --- |
+| Curso | `listar_cursos` | Leitura | Lista cursos que o professor pode editar |
+| Módulo | `listar_modulos` | Leitura | Lista IDs, ordem, carga horária e `revision_id` |
+| Módulo | `criar_modulo` | Escrita | Cria uma UC/módulo sem gerar aulas |
+| Módulo | `atualizar_modulo` | Escrita | Altera um módulo com controle de revisão |
+| Módulo | `reordenar_modulos` | Escrita | Atualiza ordens atomicamente |
+| Módulo | `arquivar_modulo` | Escrita confirmada | Arquiva o módulo e suas aulas sem apagar dados |
+| Aula | `listar_aulas` | Leitura | Retorna IDs, situação, contagens, turmas e revisões |
+| Aula | `consultar_aula` | Leitura | Retorna conteúdo, materiais, atividades, quiz, Arena e liberações |
+| Aula | `validar_aula` | Leitura | Devolve erros e alertas sem gravar nada |
+| Aula | `criar_aula_rascunho` | Escrita | Cria uma aula completa atomicamente, sem liberar |
+| Aula | `atualizar_aula_rascunho` | Escrita | Substitui seções do rascunho com `revision_id` |
+| Aula | `reordenar_aulas` | Escrita | Atualiza ordem e numeração atomicamente |
+| Aula | `arquivar_aula` | Escrita confirmada | Arquiva uma aula ainda não liberada |
+| Aula | `criar_aulas_em_lote` | Escrita | Valida e cria até 100 rascunhos em uma única transação |
+| Diário | `registrar_aula_ministrada` | Escrita | Guarda conteúdo e atividades realizados separados do conteúdo do aluno |
+| Turma | `listar_turmas` | Leitura | Lista turmas compatíveis com professor e curso |
+| Turma | `liberar_aula_para_turma` | Escrita confirmada | Libera uma aula para uma turma |
+| Turma | `retirar_aula_da_turma` | Escrita confirmada | Retira o acesso sem apagar a aula |
 
-Não existe ferramenta de exclusão nesta versão.
+Não existe exclusão definitiva pelo MCP. Arquivamento é reversível no banco e retirada de turma não remove conteúdo.
+
+### 3.1 Estrutura recomendada das questões
+
+Use IDs estáveis para as opções e respostas:
+
+```json
+{
+  "enunciado": "Quais formatos preservam transparência?",
+  "tipo": "multipla_selecao",
+  "opcoes": [
+    { "id": "a", "texto": "PNG" },
+    { "id": "b", "texto": "JPEG" },
+    { "id": "c", "texto": "WebP" }
+  ],
+  "respostas_corretas": ["a", "c"]
+}
+```
+
+O formato antigo com `opcoes` como textos e `resposta_correta` continua aceito para compatibilidade. Novas aulas devem usar o formato estruturado. O servidor rejeita respostas inexistentes, múltipla seleção com somente uma resposta, todas as opções corretas e alternativas/IDs duplicados.
+
+### 3.2 Arena e materiais
+
+Uma aula pode ter quiz e Arena independentes:
+
+```json
+{
+  "embaralhar_questoes": true,
+  "embaralhar_opcoes": true,
+  "materiais": [
+    {
+      "titulo": "Imagem-base",
+      "url": "https://exemplo.com/imagem.png",
+      "tipo": "imagem",
+      "uso": "atividade_pratica",
+      "obrigatorio": true
+    }
+  ],
+  "arena": {
+    "habilitada": true,
+    "embaralhar_questoes": true,
+    "embaralhar_opcoes": true,
+    "questoes": []
+  }
+}
+```
+
+O Estudea congela a ordem sorteada das questões e alternativas ao iniciar cada sessão da Arena. Na trilha, as alternativas são reorganizadas a cada carregamento/tentativa sem alterar o gabarito.
 
 ## 4. Pré-requisitos
 
@@ -112,17 +171,20 @@ Aplique as migrações antes de habilitar escrita pelo ChatGPT:
 npx supabase db push
 ```
 
-A migração específica da integração é:
+As migrações específicas da integração são:
 
 ```text
 supabase/migrations/20260826010000_create_mcp_lesson_tools.sql
+supabase/migrations/20260827010000_expand_mcp_course_management.sql
 ```
 
-Ela inclui:
+Elas incluem:
 
-- RPC transacional de criação da aula completa;
-- RPC de liberação para turma;
-- validação de professor, curso, módulo e turma;
+- RPCs transacionais de módulo, aula, lote, arquivamento e liberação;
+- controle otimista por `updated_at`/`revision_id`;
+- Arena independente, opções estruturadas e materiais múltiplos;
+- registro pós-aula separado do conteúdo do aluno;
+- validação de professor, curso, módulo, aula e turma;
 - idempotência para evitar duplicação após repetição de rede;
 - tabela de auditoria `mcp_audit_logs`;
 - suporte ao tipo de entrega `arquivo`.
@@ -369,7 +431,7 @@ https://mcp.estudea.com.br/mcp
 ```
 
 6. crie a conexão;
-7. revise as seis ferramentas encontradas;
+7. revise as 18 ferramentas encontradas;
 8. conclua o login e o consentimento no Estudea.
 
 Não selecione **No authentication** em produção. O ChatGPT deve descobrir o OAuth a partir do `401` e dos documentos `.well-known`.
@@ -397,17 +459,27 @@ Depois, confirme no Estudea que:
 - a aula ainda não foi liberada;
 - o log de auditoria foi criado.
 
-### 12.3 Liberação controlada
+### 12.3 Validação, edição e lote
+
+> Valide uma aula sobre tratamento de imagens. Não salve nada; mostre todos os erros e alertas encontrados.
+
+> Liste as aulas da UC1, consulte a aula escolhida e corrija apenas o conteúdo e a Arena. Use o `revision_id` retornado e mantenha como rascunho.
+
+> Prepare três aulas para a UC2. Valide o lote inteiro, verifique números e ordens duplicadas, mostre o resumo e só então crie todas como rascunho. Não libere nenhuma.
+
+Confirme que uma edição feita com `revision_id` antigo falha, em vez de sobrescrever a versão mais recente.
+
+### 12.4 Liberação controlada
 
 > Consulte a aula que acabamos de criar e liste as turmas compatíveis. Mostre exatamente qual turma será afetada e peça minha confirmação antes de liberar.
 
 Confirme somente em uma turma de teste. A ferramenta exige confirmação explícita e deve rejeitar uma tentativa ambígua.
 
-### 12.4 Isolamento entre professores
+### 12.5 Isolamento entre professores
 
 Repita a conexão com um segundo professor e confirme que ele não consegue editar cursos ou turmas aos quais não possui acesso.
 
-### 12.5 Revogação
+### 12.6 Revogação
 
 No Estudea, abra **Minha Conta → Criar aulas pelo ChatGPT**, desconecte o aplicativo e confirme que novas chamadas deixam de funcionar até uma nova autorização.
 
@@ -471,8 +543,10 @@ O token temporário expira e não deve ser reutilizado no EasyPanel. Nunca envie
 - o servidor usa chave anônima/publishable, nunca `service_role`;
 - RLS e `auth.uid()` continuam definindo o alcance dos dados;
 - criação ocorre primeiro como rascunho;
-- liberação exige confirmação explícita;
-- não existe ferramenta de exclusão;
+- liberação, retirada de turma e arquivamento exigem confirmação explícita;
+- não existe ferramenta de exclusão definitiva;
+- rascunhos liberados não podem ser substituídos ou arquivados até a retirada das turmas;
+- `revision_id` impede que uma edição antiga sobrescreva uma edição recente;
 - RPCs de escrita são transacionais e idempotentes;
 - todas as escritas relevantes geram auditoria em `mcp_audit_logs`;
 - o professor pode revogar a autorização no próprio Estudea;
@@ -495,6 +569,8 @@ O token temporário expira e não deve ser reutilizado no EasyPanel. Nunca envie
 | `Invalid Host header` | Host ausente em `MCP_ALLOWED_HOSTS` | Adicione somente o hostname público e publique novamente |
 | ChatGPT não mostra Developer mode | Plano ou política do workspace | Verifique permissões da conta/workspace |
 | Ferramentas antigas aparecem | Metadata em cache | Use **Refresh** na conexão e abra uma nova conversa |
+| `concurrent_lesson_update` | A aula mudou depois da consulta | Consulte novamente e use o novo `revision_id` |
+| Coluna `arquivado_em` não existe | Frontend/MCP publicados antes da migração nova | Aplique todas as migrações e depois faça o redeploy |
 
 ## 16. Comandos de manutenção
 

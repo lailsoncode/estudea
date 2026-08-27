@@ -790,6 +790,7 @@ export const CourseBuilder: React.FC = () => {
         .from('modulos')
         .select('*')
         .eq('curso_id', courseToClone.id)
+        .is('arquivado_em', null)
         .order('ordem', { ascending: true });
 
       if (originalMods && originalMods.length > 0) {
@@ -811,6 +812,7 @@ export const CourseBuilder: React.FC = () => {
             .from('aulas')
             .select('*, atividades(*), questoes(*)')
             .eq('modulo_id', mod.id)
+            .is('arquivado_em', null)
             .order('ordem', { ascending: true });
 
           if (originalLessons && originalLessons.length > 0) {
@@ -888,6 +890,7 @@ export const CourseBuilder: React.FC = () => {
         .from('modulos')
         .select('*')
         .eq('curso_id', courseId)
+        .is('arquivado_em', null)
         .order('ordem', { ascending: true });
       if (modError) throw modError;
 
@@ -907,6 +910,7 @@ export const CourseBuilder: React.FC = () => {
           questoes(*)
         `)
         .in('modulo_id', modIds)
+        .is('arquivado_em', null)
         .order('ordem', { ascending: true });
       if (lesError) throw lesError;
 

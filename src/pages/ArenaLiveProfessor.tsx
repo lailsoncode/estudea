@@ -24,6 +24,15 @@ interface Question {
   resposta_correta: string;
 }
 
+const shuffledCopy = <T,>(items: T[]): T[] => {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+  }
+  return result;
+};
+
 interface Player {
   id: string;
   nickname: string;
@@ -112,7 +121,9 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
               )
             )
           `)
-          .in('id', arenaAulaIds);
+          .in('id', arenaAulaIds)
+          .eq('permite_arena', true)
+          .is('arquivado_em', null);
         if (aError) throw aError;
 
         // 3. Also fetch regular quizzes with permite_arena=true that may not yet have para_arena questions
@@ -132,7 +143,8 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
             )
           `)
           .eq('tipo', 'quiz')
-          .eq('permite_arena', true);
+          .eq('permite_arena', true)
+          .is('arquivado_em', null);
         if (pError) throw pError;
 
         // Merge both lists, deduplicating by id
@@ -256,12 +268,32 @@ export const ArenaLiveProfessor: React.FC<ArenaLiveProfessorProps> = ({ session,
       if (qError) throw qError;
 
       const allQuestions = qData || [];
-      let finalQuestions = allQuestions.filter(q => q.para_arena === true);
+      const { data: arenaConfig, error: arenaConfigError } = await supabase
+        .from('aula_arena_config')
+        .select('habilitada, embaralhar_questoes, embaralhar_opcoes')
+        .eq('aula_id', selectedAulaId)
+        .maybeSingle();
+      if (arenaConfigError) throw arenaConfigError;
+      if (arenaConfig && !arenaConfig.habilitada) {
+        alert('A Arena está desabilitada para esta aula.');
+        setLoading(false);
+        return;
+      }
+
+      let finalQuestions = allQuestions.filter(q => q.contexto === 'arena' || q.para_arena === true);
 
       // Fallback to standard questions if no Arena questions are configured
       if (finalQuestions.length === 0) {
         setAiLoadingMessage('Nenhuma questão específica da Arena encontrada. Carregando quiz original...');
         finalQuestions = allQuestions.filter(q => q.para_arena === false || q.para_arena === null || q.para_arena === undefined);
+      }
+
+      if (arenaConfig?.embaralhar_questoes) finalQuestions = shuffledCopy(finalQuestions);
+      if (arenaConfig?.embaralhar_opcoes) {
+        finalQuestions = finalQuestions.map((question) => ({
+          ...question,
+          opcoes: shuffledCopy(question.opcoes || []),
+        }));
       }
 
       if (finalQuestions.length === 0) {

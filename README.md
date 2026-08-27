@@ -19,9 +19,11 @@ Criada com ❤️ pela [Oxente Code](https://github.com/oxentecode) para democra
 
 O Estudea possui um servidor MCP para professores criarem e revisarem aulas diretamente pelo ChatGPT. Em produção, cada professor conecta sua própria conta por OAuth 2.1 do Supabase, sem copiar JWT ou compartilhar senha.
 
-- consulta cursos, módulos, turmas e aulas;
-- cria aulas completas primeiro como rascunho;
-- exige confirmação explícita antes de liberar para uma turma;
+- administra módulos e localiza aulas com IDs e revisões;
+- valida e cria aulas completas, individualmente ou em lote, sempre como rascunho;
+- mantém questões do Estudea e da Arena independentes, com opções identificadas;
+- atualiza rascunhos sem sobrescrever edições recentes;
+- exige confirmação explícita antes de liberar, retirar ou arquivar;
 - respeita RLS, papel do perfil e vínculos do professor;
 - oferece consentimento e revogação dentro de **Minha Conta**.
 
