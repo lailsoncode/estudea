@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -387,22 +388,22 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/30 dark:border-slate-700 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/40 dark:border-slate-700 rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden font-sans">
         
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-outline-variant/30 dark:border-slate-800 bg-surface-container-low/50 dark:bg-slate-800/50 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
-              <HugeiconsIcon icon={Award01Icon} size={26} strokeWidth={2} />
+        <div className="px-4 sm:px-6 py-3.5 sm:py-5 border-b border-outline-variant/30 dark:border-slate-800 bg-surface-container-low/50 dark:bg-slate-800/50 flex items-center justify-between gap-3 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+              <HugeiconsIcon icon={Award01Icon} size={24} strokeWidth={2} />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h3 className="font-heading font-extrabold text-xl text-on-surface">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-heading font-extrabold text-base sm:text-xl text-on-surface truncate">
                   {isAlreadyConcluded ? 'Ata de Encerramento e Resultados' : 'Finalizar e Fechar Turma'}
                 </h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border ${
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wide border shrink-0 ${
                   isAlreadyConcluded
                     ? 'bg-primary/10 text-primary border-primary/20'
                     : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
@@ -410,7 +411,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                   {isAlreadyConcluded ? 'Turma Concluída' : 'Em Andamento'}
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant mt-0.5">
+              <p className="text-[11px] sm:text-xs text-on-surface-variant mt-0.5 truncate">
                 Turma: <strong className="text-on-surface font-semibold">{turma.nome}</strong> • Curso: <span className="font-semibold text-primary">{turma.curso_titulo || 'Sem curso'}</span>
               </p>
             </div>
@@ -418,19 +419,19 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl transition-colors"
+            className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl transition-colors shrink-0"
             title="Fechar modal"
           >
-            <HugeiconsIcon icon={Cancel01Icon} size={22} />
+            <HugeiconsIcon icon={Cancel01Icon} size={20} />
           </button>
         </div>
 
         {/* Navigation Tabs & Metrics Summary */}
-        <div className="px-6 pt-4 pb-3 border-b border-outline-variant/20 dark:border-slate-800 bg-surface-container-lowest dark:bg-slate-900 flex flex-wrap items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2 bg-surface-container-low dark:bg-slate-800/80 p-1 rounded-xl border border-outline-variant/20 dark:border-slate-700">
+        <div className="px-4 sm:px-6 pt-3 pb-3 border-b border-outline-variant/20 dark:border-slate-800 bg-surface-container-lowest dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-surface-container-low dark:bg-slate-800/80 p-1 rounded-xl border border-outline-variant/20 dark:border-slate-700 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('avaliacao')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'avaliacao'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -440,7 +441,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('ata')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'ata'
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -452,19 +453,19 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[11px] sm:text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span>Aprovados: <strong className="font-bold">{summary.aprovados}</strong> ({summary.taxaAprovacao}%)</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
               <span>Reprovados: <strong className="font-bold">{summary.reprovados}</strong></span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
               <span>Desistentes: <strong className="font-bold">{summary.desistentes}</strong></span>
             </div>
           </div>
@@ -472,21 +473,21 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
 
         {/* Feedback Alerts */}
         {error && (
-          <div className="mx-6 mt-4 p-3.5 bg-error-container/30 border border-error/20 rounded-xl text-error text-xs font-semibold flex items-center gap-2 shrink-0">
+          <div className="mx-4 sm:mx-6 mt-3 sm:mt-4 p-3.5 bg-error-container/30 border border-error/20 rounded-xl text-error text-xs font-semibold flex items-center gap-2 shrink-0">
             <HugeiconsIcon icon={Alert01Icon} size={18} className="shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mx-6 mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 shrink-0">
+          <div className="mx-4 sm:mx-6 mt-3 sm:mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 shrink-0">
             <HugeiconsIcon icon={Tick01Icon} size={18} className="shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Main Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-on-surface-variant">
               <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
@@ -503,26 +504,26 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
           ) : activeTab === 'avaliacao' ? (
             <div className="space-y-5">
               {/* Intelligent Suggestion Banner & Quick Actions */}
-              <div className="p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                     <HugeiconsIcon icon={SparklesIcon} size={22} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-heading font-extrabold text-on-surface">
+                    <h4 className="text-xs sm:text-sm font-heading font-extrabold text-on-surface">
                       Sugestão Pedagógica Automática
                     </h4>
-                    <p className="text-xs text-on-surface-variant">
+                    <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
                       O sistema calculou automaticamente o status com base em: <strong>Frequência mínima (75%)</strong>, <strong>Progresso nas aulas</strong> e <strong>Média de notas práticas</strong>.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center flex-wrap gap-2 w-full md:w-auto">
+                <div className="flex items-center flex-wrap gap-2 w-full lg:w-auto">
                   <button
                     type="button"
                     onClick={handleApplyAllSuggestions}
-                    className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 shadow-sm transition-all"
+                    className="flex-1 lg:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary/90 shadow-sm transition-all"
                   >
                     <HugeiconsIcon icon={SparklesIcon} size={15} />
                     Aplicar Sugestões ({students.length})
@@ -539,7 +540,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
               </div>
 
               {/* Search & Filter Bar */}
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4">
                 <div className="relative flex-1 max-w-sm">
                   <HugeiconsIcon icon={Search01Icon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
                   <input
@@ -547,7 +548,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Buscar aluno por nome..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/50"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:border-primary text-on-surface placeholder:text-on-surface-variant/50"
                   />
                 </div>
                 <div className="text-xs text-on-surface-variant font-medium">
@@ -556,18 +557,18 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
               </div>
 
               {/* Student Evaluation Table */}
-              <div className="border border-outline-variant/30 dark:border-slate-700 rounded-2xl overflow-hidden bg-surface-container-lowest dark:bg-slate-900 shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+              <div className="border border-outline-variant/30 dark:border-slate-700 rounded-xl sm:rounded-2xl overflow-hidden bg-surface-container-lowest dark:bg-slate-900 shadow-sm">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-xs min-w-[820px]">
                     <thead>
                       <tr className="border-b border-outline-variant/30 dark:border-slate-800 bg-surface-container-low/60 dark:bg-slate-800 text-on-surface-variant font-bold uppercase tracking-wider text-[11px]">
-                        <th className="py-3.5 pl-4 pr-2">Estudante</th>
-                        <th className="py-3.5 px-3 text-center">Frequência</th>
-                        <th className="py-3.5 px-3 text-center">Progresso</th>
-                        <th className="py-3.5 px-3 text-center">Média Entregas</th>
-                        <th className="py-3.5 px-3">Sugestão</th>
-                        <th className="py-3.5 px-4 text-center">Situação Final (Ajuste)</th>
-                        <th className="py-3.5 pr-4 pl-2">Observação Individual</th>
+                        <th className="py-3.5 pl-4 pr-2 min-w-[180px]">Estudante</th>
+                        <th className="py-3.5 px-2 text-center min-w-[85px]">Frequência</th>
+                        <th className="py-3.5 px-2 text-center min-w-[95px]">Progresso</th>
+                        <th className="py-3.5 px-2 text-center min-w-[90px]">Média Entregas</th>
+                        <th className="py-3.5 px-2 min-w-[135px]">Sugestão</th>
+                        <th className="py-3.5 px-3 text-center min-w-[250px]">Situação Final (Ajuste)</th>
+                        <th className="py-3.5 pr-4 pl-2 min-w-[160px]">Observação Individual</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/20 dark:divide-slate-800">
@@ -578,12 +579,12 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
 
                         return (
                           <tr key={s.id} className="hover:bg-surface-container-low/30 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3.5 pl-4 pr-2">
+                            <td className="py-3 pl-4 pr-2">
                               <span className="font-heading font-bold text-sm text-on-surface block line-clamp-1">{s.nome || 'Sem nome'}</span>
                               <span className="text-[11px] text-on-surface-variant font-mono">{s.email || 'Sem e-mail'}</span>
                             </td>
 
-                            <td className="py-3.5 px-3 text-center">
+                            <td className="py-3 px-2 text-center">
                               <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded font-bold font-mono text-[11px] ${
                                 s.frequencia >= 75
                                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
@@ -593,7 +594,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                               </span>
                             </td>
 
-                            <td className="py-3.5 px-3 text-center">
+                            <td className="py-3 px-2 text-center">
                               <div className="flex flex-col items-center gap-1">
                                 <span className="font-bold font-mono text-[11px] text-on-surface">{s.progresso_geral}%</span>
                                 <div className="w-12 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
@@ -605,13 +606,13 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                               </div>
                             </td>
 
-                            <td className="py-3.5 px-3 text-center">
+                            <td className="py-3 px-2 text-center">
                               <span className="font-bold font-mono text-on-surface">
                                 {s.media_notas !== null ? `${s.media_notas} pts` : '—'}
                               </span>
                             </td>
 
-                            <td className="py-3.5 px-3">
+                            <td className="py-3 px-2">
                               <div className="flex flex-col gap-0.5" title={s.motivo_sugestao}>
                                 <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full w-fit ${
                                   s.sugestao_ia === 'aprovado'
@@ -628,12 +629,12 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                             </td>
 
                             {/* Status Selector Buttons */}
-                            <td className="py-3.5 px-4 text-center">
-                              <div className="inline-flex items-center p-1 bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 rounded-xl gap-1 shadow-xs">
+                            <td className="py-3 px-3 text-center">
+                              <div className="inline-flex items-center p-0.5 sm:p-1 bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 rounded-xl gap-0.5 sm:gap-1 shadow-xs">
                                 <button
                                   type="button"
                                   onClick={() => handleStudentStatusChange(s.id, 'aprovado')}
-                                  className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
+                                  className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-[11px] transition-all flex items-center gap-1 ${
                                     isApproved
                                       ? 'bg-emerald-600 text-white shadow-xs'
                                       : 'text-on-surface-variant hover:text-emerald-600'
@@ -646,7 +647,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleStudentStatusChange(s.id, 'reprovado')}
-                                  className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
+                                  className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-[11px] transition-all flex items-center gap-1 ${
                                     isFailed
                                       ? 'bg-rose-600 text-white shadow-xs'
                                       : 'text-on-surface-variant hover:text-rose-600'
@@ -659,7 +660,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleStudentStatusChange(s.id, 'desistente')}
-                                  className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                                  className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[10px] sm:text-[11px] transition-all ${
                                     isDropped
                                       ? 'bg-amber-600 text-white shadow-xs'
                                       : 'text-on-surface-variant hover:text-amber-600'
@@ -671,7 +672,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                             </td>
 
                             {/* Observation input */}
-                            <td className="py-3.5 pr-4 pl-2">
+                            <td className="py-3 pr-4 pl-2">
                               <input
                                 type="text"
                                 value={s.observacao_conclusao}
@@ -689,7 +690,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
               </div>
 
               {/* General Class Note */}
-              <div className="p-4 rounded-2xl bg-surface-container-low/40 dark:bg-slate-800/40 border border-outline-variant/30 dark:border-slate-700 space-y-2">
+              <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-low/40 dark:bg-slate-800/40 border border-outline-variant/30 dark:border-slate-700 space-y-2">
                 <label className="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
                   <HugeiconsIcon icon={InformationCircleIcon} size={16} className="text-primary" />
                   Observações Gerais da Turma (Consta na Ata Oficial)
@@ -706,7 +707,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
           ) : (
             /* TAB 2: ATA OFICIAL DE CONCLUSÃO */
             <div className="space-y-5">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <p className="text-xs text-on-surface-variant">
                   Esta ata pode ser impressa ou copiada para os registros pedagógicos formais da instituição.
                 </p>
@@ -731,19 +732,19 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
               </div>
 
               {/* Printable Document Box */}
-              <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-outline-variant/40 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200 font-serif leading-relaxed space-y-6">
+              <div className="p-4 sm:p-8 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-outline-variant/40 dark:border-slate-700 shadow-sm text-slate-800 dark:text-slate-200 font-serif leading-relaxed space-y-6">
                 
                 {/* Document Header */}
                 <div className="text-center border-b border-slate-200 dark:border-slate-800 pb-5 space-y-1">
                   <span className="text-[11px] font-sans font-bold uppercase tracking-widest text-primary">Plataforma Educacional Estudea • Oxente Code</span>
-                  <h2 className="text-xl font-bold font-heading text-slate-900 dark:text-white">ATA OFICIAL DE ENCERRAMENTO E CONCLUSÃO DE CURSO</h2>
+                  <h2 className="text-lg sm:text-xl font-bold font-heading text-slate-900 dark:text-white">ATA OFICIAL DE ENCERRAMENTO E CONCLUSÃO DE CURSO</h2>
                   <p className="text-xs text-slate-500 font-sans">
                     Emissão gerada em {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
 
                 {/* Cohort Identification */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 font-sans text-xs border border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 font-sans text-xs border border-slate-200 dark:border-slate-700">
                   <div>
                     <span className="text-slate-400 block font-bold text-[10px] uppercase">Turma</span>
                     <strong className="text-slate-900 dark:text-white text-sm">{turma.nome}</strong>
@@ -767,26 +768,26 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                 {/* Stats Summary Table */}
                 <div className="font-sans space-y-2">
                   <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">Quadro Geral de Resultados</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 text-center">
                     <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                       <span className="text-slate-400 text-[10px] block font-bold uppercase">Matriculados</span>
-                      <span className="text-lg font-bold text-slate-900 dark:text-white">{summary.total}</span>
+                      <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{summary.total}</span>
                     </div>
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                       <span className="text-emerald-600 dark:text-emerald-400 text-[10px] block font-bold uppercase">Aprovados</span>
-                      <span className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{summary.aprovados} ({summary.taxaAprovacao}%)</span>
+                      <span className="text-base sm:text-lg font-bold text-emerald-700 dark:text-emerald-300">{summary.aprovados} ({summary.taxaAprovacao}%)</span>
                     </div>
                     <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-200 dark:border-rose-800">
                       <span className="text-rose-600 dark:text-rose-400 text-[10px] block font-bold uppercase">Reprovados</span>
-                      <span className="text-lg font-bold text-rose-700 dark:text-rose-300">{summary.reprovados}</span>
+                      <span className="text-base sm:text-lg font-bold text-rose-700 dark:text-rose-300">{summary.reprovados}</span>
                     </div>
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
                       <span className="text-amber-600 dark:text-amber-400 text-[10px] block font-bold uppercase">Desistentes</span>
-                      <span className="text-lg font-bold text-amber-700 dark:text-amber-300">{summary.desistentes}</span>
+                      <span className="text-base sm:text-lg font-bold text-amber-700 dark:text-amber-300">{summary.desistentes}</span>
                     </div>
-                    <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 col-span-2 sm:col-span-1">
                       <span className="text-slate-400 text-[10px] block font-bold uppercase">Freq. Média</span>
-                      <span className="text-lg font-bold text-slate-900 dark:text-white">{summary.frequenciaMedia}%</span>
+                      <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{summary.frequenciaMedia}%</span>
                     </div>
                   </div>
                 </div>
@@ -794,46 +795,48 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
                 {/* Individual Results List */}
                 <div className="font-sans space-y-2">
                   <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">Relação Nominal dos Estudantes</h4>
-                  <table className="w-full border-collapse border border-slate-200 dark:border-slate-700 text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-center w-10">Nº</th>
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-left">Nome do Aluno</th>
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Frequência</th>
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Progresso</th>
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Situação Final</th>
-                        <th className="border border-slate-200 dark:border-slate-700 p-2 text-left">Observações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {students.map((s, index) => (
-                        <tr key={s.id} className="border-b border-slate-200 dark:border-slate-800">
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{index + 1}</td>
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 font-semibold text-slate-900 dark:text-white">{s.nome || 'Sem nome'}</td>
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{s.frequencia}%</td>
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{s.progresso_geral}%</td>
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 text-center">
-                            <span className={`font-bold uppercase text-[11px] ${
-                              s.situacao_final === 'aprovado'
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : s.situacao_final === 'reprovado'
-                                ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-amber-600 dark:text-amber-400'
-                            }`}>
-                              {s.situacao_final}
-                            </span>
-                          </td>
-                          <td className="border border-slate-200 dark:border-slate-700 p-2 text-slate-600 dark:text-slate-400 text-[11px]">
-                            {s.observacao_conclusao || '—'}
-                          </td>
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full border-collapse border border-slate-200 dark:border-slate-700 text-xs min-w-[500px]">
+                      <thead>
+                        <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-center w-10">Nº</th>
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-left">Nome do Aluno</th>
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Frequência</th>
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Progresso</th>
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-center">Situação Final</th>
+                          <th className="border border-slate-200 dark:border-slate-700 p-2 text-left">Observações</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {students.map((s, index) => (
+                          <tr key={s.id} className="border-b border-slate-200 dark:border-slate-800">
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{index + 1}</td>
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 font-semibold text-slate-900 dark:text-white">{s.nome || 'Sem nome'}</td>
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{s.frequencia}%</td>
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 text-center font-mono">{s.progresso_geral}%</td>
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 text-center">
+                              <span className={`font-bold uppercase text-[11px] ${
+                                s.situacao_final === 'aprovado'
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : s.situacao_final === 'reprovado'
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-amber-600 dark:text-amber-400'
+                              }`}>
+                                {s.situacao_final}
+                              </span>
+                            </td>
+                            <td className="border border-slate-200 dark:border-slate-700 p-2 text-slate-600 dark:text-slate-400 text-[11px]">
+                              {s.observacao_conclusao || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Signatures Area */}
-                <div className="pt-10 flex justify-around font-sans text-xs text-center">
+                <div className="pt-8 sm:pt-10 flex flex-col sm:flex-row justify-around items-center gap-6 sm:gap-4 font-sans text-xs text-center">
                   <div className="border-t border-slate-400 dark:border-slate-600 pt-2 w-56">
                     <p className="font-bold text-slate-800 dark:text-slate-200">Professor(a) / Instrutor(a)</p>
                     <p className="text-[11px] text-slate-500">Responsável Pedagógico</p>
@@ -850,13 +853,13 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="px-6 py-4 border-t border-outline-variant/30 dark:border-slate-800 bg-surface-container-low/50 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-outline-variant/30 dark:border-slate-800 bg-surface-container-low/50 dark:bg-slate-800/50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
           <div>
             {isAlreadyConcluded && (
               <button
                 type="button"
                 onClick={() => setShowReopenConfirm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-colors"
               >
                 <HugeiconsIcon icon={RotateLeft01Icon} size={16} />
                 Reabrir Turma (Voltar a Em Andamento)
@@ -864,11 +867,11 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container text-xs font-bold text-on-surface transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container text-xs font-bold text-on-surface transition-colors text-center"
             >
               Fechar
             </button>
@@ -877,7 +880,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
               type="button"
               disabled={saving || students.length === 0}
               onClick={handleFinalizeCohort}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-heading font-bold text-xs hover:bg-primary/90 shadow-md hover:shadow-primary/20 transition-all disabled:opacity-50"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-heading font-bold text-xs hover:bg-primary/90 shadow-md hover:shadow-primary/20 transition-all disabled:opacity-50"
             >
               <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} />
               {saving ? 'Gravando Encerramento...' : isAlreadyConcluded ? 'Atualizar Resultados da Ata' : 'Finalizar e Concluir Turma'}
@@ -889,7 +892,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
 
       {/* Confirmation Submodal: Reopen Cohort */}
       {showReopenConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/40 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20">
               <HugeiconsIcon icon={Alert01Icon} size={26} />
@@ -921,6 +924,7 @@ export const FinalizarTurmaModal: React.FC<FinalizarTurmaModalProps> = ({
         </div>
       )}
 
-    </div>
+    </div>,
+    document.body
   );
 };
