@@ -1173,7 +1173,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
           {activeTab === 'configuracao' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Configuration Form */}
-              <div className="lg:col-span-1 app-card-padded space-y-4 h-fit">
+              <div className="lg:col-span-1 product-card p-5 space-y-4 h-fit">
                 <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Configurações Gerais</h3>
                 <div className="space-y-3">
                   <div>
@@ -1304,7 +1304,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                 </div>
 
                 {!pi ? (
-                  <div className="app-card-padded text-center text-slate-400 space-y-3">
+                  <div className="product-empty-state text-center space-y-3">
                     <p className="text-body-md font-bold text-on-surface">Inicialize o Projeto Integrador.</p>
                     <p className="text-label-sm max-w-sm mx-auto">Preencha o formulário ao lado e salve, ou carregue o modelo padrão:</p>
                     {isMidiasDigitais && (
@@ -1318,7 +1318,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                     )}
                   </div>
                 ) : etapas.length === 0 ? (
-                  <div className="app-card-padded text-center text-slate-400 space-y-3">
+                  <div className="product-empty-state text-center space-y-3">
                     <p className="text-body-md font-bold text-on-surface">Nenhuma etapa cadastrada.</p>
                     <p className="text-label-sm max-w-sm mx-auto">Crie prazos e entregas para os alunos clicando em "Nova Etapa", ou carregue o modelo do curso:</p>
                     {isMidiasDigitais && (
@@ -1428,7 +1428,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
               </div>
 
               {!pi ? (
-                <div className="app-card-padded text-center text-slate-400">
+                <div className="product-empty-state text-center">
                   <p className="text-body-md font-bold text-on-surface">Inicialize o Projeto Integrador primeiro.</p>
                 </div>
               ) : pi.tipo === 'individual' ? (
@@ -1574,7 +1574,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                         )}
                       </div>
                     ) : (
-                      <div className="app-card-padded text-center text-slate-400">
+                      <div className="product-empty-state text-center">
                         <p className="text-body-md font-bold text-on-surface">Nenhum grupo selecionado.</p>
                         <p className="text-label-sm">Clique em um dos grupos da lista lateral para ver os integrantes e adicionar membros.</p>
                       </div>
@@ -1783,7 +1783,7 @@ export const ProjetoIntegradorManager: React.FC<ProjetoIntegradorManagerProps> =
                   </div>
 
                   {!selectedEtapaId ? (
-                    <div className="app-card-padded text-center text-slate-400">
+                    <div className="product-empty-state text-center">
                       <p className="text-body-md font-bold text-on-surface">Adicione etapas ao Projeto Integrador primeiro.</p>
                     </div>
                   ) : (

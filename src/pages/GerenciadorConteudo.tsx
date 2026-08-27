@@ -174,81 +174,84 @@ export const GerenciadorConteudo: React.FC = () => {
   };
 
   return (
-    <div className="app-page">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       {/* Tab Navigation header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-4">
-        <div className="flex gap-2">
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs">
           <button
             onClick={() => setActiveTab('turmas')}
-            className={`px-5 py-2.5 rounded-md font-heading font-bold text-label-md flex items-center gap-2 transition-all ${
+            className={`py-1.5 px-3 rounded-product-control font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'turmas'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                ? 'bg-brand-navy text-white shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <HugeiconsIcon icon={TeacherIcon} size={20} />
-            Gerenciar Turmas
+            <HugeiconsIcon icon={TeacherIcon} size={15} strokeWidth={2} />
+            <span>Gerenciar Turmas</span>
           </button>
           <button
             onClick={() => setActiveTab('aulas')}
-            className={`px-5 py-2.5 rounded-md font-heading font-bold text-label-md flex items-center gap-2 transition-all ${
+            className={`py-1.5 px-3 rounded-product-control font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'aulas'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                ? 'bg-brand-navy text-white shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <HugeiconsIcon icon={BookOpen01Icon} size={20} />
-            Cadastrar Aula e Atividade
+            <HugeiconsIcon icon={BookOpen01Icon} size={15} strokeWidth={2} />
+            <span>Cadastrar Aula e Atividade</span>
           </button>
         </div>
 
         {activeTab === 'turmas' && (
           <button
             onClick={handleOpenNovaTurma}
-            className="px-4 py-2.5 rounded-md bg-gradient-to-r from-primary to-primary-container text-on-primary font-heading font-bold text-label-md flex items-center gap-1.5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+            className="product-primary-action text-xs"
           >
-            <HugeiconsIcon icon={AddCircleIcon} size={20} />
-            Nova Turma
+            <HugeiconsIcon icon={AddCircleIcon} size={15} strokeWidth={2} />
+            <span>Nova Turma</span>
           </button>
         )}
-      </div>
+      </header>
 
       {/* Tab Content 1: Gerenciar Turmas */}
       {activeTab === 'turmas' ? (
-        <div className="bg-white border border-slate-200/80 rounded-lg shadow-sm p-6 space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-            <HugeiconsIcon icon={Folder01Icon} size={20} className="text-primary" />
-            <h3 className="app-section-title">
+        <div className="product-card p-5 space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-outline-variant/60">
+            <HugeiconsIcon icon={Folder01Icon} size={18} className="text-primary" strokeWidth={2} />
+            <h3 className="font-heading font-extrabold text-sm text-on-surface">
               Turmas Cadastradas
             </h3>
           </div>
 
           {loadingTurmas ? (
-            <p className="text-center text-slate-500 py-8">Buscando turmas...</p>
+            <div className="py-12 text-center space-y-3">
+              <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto" />
+              <p className="text-xs text-on-surface-variant font-semibold animate-pulse">Buscando turmas...</p>
+            </div>
           ) : turmas.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 space-y-2">
-              <p className="text-body-lg">Nenhuma turma cadastrada no momento.</p>
-              <p className="text-label-sm">Clique em "Nova Turma" acima para começar.</p>
+            <div className="product-empty-state space-y-2 p-10">
+              <p className="text-sm font-extrabold text-on-surface">Nenhuma turma cadastrada no momento.</p>
+              <p className="text-xs text-on-surface-variant">Clique em "Nova Turma" acima para começar.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {turmas.map((turma) => (
                 <div
                   key={turma.id}
-                  className="bg-slate-50 border border-slate-200 hover:border-primary/30 p-5 rounded-lg transition-all shadow-sm hover:shadow flex flex-col justify-between"
+                  className="product-card-interactive p-4 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
-                    <h4 className="text-body-lg font-heading font-bold text-on-background">
+                    <h4 className="font-heading font-extrabold text-sm text-on-surface">
                       {turma.nome}
                     </h4>
-                    <div className="flex items-center justify-between text-label-sm">
-                      <span className="text-slate-500 font-semibold">Código de Acesso:</span>
-                      <span className="bg-white border border-slate-200 px-3 py-1 rounded font-mono font-bold text-secondary">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-on-surface-variant font-medium">Código de Acesso:</span>
+                      <span className="bg-surface-container-low border border-outline-variant/60 px-2.5 py-0.5 rounded-product-control font-mono font-extrabold text-primary">
                         {turma.codigo_acesso}
                       </span>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-400 mt-4 text-right">
+                  <div className="text-[10px] text-on-surface-variant mt-4 text-right font-medium">
                     Criado em {new Date(turma.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -258,26 +261,26 @@ export const GerenciadorConteudo: React.FC = () => {
         </div>
       ) : (
         /* Tab Content 2: Cadastrar Aula e Atividade Form */
-        <div className="bg-white border border-slate-200/80 rounded-lg shadow-sm p-6 space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-            <HugeiconsIcon icon={BookOpen01Icon} size={20} className="text-primary" />
-            <h3 className="app-section-title">
+        <div className="product-card p-5 sm:p-6 space-y-6">
+          <div className="flex items-center gap-2 pb-3 border-b border-outline-variant/60">
+            <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" strokeWidth={2} />
+            <h3 className="font-heading font-extrabold text-sm text-on-surface">
               Cadastrar Nova Aula e Atividade
             </h3>
           </div>
 
-          <form onSubmit={handleSalvarAula} className="space-y-6">
+          <form onSubmit={handleSalvarAula} className="space-y-5">
             {/* Form Warnings/Alerts */}
             {errorAula && (
-              <div className="p-4 bg-error-container/30 border border-error/20 rounded text-error text-label-md flex items-start gap-2">
-                <HugeiconsIcon icon={Alert01Icon} size={20} className="mt-0.5 shrink-0" />
+              <div className="p-4 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2">
+                <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" strokeWidth={2} />
                 <span>{errorAula}</span>
               </div>
             )}
 
             {successAula && (
-              <div className="p-4 bg-secondary-container/30 border border-secondary/20 rounded text-secondary text-label-md flex items-start gap-2">
-                <HugeiconsIcon icon={Tick01Icon} size={20} className="mt-0.5 shrink-0" />
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2">
+                <HugeiconsIcon icon={Tick01Icon} size={16} className="mt-0.5 shrink-0" strokeWidth={2} />
                 <span>{successAula}</span>
               </div>
             )}
@@ -285,7 +288,7 @@ export const GerenciadorConteudo: React.FC = () => {
             {/* Lesson Fields */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Número da Aula (1 a 40)</label>
+                <label className="text-xs font-bold text-on-surface">Número da Aula (1 a 40)</label>
                 <input
                   type="number"
                   min="1"
@@ -293,60 +296,60 @@ export const GerenciadorConteudo: React.FC = () => {
                   value={numeroAula}
                   onChange={(e) => setNumeroAula(Number(e.target.value))}
                   disabled={salvandoAula}
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all font-mono font-bold"
+                  className="product-control text-xs font-mono font-bold"
                 />
               </div>
               <div className="md:col-span-3 space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Título da Aula</label>
+                <label className="text-xs font-bold text-on-surface">Título da Aula</label>
                 <input
                   type="text"
                   placeholder="Ex: Introdução ao HTML e Estruturas de Tags"
                   value={tituloAula}
                   onChange={(e) => setTituloAula(e.target.value)}
                   disabled={salvandoAula}
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all"
+                  className="product-control text-xs"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-label-sm font-semibold text-on-surface">Conteúdo da Aula (Markdown ou texto corrido)</label>
+              <label className="text-xs font-bold text-on-surface">Conteúdo da Aula (Markdown ou texto corrido)</label>
               <textarea
                 rows={5}
                 placeholder="Insira as explicações, exemplos de código ou instruções gerais da aula..."
                 value={conteudoAula}
                 onChange={(e) => setConteudoAula(e.target.value)}
                 disabled={salvandoAula}
-                className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all font-mono"
+                className="product-control text-xs font-mono"
               />
             </div>
 
             {/* Linked Activity Fields */}
-            <div className="border-t border-slate-100 pt-6 space-y-4">
-              <h4 className="font-heading font-bold text-body-lg text-secondary flex items-center gap-1.5">
-                <HugeiconsIcon icon={TeacherIcon} size={18} />
-                Atividade Prática Vinculada
+            <div className="border-t border-outline-variant/60 pt-5 space-y-4">
+              <h4 className="font-heading font-extrabold text-sm text-secondary flex items-center gap-1.5">
+                <HugeiconsIcon icon={TeacherIcon} size={16} strokeWidth={2} />
+                <span>Atividade Prática Vinculada</span>
               </h4>
 
               <div className="space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Enunciado da Atividade</label>
+                <label className="text-xs font-bold text-on-surface">Enunciado da Atividade</label>
                 <input
                   type="text"
                   placeholder="Descreva o que o aluno deve fazer e entregar..."
                   value={enunciadoAtividade}
                   onChange={(e) => setEnunciadoAtividade(e.target.value)}
                   disabled={salvandoAula}
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all"
+                  className="product-control text-xs"
                 />
               </div>
 
               <div className="w-full md:w-1/3 space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Tipo de Entrega</label>
+                <label className="text-xs font-bold text-on-surface">Tipo de Entrega</label>
                 <select
                   value={tipoEntrega}
                   onChange={(e) => setTipoEntrega(e.target.value as 'texto' | 'imagem')}
                   disabled={salvandoAula}
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all"
+                  className="product-control text-xs"
                 >
                   <option value="texto">Texto Corrido</option>
                   <option value="imagem">Upload de Imagem</option>
@@ -355,18 +358,14 @@ export const GerenciadorConteudo: React.FC = () => {
             </div>
 
             {/* Save Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
               <button
                 type="submit"
                 disabled={salvandoAula}
-                className={`px-6 py-3 rounded font-heading font-bold text-body-lg flex items-center gap-2 transition-all duration-300 ${
-                  salvandoAula
-                    ? 'bg-slate-300 text-slate-500 cursor-wait border border-slate-200'
-                    : 'bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5'
-                }`}
+                className="product-primary-action text-xs"
               >
-                {salvandoAula ? 'Salvando...' : 'Salvar Aula e Atividade'}
-                <HugeiconsIcon icon={AddCircleIcon} size={20} />
+                <span>{salvandoAula ? 'Salvando...' : 'Salvar Aula e Atividade'}</span>
+                <HugeiconsIcon icon={AddCircleIcon} size={16} strokeWidth={2} />
               </button>
             </div>
           </form>
@@ -375,17 +374,19 @@ export const GerenciadorConteudo: React.FC = () => {
 
       {/* Modal: Nova Turma */}
       {showModalNovaTurma && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-md border border-slate-200 rounded-lg shadow-lg overflow-hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="product-dialog max-w-md w-full p-0 overflow-hidden">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="app-section-title flex items-center gap-2">
-                <HugeiconsIcon icon={TeacherIcon} size={20} className="text-primary" />
-                Cadastrar Nova Turma
-              </h3>
+            <div className="product-dialog-header">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon icon={TeacherIcon} size={18} className="text-primary" strokeWidth={2} />
+                <h3 className="font-heading font-extrabold text-sm text-on-surface">
+                  Cadastrar Nova Turma
+                </h3>
+              </div>
               <button
                 onClick={() => setShowModalNovaTurma(false)}
-                className="text-slate-400 hover:text-slate-600 focus:outline-none"
+                className="product-icon-action !h-6 !w-6"
               >
                 &times;
               </button>
@@ -394,54 +395,54 @@ export const GerenciadorConteudo: React.FC = () => {
             {/* Modal Form */}
             <form onSubmit={handleSalvarTurma} className="p-5 space-y-4">
               {errorTurma && (
-                <div className="p-3 bg-error-container/30 border border-error/20 rounded text-error text-label-sm flex items-start gap-2">
-                  <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+                <div className="p-3 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2">
+                  <HugeiconsIcon icon={Alert01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
                   <span>{errorTurma}</span>
                 </div>
               )}
 
               {successTurma && (
-                <div className="p-3 bg-secondary-container/30 border border-secondary/20 rounded text-secondary text-label-sm flex items-start gap-2">
-                  <HugeiconsIcon icon={Tick01Icon} size={16} className="mt-0.5 shrink-0" />
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2">
+                  <HugeiconsIcon icon={Tick01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
                   <span>{successTurma}</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Nome da Turma</label>
+                <label className="text-xs font-bold text-on-surface">Nome da Turma</label>
                 <input
                   type="text"
                   placeholder="Ex: Desenvolvimento Web - Noturno"
                   value={nomeTurma}
                   onChange={(e) => setNomeTurma(e.target.value)}
                   disabled={salvandoTurma}
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50 transition-all"
+                  className="product-control text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-label-sm font-semibold text-on-surface">Código de Acesso (Gerado automaticamente)</label>
+                <label className="text-xs font-bold text-on-surface">Código de Acesso (Gerado automaticamente)</label>
                 <input
                   type="text"
                   value={codigoTurma}
                   disabled
-                  className="w-full p-3 text-body-md rounded border border-outline-variant/60 bg-slate-100 text-secondary font-mono font-bold select-all tracking-wider text-center"
+                  className="product-control text-xs text-primary font-mono font-bold select-all tracking-wider text-center bg-surface-container-low"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="product-dialog-footer">
                 <button
                   type="button"
                   onClick={() => setShowModalNovaTurma(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded hover:bg-slate-50 font-heading font-semibold"
+                  className="product-secondary-action text-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoTurma}
-                  className="px-5 py-2 bg-primary text-on-primary rounded font-heading font-bold shadow-sm hover:shadow hover:bg-primary-container transition-all"
+                  className="product-primary-action text-xs"
                 >
                   {salvandoTurma ? 'Salvando...' : 'Salvar Turma'}
                 </button>

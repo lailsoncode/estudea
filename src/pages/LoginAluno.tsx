@@ -76,14 +76,14 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
   const isFormValid = email && password.length >= 6;
 
   return (
-    <div className="w-full max-w-md mx-auto bg-surface-container-lowest border border-outline-variant/65 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-8 space-y-6">
+    <div className="w-full max-w-md mx-auto product-card p-6 sm:p-8 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="text-center space-y-3">
-        <img src={logoIcon} alt="Estudea Logo" className="w-16 h-16 rounded-2xl mx-auto object-contain shadow-sm" />
-        <h3 className="text-headline-lg font-heading font-extrabold text-on-background">
+      <div className="text-center space-y-2">
+        <img src={logoIcon} alt="Estudea Logo" className="w-14 h-14 rounded-2xl mx-auto object-contain shadow-xs" />
+        <h3 className="font-heading font-extrabold text-xl text-on-surface">
           Acessar Estudea
         </h3>
-        <p className="text-on-surface-variant text-label-md">
+        <p className="text-xs text-on-surface-variant font-medium">
           Faça login para entrar na sua conta de estudante.
         </p>
       </div>
@@ -92,9 +92,9 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={Mail01Icon} size={14} className="text-outline" />
-            E-mail
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={Mail01Icon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>E-mail</span>
           </label>
           <input
             type="email"
@@ -102,15 +102,15 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="w-full p-4 text-body-md rounded border border-outline-variant/60 bg-surface-container-low focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+            className="product-control text-xs"
           />
         </div>
 
         {/* Password */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={AccessIcon} size={14} className="text-outline" />
-            Senha
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={AccessIcon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>Senha</span>
           </label>
           <div className="relative">
             <input
@@ -119,29 +119,29 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className="w-full p-4 pr-12 text-body-md rounded border border-outline-variant/60 bg-surface-container-low focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+              className="product-control text-xs pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1"
             >
-              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} />
+              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={16} strokeWidth={2} />
             </button>
           </div>
         </div>
 
         {/* Status Alerts */}
         {errorMessage && (
-          <div className="p-4 bg-error-container/30 border border-error/20 rounded text-error text-label-md flex items-start gap-2">
-            <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+          <div className="p-3.5 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2">
+            <HugeiconsIcon icon={Alert01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 bg-secondary-container/30 border border-secondary/20 rounded text-secondary text-label-md flex items-start gap-2">
-            <HugeiconsIcon icon={Tick01Icon} size={16} className="mt-0.5 shrink-0" />
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2">
+            <HugeiconsIcon icon={Tick01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -150,20 +150,16 @@ export const LoginAluno: React.FC<LoginAlunoProps> = ({
         <button
           type="submit"
           disabled={loading || !isFormValid}
-          className={`w-full py-4 rounded-xl font-heading font-bold text-body-lg flex items-center justify-center gap-2 transition-all duration-300 ${
-            isFormValid && !loading
-              ? 'bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:scale-95'
-              : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
-          }`}
+          className="w-full product-primary-action text-xs justify-center"
         >
-          {loading ? 'Entrando...' : 'Entrar na Plataforma'}
-          <HugeiconsIcon icon={ArrowRight01Icon} size={18} />
+          <span>{loading ? 'Entrando...' : 'Entrar na Plataforma'}</span>
+          <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
         </button>
       </form>
 
       {/* Switch Screen Link */}
-      <div className="text-center pt-2 space-y-2 border-t border-outline-variant/20 mt-3">
-        <p className="text-label-md text-on-surface-variant">
+      <div className="text-center pt-3 space-y-2 border-t border-outline-variant/60 mt-3">
+        <p className="text-xs text-on-surface-variant">
           Não possui uma conta?{' '}
           <button
             onClick={onNavigateToSignup}

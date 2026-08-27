@@ -284,49 +284,50 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
   }
 
   return (
-    <div className="app-page max-w-4xl mx-auto animate-fade-in pb-12">
+    <div className="product-page max-w-5xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       {/* Top Navigation */}
-      <div className="app-page-header app-page-header-row">
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="app-title">Minha Conta</h2>
-          <p className="app-subtitle">Personalize suas informações e gerencie a segurança.</p>
+          <span className="product-section-kicker">Configurações Pessoais</span>
+          <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Minha Conta</h1>
+          <p className="product-subtitle">Personalize suas informações e gerencie a segurança de acesso.</p>
         </div>
         {onBack && (
           <button
             onClick={onBack}
-            className="app-secondary-action"
+            className="product-secondary-action text-xs"
           >
-            <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
-            Voltar
+            <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
+            <span>Voltar</span>
           </button>
         )}
-      </div>
+      </header>
 
       {/* Message Banner */}
       {message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 border ${
+        <div className={`p-4 rounded-product-control flex items-center gap-3 border ${
           message.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-            : 'bg-error-container/20 border-error/20 text-error'
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300' 
+            : 'bg-error/10 border-error/20 text-error'
         }`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            message.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-error text-on-error'
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+            message.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-error text-white'
           }`}>
-            <HugeiconsIcon icon={message.type === 'success' ? Tick01Icon : Cancel01Icon} size={16} strokeWidth={2.5} />
+            <HugeiconsIcon icon={message.type === 'success' ? Tick01Icon : Cancel01Icon} size={15} strokeWidth={2.5} />
           </div>
-          <p className="font-sans text-body-md font-bold">{message.text}</p>
+          <p className="text-xs font-bold">{message.text}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Card: Avatar Selection & Overview */}
-        <div className="app-card-padded flex flex-col items-center space-y-6">
+        <div className="product-card p-5 flex flex-col items-center space-y-5">
           <div 
             onClick={() => document.getElementById('avatar-upload-input')?.click()}
             className="relative group cursor-pointer"
             title="Clique para enviar uma foto"
           >
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 shadow-md bg-surface-container relative">
+            <div className="w-28 h-28 rounded-full overflow-hidden border-3 border-primary/20 shadow-md bg-surface-container-low relative">
               <img
                 src={avatarUrl}
                 alt="Avatar atual"
@@ -336,15 +337,15 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
                 }}
               />
               {compressing && (
-                <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-                  <HugeiconsIcon icon={Loading03Icon} className="w-8 h-8 text-white animate-spin" />
+                <div className="absolute inset-0 bg-slate-950/70 flex items-center justify-center">
+                  <HugeiconsIcon icon={Loading03Icon} className="w-7 h-7 text-white animate-spin" />
                 </div>
               )}
             </div>
-            <div className="absolute inset-0 bg-slate-900/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 bg-slate-950/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="text-center text-white space-y-1">
-                <HugeiconsIcon icon={Camera01Icon} className="mx-auto w-6 h-6" />
-                <span className="block text-[10px] font-bold uppercase tracking-wider">Enviar Foto</span>
+                <HugeiconsIcon icon={Camera01Icon} className="mx-auto w-5 h-5" strokeWidth={2} />
+                <span className="block text-[9px] font-extrabold uppercase tracking-wider">Enviar Foto</span>
               </div>
             </div>
           </div>
@@ -358,14 +359,14 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
           />
 
           {compressionInfo && (
-            <div className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-3 text-center space-y-1 animate-fade-in">
-              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Compressão Otimizada (Canvas)</p>
+            <div className="w-full bg-surface-container-low border border-outline-variant/60 rounded-product-control p-3 text-center space-y-1 animate-fade-in">
+              <p className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Compressão Otimizada (Canvas)</p>
               <div className="flex justify-around text-xs text-on-surface-variant font-mono">
                 <div>
                   <span className="opacity-70 block text-[9px] uppercase">Original</span>
                   <span className="line-through text-error/80">{compressionInfo.originalSize}</span>
                 </div>
-                <div className="font-bold text-emerald-600">
+                <div className="font-bold text-emerald-600 dark:text-emerald-400">
                   <span className="opacity-70 block text-[9px] uppercase">Comprimido</span>
                   <span>{compressionInfo.compressedSize}</span>
                 </div>
@@ -374,25 +375,25 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
           )}
 
           <div className="text-center space-y-1">
-            <h3 className="app-section-title">
+            <h3 className="font-heading font-extrabold text-base text-on-surface">
               {nome || 'Usuário'}
             </h3>
-            <p className="text-label-md text-on-surface-variant font-medium">{session?.user?.email}</p>
-            <span className="inline-block bg-primary/5 text-primary border border-primary/10 rounded-full px-3 py-1 text-label-sm font-bold mt-2">
+            <p className="text-xs text-on-surface-variant font-medium">{session?.user?.email}</p>
+            <span className="inline-block bg-primary/10 text-primary border border-primary/20 rounded-full px-3 py-0.5 text-[11px] font-extrabold mt-2">
               {roleLabel}
             </span>
           </div>
 
           {/* Quick preset avatars */}
-          <div className="w-full border-t border-outline-variant/30 pt-6 space-y-3">
-            <p className="text-label-sm font-bold text-on-surface-variant uppercase tracking-wider text-center">Avatares Recomendados</p>
-            <div className="grid grid-cols-3 gap-3 justify-items-center">
+          <div className="w-full border-t border-outline-variant/60 pt-5 space-y-3">
+            <p className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center">Avatares Recomendados</p>
+            <div className="grid grid-cols-3 gap-2.5 justify-items-center">
               {PRESET_AVATARS.map((url, index) => (
                 <button
                   key={index}
                   onClick={() => setAvatarUrl(url)}
-                  className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all hover:scale-105 ${
-                    avatarUrl === url ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-outline-variant/50'
+                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all hover:scale-105 cursor-pointer ${
+                    avatarUrl === url ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-outline-variant/60'
                   }`}
                 >
                   <img src={url} alt={`Preset ${index + 1}`} className="w-full h-full object-cover" />
@@ -403,54 +404,54 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
         </div>
 
         {/* Right Cards: Forms */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           {/* Form 1: Personal Details */}
-          <div className="app-card-padded space-y-6">
-            <div className="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
-              <HugeiconsIcon icon={UserIcon} className="text-primary w-6 h-6" />
-              <h3 className="app-section-title">Informações Pessoais</h3>
+          <div className="product-card p-5 sm:p-6 space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-outline-variant/60 pb-3">
+              <HugeiconsIcon icon={UserIcon} className="text-primary w-5 h-5" strokeWidth={2} />
+              <h3 className="font-heading font-extrabold text-sm text-on-surface">Informações Pessoais</h3>
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-on-surface font-sans font-bold text-label-sm">Nome Completo</label>
+                <label className="text-xs font-bold text-on-surface">Nome Completo</label>
                 <input
                   type="text"
                   required
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="w-full p-3 bg-surface border border-outline-variant/60 rounded-xl focus:border-primary text-on-surface font-sans text-body-md focus:ring-0 focus:outline-none placeholder-on-surface-variant/40"
+                  className="product-control text-xs"
                   placeholder="Seu nome de exibição"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-on-surface font-sans font-bold text-label-sm">E-mail (Não alterável)</label>
-                <div className="flex items-center bg-surface-container-low border border-outline-variant/40 rounded-xl p-3 text-on-surface-variant">
-                  <HugeiconsIcon icon={Mail01Icon} className="w-5 h-5 mr-3 text-outline" />
-                  <span className="font-sans text-body-md">{session?.user?.email}</span>
+                <label className="text-xs font-bold text-on-surface">E-mail (Não alterável)</label>
+                <div className="flex items-center bg-surface-container-low border border-outline-variant/60 rounded-product-control px-3.5 py-2.5 text-on-surface-variant text-xs font-medium">
+                  <HugeiconsIcon icon={Mail01Icon} className="w-4 h-4 mr-2.5 text-on-surface-variant" strokeWidth={2} />
+                  <span>{session?.user?.email}</span>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-on-surface font-sans font-bold text-label-sm">URL da Foto de Perfil</label>
+                <label className="text-xs font-bold text-on-surface">URL da Foto de Perfil</label>
                 <input
                   type="url"
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full p-3 bg-surface border border-outline-variant/60 rounded-xl focus:border-primary text-on-surface font-sans text-body-md focus:ring-0 focus:outline-none placeholder-on-surface-variant/40"
+                  className="product-control text-xs"
                   placeholder="https://exemplo.com/sua-foto.jpg"
                 />
-                <p className="text-[11px] text-on-surface-variant/70 mt-1">Cole uma URL de imagem ou escolha um dos avatares rápidos ao lado.</p>
+                <p className="text-[11px] text-on-surface-variant mt-1 font-medium">Cole uma URL de imagem ou escolha um dos avatares rápidos ao lado.</p>
               </div>
 
               {/* Show student turma info if student */}
               {!isAdmin && turmaNome && (
                 <div className="space-y-1">
-                  <label className="text-on-surface font-sans font-bold text-label-sm">Sua Turma</label>
-                  <div className="flex items-center bg-surface-container-low border border-outline-variant/40 rounded-xl p-3 text-on-surface-variant">
-                    <HugeiconsIcon icon={SchoolIcon} className="w-5 h-5 mr-3 text-outline" />
-                    <span className="font-sans text-body-md font-bold text-on-surface">{turmaNome}</span>
+                  <label className="text-xs font-bold text-on-surface">Sua Turma</label>
+                  <div className="flex items-center bg-surface-container-low border border-outline-variant/60 rounded-product-control px-3.5 py-2.5 text-on-surface text-xs font-bold">
+                    <HugeiconsIcon icon={SchoolIcon} className="w-4 h-4 mr-2.5 text-primary" strokeWidth={2} />
+                    <span>{turmaNome}</span>
                   </div>
                 </div>
               )}
@@ -459,17 +460,17 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="app-primary-action"
+                  className="product-primary-action text-xs"
                 >
                   {savingProfile ? (
                     <>
                       <HugeiconsIcon icon={Loading03Icon} className="w-4 h-4 animate-spin" />
-                      Salvando...
+                      <span>Salvando...</span>
                     </>
                   ) : (
                     <>
-                      <HugeiconsIcon icon={Tick01Icon} size={18} strokeWidth={2} />
-                      Salvar Alterações
+                      <HugeiconsIcon icon={Tick01Icon} size={16} strokeWidth={2} />
+                      <span>Salvar Alterações</span>
                     </>
                   )}
                 </button>
@@ -478,34 +479,34 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
           </div>
 
           {/* Form 2: Password Update */}
-          <div className="app-card-padded space-y-6">
-            <div className="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
-              <HugeiconsIcon icon={LockPasswordIcon} className="text-primary w-6 h-6" />
-              <h3 className="app-section-title">Segurança (Alterar Senha)</h3>
+          <div className="product-card p-5 sm:p-6 space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-outline-variant/60 pb-3">
+              <HugeiconsIcon icon={LockPasswordIcon} className="text-secondary w-5 h-5" strokeWidth={2} />
+              <h3 className="font-heading font-extrabold text-sm text-on-surface">Segurança (Alterar Senha)</h3>
             </div>
 
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-on-surface font-sans font-bold text-label-sm">Nova Senha</label>
+                  <label className="text-xs font-bold text-on-surface">Nova Senha</label>
                   <input
                     type="password"
                     required
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
-                    className="w-full p-3 bg-surface border border-outline-variant/60 rounded-xl focus:border-primary text-on-surface font-sans text-body-md focus:ring-0 focus:outline-none placeholder-on-surface-variant/40"
+                    className="product-control text-xs"
                     placeholder="Mínimo 6 caracteres"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-on-surface font-sans font-bold text-label-sm">Confirmar Nova Senha</label>
+                  <label className="text-xs font-bold text-on-surface">Confirmar Nova Senha</label>
                   <input
                     type="password"
                     required
                     value={confirmaSenha}
                     onChange={(e) => setConfirmaSenha(e.target.value)}
-                    className="w-full p-3 bg-surface border border-outline-variant/60 rounded-xl focus:border-primary text-on-surface font-sans text-body-md focus:ring-0 focus:outline-none placeholder-on-surface-variant/40"
+                    className="product-control text-xs"
                     placeholder="Repita a nova senha"
                   />
                 </div>
@@ -515,17 +516,17 @@ export const PerfilUsuario: React.FC<PerfilUsuarioProps> = ({ session, onBack, i
                 <button
                   type="submit"
                   disabled={savingPassword}
-                  className="bg-secondary text-on-secondary hover:bg-secondary/90 border border-transparent font-heading font-extrabold text-label-md py-3 px-6 rounded-xl shadow transition-colors flex items-center gap-2 disabled:opacity-55"
+                  className="product-primary-action text-xs !bg-secondary hover:!bg-secondary/90"
                 >
                   {savingPassword ? (
                     <>
                       <HugeiconsIcon icon={Loading03Icon} className="w-4 h-4 animate-spin" />
-                      Alterando...
+                      <span>Alterando...</span>
                     </>
                   ) : (
                     <>
-                      <HugeiconsIcon icon={LockPasswordIcon} size={18} strokeWidth={2} />
-                      Atualizar Senha
+                      <HugeiconsIcon icon={LockPasswordIcon} size={16} strokeWidth={2} />
+                      <span>Atualizar Senha</span>
                     </>
                   )}
                 </button>

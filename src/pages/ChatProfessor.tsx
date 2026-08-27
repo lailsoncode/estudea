@@ -4,11 +4,11 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Chat01Icon,
   SentIcon,
-  Attachment01Icon,
   Edit01Icon,
   Delete02Icon,
   UserGroupIcon,
-  ArrowLeft01Icon
+  ArrowLeft01Icon,
+  Search01Icon
 } from '@hugeicons/core-free-icons';
 
 interface StudentProfile {
@@ -78,7 +78,6 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
     fetchInitialData();
   }, []);
 
-  // Fetch messages when selected student changes
   useEffect(() => {
     if (selectedStudentId) {
       fetchMessages(selectedStudentId);
@@ -87,7 +86,6 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
     }
   }, [selectedStudentId]);
 
-  // Handle message updates/inserts via Realtime
   useEffect(() => {
     const channel = supabase
       .channel('chat_professor_global')
@@ -99,25 +97,7 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
           table: 'chat_messages'
         },
         (payload) => {
-          const newMsg = payload.new as ChatMessage;
-          const oldMsg = payload.old as ChatMessage;
-
-          // 1. If message belongs to selected student, update active chat list
-          if (selectedStudentId) {
-            if (payload.eventType === 'INSERT' && newMsg.aluno_id === selectedStudentId) {
-              setMessages((prev) => {
-                if (prev.some((m) => m.id === newMsg.id)) return prev;
-                return [...prev, newMsg];
-              });
-            } else if (payload.eventType === 'UPDATE' && newMsg.aluno_id === selectedStudentId) {
-              setMessages((prev) => prev.map((m) => (m.id === newMsg.id ? newMsg : m)));
-            } else if (payload.eventType === 'DELETE' && oldMsg) {
-              setMessages((prev) => prev.filter((m) => m.id !== oldMsg.id));
-            }
-          }
-
-          // 2. Trigger a refresh of student list states to update snippets & unread counts
-          refreshChatListData();
+          handleRealtimePayload(payload);
         }
       )
       .subscribe();
@@ -127,69 +107,82 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
     };
   }, [selectedStudentId]);
 
-  // Auto scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const getCurrentTeacher = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setCurrentTeacherId(session.user.id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setCurrentTeacherId(session.user.id);
+    }
+  };
+
+  const handleRealtimePayload = (payload: any) => {
+    if (payload.eventType === 'INSERT') {
+      const newMsg = payload.new as ChatMessage;
+
+      if (selectedStudentId && newMsg.aluno_id === selectedStudentId) {
+        setMessages((prev) => [...prev, newMsg]);
+        scrollToBottom();
       }
-    } catch (err) {
-      console.error('Error fetching teacher session:', err);
+
+      refreshChatListData();
+    } else if (payload.eventType === 'UPDATE') {
+      const updatedMsg = payload.new as ChatMessage;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m))
+      );
+      refreshChatListData();
+    } else if (payload.eventType === 'DELETE') {
+      const deletedId = payload.old.id;
+      setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+      refreshChatListData();
     }
   };
 
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // Fetch turmas
       const { data: turmasData } = await supabase
         .from('turmas')
-        .select('id, nome');
+        .select('id, nome')
+        .order('nome', { ascending: true });
+
       setTurmas(turmasData || []);
 
-      // Fetch student profiles
       const { data: studentsData } = await supabase
         .from('profiles')
         .select('id, nome, email, avatar_url, turma_id')
         .eq('role', 'student')
         .order('nome', { ascending: true });
-      
+
       setStudents(studentsData || []);
     } catch (err) {
-      console.error('Error fetching initial chat data:', err);
+      console.error('Error fetching chat initial data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // State to refresh snippets / unread counts
-  const [chatMessagesCache, setChatMessagesCache] = useState<ChatMessage[]>([]);
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
 
-  const fetchAllMessagesCache = async () => {
+  const fetchAllRecentMessages = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
         .order('created_at', { ascending: true });
-      if (data) {
-        setChatMessagesCache(data);
-      }
+
+      if (error) throw error;
+      setAllMessages(data || []);
     } catch (err) {
-      console.error('Error caching messages:', err);
+      console.error('Error fetching all messages for list overview:', err);
     }
   };
 
   useEffect(() => {
-    fetchAllMessagesCache();
-  }, [students]);
+    fetchAllRecentMessages();
+  }, []);
 
   const refreshChatListData = () => {
-    fetchAllMessagesCache();
+    fetchAllRecentMessages();
   };
 
   const fetchMessages = async (studentId: string) => {
@@ -202,70 +195,44 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
 
       if (error) throw error;
       setMessages(data || []);
+      
+      const teacherKey = currentTeacherId || 'current_teacher';
+      localStorage.setItem(`chat_last_opened:${teacherKey}:${studentId}`, new Date().toISOString());
 
-      // Mark as read
-      if (currentTeacherId) {
-        localStorage.setItem(`chat_last_opened:${currentTeacherId}:${studentId}`, new Date().toISOString());
-        refreshChatListData();
-      }
+      setTimeout(scrollToBottom, 100);
     } catch (err) {
-      console.error('Error fetching messages:', err);
+      console.error('Error fetching conversation:', err);
     }
   };
 
-  // Process list items with last message & unread counts
-  const chatListItems = useMemo<ChatListItem[]>(() => {
+  const scrollToBottom = () => {
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  };
+
+  const chatListItems: ChatListItem[] = useMemo(() => {
     const turmaMap = new Map(turmas.map((t) => [t.id, t.nome]));
-    
+
     return students.map((student) => {
-      const studentMessages = chatMessagesCache.filter((m) => m.aluno_id === student.id);
+      const studentMessages = allMessages.filter((m) => m.aluno_id === student.id);
       const lastMessage = studentMessages.length > 0 ? studentMessages[studentMessages.length - 1] : null;
 
-      // Count unread (only messages sent by student)
-      let unreadCount = 0;
-      if (currentTeacherId) {
-        const lastOpenedKey = `chat_last_opened:${currentTeacherId}:${student.id}`;
-        const lastOpenedStr = localStorage.getItem(lastOpenedKey) || new Date(0).toISOString();
-        const lastOpenedTime = new Date(lastOpenedStr).getTime();
+      const teacherKey = currentTeacherId || 'current_teacher';
+      const lastOpenedStr = localStorage.getItem(`chat_last_opened:${teacherKey}:${student.id}`) || new Date(0).toISOString();
+      const lastOpenedTime = new Date(lastOpenedStr).getTime();
 
-        unreadCount = studentMessages.filter(
-          (m) => m.remetente_id === student.id && new Date(m.created_at).getTime() > lastOpenedTime
-        ).length;
-      }
+      const unreadCount = studentMessages.filter(
+        (m) => m.remetente_id === student.id && new Date(m.created_at).getTime() > lastOpenedTime
+      ).length;
 
       return {
         student,
-        turmaNome: student.turma_id ? (turmaMap.get(student.turma_id) || 'Sem Turma') : 'Sem Turma',
+        turmaNome: student.turma_id ? turmaMap.get(student.turma_id) || 'Sem Turma' : 'Sem Turma',
         lastMessage,
         unreadCount
       };
-    });
-  }, [students, turmas, chatMessagesCache, currentTeacherId, selectedStudentId]);
-
-  // Filter and sort items
-  const filteredChatList = useMemo(() => {
-    // Only show chats that have messages, or the currently selected student (to allow starting a new chat)
-    let result = chatListItems.filter(
-      (item) => item.lastMessage !== null || item.student.id === selectedStudentId
-    );
-
-    // Search term
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.student.nome.toLowerCase().includes(searchLower) ||
-          item.student.email.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Turma filter
-    if (selectedTurmaId !== 'all') {
-      result = result.filter((item) => item.student.turma_id === selectedTurmaId);
-    }
-
-    // Sort: most recent message first, followed by alphabetical order for those without messages
-    return [...result].sort((a, b) => {
+    }).sort((a, b) => {
       if (a.lastMessage && b.lastMessage) {
         return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
       }
@@ -273,64 +240,62 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
       if (b.lastMessage) return 1;
       return a.student.nome.localeCompare(b.student.nome);
     });
-  }, [chatListItems, searchTerm, selectedTurmaId, selectedStudentId]);
+  }, [students, turmas, allMessages, currentTeacherId]);
+
+  const filteredChatList = useMemo(() => {
+    return chatListItems.filter((item) => {
+      const matchesSearch =
+        item.student.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.student.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesTurma =
+        selectedTurmaId === 'all' || item.student.turma_id === selectedTurmaId;
+
+      return matchesSearch && matchesTurma;
+    });
+  }, [chatListItems, searchTerm, selectedTurmaId]);
 
   const selectedItem = useMemo(() => {
     return chatListItems.find((item) => item.student.id === selectedStudentId) || null;
   }, [chatListItems, selectedStudentId]);
 
-  // Send message
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!newMessage.trim() || !selectedStudentId || !currentTeacherId) return;
+    if (!selectedStudentId || !newMessage.trim()) return;
 
-    const msgText = newMessage.trim();
+    const messageText = newMessage.trim();
     setNewMessage('');
 
-    const tempId = crypto.randomUUID();
-    const tempMsg: ChatMessage = {
-      id: tempId,
-      aluno_id: selectedStudentId,
-      remetente_id: currentTeacherId,
-      texto: msgText,
-      created_at: new Date().toISOString()
-    };
-
-    // Optimistic UI update
-    setMessages((prev) => [...prev, tempMsg]);
-
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const senderId = session?.user?.id || currentTeacherId;
+
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
           aluno_id: selectedStudentId,
-          remetente_id: currentTeacherId,
-          texto: msgText
+          remetente_id: senderId,
+          texto: messageText
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Replace optimistic message with actual db message
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
-      
-      // Mark as read immediately
-      localStorage.setItem(`chat_last_opened:${currentTeacherId}:${selectedStudentId}`, new Date().toISOString());
-      refreshChatListData();
+      if (data) {
+        setMessages((prev) => [...prev, data]);
+        scrollToBottom();
+        refreshChatListData();
+      }
     } catch (err) {
       console.error('Error sending message:', err);
-      // Remove the message on error
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      alert('Erro ao enviar mensagem. Tente novamente.');
+      alert('Erro ao enviar mensagem.');
     }
   };
 
-  // Delete message
   const handleDeleteMessage = async (msgId: string) => {
-    if (!window.confirm('Deseja realmente excluir esta mensagem?')) return;
+    if (!window.confirm('Tem certeza que deseja apagar esta mensagem?')) return;
 
-    const previousMessages = [...messages];
     setMessages((prev) => prev.filter((m) => m.id !== msgId));
 
     try {
@@ -343,12 +308,10 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
       refreshChatListData();
     } catch (err) {
       console.error('Error deleting message:', err);
-      setMessages(previousMessages);
-      alert('Erro ao excluir mensagem.');
+      alert('Erro ao apagar mensagem.');
     }
   };
 
-  // Edit message
   const handleStartEditMessage = (msg: ChatMessage) => {
     setEditingMessage(msg);
     setEditMessageText(msg.texto);
@@ -422,7 +385,6 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
     }
   };
 
-  // Group messages by day
   const groupedMessages = useMemo(() => {
     const groups: { dateLabel: string; msgs: ChatMessage[] }[] = [];
     messages.forEach((msg) => {
@@ -438,17 +400,17 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
   }, [messages]);
 
   return (
-    <div className="bg-background w-full flex flex-col h-full rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
-      <div className="flex-1 flex overflow-hidden">
+    <div className="product-page max-w-7xl mx-auto h-[calc(100vh-8.5rem)] flex flex-col animate-fade-in pb-2">
+      <div className="product-card p-0 flex flex-1 overflow-hidden">
         
         {/* Left Sidebar: Students List */}
-        <aside className={`w-full md:w-80 border-r border-outline-variant/30 flex flex-col bg-white ${selectedStudentId ? 'hidden md:flex' : 'flex'}`}>
+        <aside className={`w-full md:w-80 border-r border-outline-variant/70 flex flex-col bg-surface-container-lowest ${selectedStudentId ? 'hidden md:flex' : 'flex'}`}>
           {/* Header Controls */}
-          <div className="p-4 border-b border-slate-100/80 space-y-3">
-            <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
-              <HugeiconsIcon icon={Chat01Icon} size={20} className="text-primary" />
+          <div className="p-3.5 border-b border-outline-variant/60 space-y-2.5">
+            <h2 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-2">
+              <HugeiconsIcon icon={Chat01Icon} size={18} className="text-primary" />
               <span>Mensagens dos Alunos</span>
-            </h3>
+            </h2>
             
             {/* Search Input */}
             <div className="relative">
@@ -457,21 +419,23 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Pesquisar aluno..."
-                className="w-full bg-slate-50 border border-outline-variant/55 rounded-xl py-2 px-3 pl-9 text-xs font-semibold placeholder:text-on-surface-variant/35 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="product-control pl-8 pr-3 py-1.5 text-xs"
               />
-              <svg className="w-4 h-4 text-on-surface-variant/40 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <HugeiconsIcon
+                icon={Search01Icon}
+                size={14}
+                strokeWidth={2}
+                className="text-on-surface-variant absolute left-2.5 top-1/2 -translate-y-1/2"
+              />
             </div>
 
             {/* Turma Filter Selector */}
             <div className="flex items-center gap-2">
-              <HugeiconsIcon icon={UserGroupIcon} size={15} className="text-on-surface-variant/50" />
+              <HugeiconsIcon icon={UserGroupIcon} size={14} className="text-on-surface-variant" />
               <select
                 value={selectedTurmaId}
                 onChange={(e) => setSelectedTurmaId(e.target.value)}
-                className="bg-transparent border-none text-[11px] font-bold text-on-surface-variant/80 focus:ring-0 p-0 pr-6 cursor-pointer select-none"
+                className="bg-transparent border-none text-[11px] font-bold text-on-surface-variant focus:ring-0 p-0 pr-4 cursor-pointer select-none"
               >
                 <option value="all">Todas as Turmas</option>
                 {turmas.map((t) => (
@@ -482,17 +446,17 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
           </div>
 
           {/* Student List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto divide-y divide-outline-variant/30">
             {loading ? (
               <div className="p-8 text-center space-y-3">
-                <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
+                <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto" />
                 <p className="text-xs font-bold text-on-surface-variant">Carregando conversas...</p>
               </div>
             ) : filteredChatList.length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant/40 space-y-2">
-                <HugeiconsIcon icon={Chat01Icon} size={28} className="mx-auto" />
-                <p className="text-xs font-bold">Nenhum aluno encontrado</p>
-                <p className="text-[10px]">Verifique os termos da busca ou filtro de turma.</p>
+              <div className="product-empty-state py-8">
+                <HugeiconsIcon icon={Chat01Icon} size={24} className="text-primary mb-1" />
+                <p className="text-xs font-bold text-on-surface">Nenhum aluno encontrado</p>
+                <p className="text-[10px] text-on-surface-variant">Verifique os termos da busca.</p>
               </div>
             ) : (
               filteredChatList.map((item) => {
@@ -501,10 +465,10 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                   <button
                     key={item.student.id}
                     onClick={() => setSelectedStudentId(item.student.id)}
-                    className={`w-full text-left p-3.5 flex items-start gap-3 transition-all ${
+                    className={`w-full text-left p-3 flex items-start gap-2.5 transition-all ${
                       active 
-                        ? 'bg-primary/5 border-l-4 border-l-primary' 
-                        : 'hover:bg-slate-50/70 border-l-4 border-l-transparent'
+                        ? 'bg-primary/10 border-l-4 border-l-primary' 
+                        : 'hover:bg-surface-container-low border-l-4 border-l-transparent'
                     }`}
                   >
                     {/* Student Avatar */}
@@ -512,10 +476,10 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                       <img
                         src={item.student.avatar_url}
                         alt={item.student.nome}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-100 shrink-0"
+                        className="w-9 h-9 rounded-product-control object-cover border border-outline-variant/60 shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/15 flex items-center justify-center font-bold text-xs shrink-0 select-none">
+                      <div className="w-9 h-9 rounded-product-control bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs shrink-0 select-none">
                         {getInitials(item.student.nome)}
                       </div>
                     )}
@@ -523,11 +487,11 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                     {/* Metadata Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-1">
-                        <h4 className="font-heading font-bold text-xs text-on-surface truncate">
+                        <h4 className="font-heading font-extrabold text-xs text-on-surface truncate">
                           {item.student.nome}
                         </h4>
                         {item.lastMessage && (
-                          <span className="text-[9px] font-bold text-on-surface-variant/50 shrink-0">
+                          <span className="text-[9px] font-bold text-on-surface-variant shrink-0">
                             {formatTime(item.lastMessage.created_at)}
                           </span>
                         )}
@@ -537,19 +501,19 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                         {item.turmaNome}
                       </p>
 
-                      <p className="text-[11px] font-semibold text-on-surface-variant/70 truncate mt-1">
+                      <p className="text-[11px] font-medium text-on-surface-variant truncate mt-0.5">
                         {item.lastMessage ? (
                           item.lastMessage.remetente_id === currentTeacherId ? (
-                            <span className="text-primary/80 font-bold mr-1">Você:</span>
+                            <span className="text-primary font-bold mr-1">Você:</span>
                           ) : null
                         ) : null}
                         {item.lastMessage ? item.lastMessage.texto : 'Nenhuma mensagem trocada.'}
                       </p>
                     </div>
 
-                    {/* Unread badge indicator */}
+                    {/* Unread badge */}
                     {item.unreadCount > 0 && (
-                      <span className="bg-error text-white text-[9px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center animate-pulse shrink-0 self-center shadow-sm">
+                      <span className="bg-error text-white text-[9px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center animate-pulse shrink-0 self-center shadow-xs">
                         {item.unreadCount}
                       </span>
                     )}
@@ -561,39 +525,39 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
         </aside>
 
         {/* Right Pane: Active Chat Window */}
-        <section className={`flex-1 flex flex-col bg-slate-50/30 ${selectedStudentId ? 'flex' : 'hidden md:flex'}`}>
+        <section className={`flex-1 flex flex-col bg-surface-container-low/30 ${selectedStudentId ? 'flex' : 'hidden md:flex'}`}>
           {selectedItem ? (
             <>
-              {/* Header */}
-              <div className="px-4 sm:px-6 py-4 bg-white border-b border-outline-variant/30 flex items-center justify-between shadow-xs select-none">
+              {/* Chat Header */}
+              <div className="px-4 py-3 bg-surface-container-lowest border-b border-outline-variant/70 flex items-center justify-between shadow-xs select-none">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSelectedStudentId(null)}
-                    className="md:hidden p-2 -ml-2 text-on-surface-variant/70 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    className="md:hidden product-icon-action !h-8 !w-8 -ml-1"
                     title="Voltar para a lista"
                   >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={20} strokeWidth={2.5} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={2} />
                   </button>
                   {selectedItem.student.avatar_url ? (
                     <img
                       src={selectedItem.student.avatar_url}
                       alt={selectedItem.student.nome}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-100"
+                      className="w-9 h-9 rounded-product-control object-cover border border-outline-variant/60"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/15 flex items-center justify-center font-bold text-sm select-none">
+                    <div className="w-9 h-9 rounded-product-control bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs select-none">
                       {getInitials(selectedItem.student.nome)}
                     </div>
                   )}
                   <div>
-                    <h3 className="font-heading font-extrabold text-sm text-on-surface">
+                    <h3 className="font-heading font-extrabold text-xs text-on-surface">
                       {selectedItem.student.nome}
                     </h3>
                     <p className="text-[10px] font-bold text-primary flex items-center gap-1.5 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       <span>{selectedItem.turmaNome}</span>
-                      <span className="text-on-surface-variant/40 font-normal">•</span>
-                      <span className="text-on-surface-variant/70 font-semibold">{selectedItem.student.email}</span>
+                      <span className="text-on-surface-variant font-normal">•</span>
+                      <span className="text-on-surface-variant font-semibold">{selectedItem.student.email}</span>
                     </p>
                   </div>
                 </div>
@@ -602,13 +566,13 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
               {/* Messages Listing */}
               <div
                 ref={messagesAreaRef}
-                className="flex-1 overflow-y-auto p-6 space-y-6"
+                className="flex-1 overflow-y-auto p-5 space-y-4"
               >
                 {groupedMessages.map((group) => (
-                  <div key={group.dateLabel} className="space-y-4">
+                  <div key={group.dateLabel} className="space-y-3">
                     {/* Date separator */}
-                    <div className="flex justify-center my-3">
-                      <span className="bg-slate-100 text-on-surface-variant/70 font-bold text-[9px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                    <div className="flex justify-center my-2">
+                      <span className="bg-surface-container-high text-on-surface-variant font-bold text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
                         {group.dateLabel}
                       </span>
                     </div>
@@ -618,51 +582,50 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                       const isProfessor = msg.remetente_id === currentTeacherId;
                       return (
                         <div key={msg.id} className={`flex ${isProfessor ? 'justify-end' : 'justify-start'} group`}>
-                          <div className={`flex gap-2 max-w-[75%] ${isProfessor ? 'flex-row-reverse' : 'flex-row'}`}>
+                          <div className={`flex gap-2 max-w-[80%] ${isProfessor ? 'flex-row-reverse' : 'flex-row'}`}>
                             
-                            {/* Student initial (if not teacher) */}
                             {!isProfessor && (
-                              <div className="w-7 h-7 rounded-full bg-slate-200/60 flex items-center justify-center font-bold text-on-surface-variant text-[10px] self-end shrink-0 border border-outline-variant/10 select-none">
+                              <div className="w-6 h-6 rounded-product-control bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-[9px] self-end shrink-0 select-none">
                                 {getInitials(selectedItem.student.nome)}
                               </div>
                             )}
 
                             {/* Bubble body */}
                             <div
-                              className={`rounded-2xl px-4 py-3 shadow-sm border transition-all relative ${
+                              className={`px-3.5 py-2.5 shadow-sm transition-all relative ${
                                 isProfessor
-                                  ? 'bg-primary text-white border-primary-container rounded-tr-sm'
-                                  : 'bg-white text-on-surface border-slate-100 rounded-tl-sm'
+                                  ? 'bg-brand-navy text-white rounded-product-card rounded-tr-xs'
+                                  : 'bg-surface-container-lowest text-on-surface border border-outline-variant/60 rounded-product-card rounded-tl-xs'
                               }`}
                             >
-                              <p className="text-xs leading-relaxed font-semibold break-words whitespace-pre-wrap">
+                              <p className="text-xs leading-relaxed font-medium break-words whitespace-pre-wrap">
                                 {msg.texto}
                               </p>
                               <span
-                                className={`block text-[9px] mt-1.5 text-right font-medium ${
-                                  isProfessor ? 'text-white/70' : 'text-on-surface-variant/50'
+                                className={`block text-[9px] mt-1 text-right font-medium ${
+                                  isProfessor ? 'text-white/70' : 'text-on-surface-variant'
                                 }`}
                               >
                                 {formatTime(msg.created_at)}
                               </span>
                             </div>
 
-                            {/* Hover Actions for teacher messages */}
+                            {/* Actions for teacher messages */}
                             {isProfessor && (
-                              <div className="flex gap-1 items-center self-center opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                              <div className="flex gap-1 items-center self-center opacity-0 group-hover:opacity-100 transition-opacity mr-1">
                                 <button
                                   onClick={() => handleStartEditMessage(msg)}
-                                  className="p-1.5 text-on-surface-variant/40 hover:text-primary hover:bg-slate-100 rounded transition-colors"
+                                  className="product-icon-action !h-7 !w-7"
                                   title="Editar mensagem"
                                 >
-                                  <HugeiconsIcon icon={Edit01Icon} size={14} />
+                                  <HugeiconsIcon icon={Edit01Icon} size={13} strokeWidth={2} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteMessage(msg.id)}
-                                  className="p-1.5 text-on-surface-variant/40 hover:text-error hover:bg-slate-100 rounded transition-colors"
+                                  className="product-icon-action !h-7 !w-7 text-error hover:bg-error/10"
                                   title="Excluir mensagem"
                                 >
-                                  <HugeiconsIcon icon={Delete02Icon} size={14} />
+                                  <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
                                 </button>
                               </div>
                             )}
@@ -676,16 +639,16 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Editing Action Bar */}
+              {/* Editing Notification */}
               {editingMessage && (
-                <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-on-surface-variant/80">
-                  <span className="flex items-center gap-1.5">
-                    <HugeiconsIcon icon={Edit01Icon} size={12} className="text-primary" />
-                    <span>Editando mensagem selecionada...</span>
+                <div className="px-4 py-1.5 bg-surface-container-low border-t border-outline-variant/60 flex justify-between items-center text-[10px] font-bold text-on-surface-variant">
+                  <span className="flex items-center gap-1.5 text-primary">
+                    <HugeiconsIcon icon={Edit01Icon} size={12} strokeWidth={2} />
+                    <span>Editando mensagem...</span>
                   </span>
                   <button
                     onClick={handleCancelEditMessage}
-                    className="text-error hover:underline text-xs font-black uppercase tracking-wider"
+                    className="text-error hover:underline text-xs font-bold"
                   >
                     Cancelar
                   </button>
@@ -693,19 +656,11 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
               )}
 
               {/* Input Bar */}
-              <div className="p-4 bg-white border-t border-outline-variant/30">
+              <div className="p-3 bg-surface-container-lowest border-t border-outline-variant/70">
                 <form
                   onSubmit={editingMessage ? handleSaveEditMessage : handleSendMessage}
-                  className="flex items-end gap-3 bg-slate-50 border border-outline-variant/55 rounded-xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all"
+                  className="flex items-end gap-2 bg-surface-container-low border border-outline-variant/70 rounded-product-control p-1.5 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all"
                 >
-                  <button
-                    type="button"
-                    className="p-2 text-on-surface-variant/40 hover:text-primary hover:bg-slate-200/50 transition-colors rounded-lg shrink-0"
-                    title="Anexar arquivo"
-                  >
-                    <HugeiconsIcon icon={Attachment01Icon} size={18} strokeWidth={2} />
-                  </button>
-                  
                   <textarea
                     value={editingMessage ? editMessageText : newMessage}
                     onChange={(e) => {
@@ -717,11 +672,11 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                     }}
                     placeholder={
                       editingMessage
-                        ? 'Altere o conteúdo da mensagem...'
+                        ? 'Altere a mensagem...'
                         : `Digite sua mensagem para ${selectedItem.student.nome.split(' ')[0]}...`
                     }
                     rows={1}
-                    className="w-full bg-transparent border-0 focus:ring-0 resize-none text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 py-2 outline-none"
+                    className="w-full bg-transparent border-0 focus:ring-0 resize-none text-xs font-medium text-on-surface placeholder:text-on-surface-variant py-1.5 px-2 outline-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -737,26 +692,21 @@ export const ChatProfessor: React.FC<ChatProfessorProps> = ({
                   <button
                     type="submit"
                     disabled={editingMessage ? !editMessageText.trim() : !newMessage.trim()}
-                    className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/90 disabled:opacity-40 disabled:hover:bg-primary transition-all shadow-sm"
-                    title={editingMessage ? 'Salvar alterações' : 'Enviar mensagem'}
+                    className="product-primary-action !min-h-8 !w-8 !p-0 flex items-center justify-center shrink-0 disabled:opacity-40"
+                    title={editingMessage ? 'Salvar' : 'Enviar'}
                   >
-                    <HugeiconsIcon icon={editingMessage ? Edit01Icon : SentIcon} size={16} strokeWidth={2} />
+                    <HugeiconsIcon icon={editingMessage ? Edit01Icon : SentIcon} size={15} strokeWidth={2} />
                   </button>
                 </form>
               </div>
             </>
           ) : (
-            /* Empty State */
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-on-surface-variant/40 space-y-4 select-none">
-              <div className="w-16 h-16 rounded-full bg-primary/5 text-primary flex items-center justify-center shadow-xs">
-                <HugeiconsIcon icon={Chat01Icon} size={32} strokeWidth={1.5} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-heading font-extrabold text-sm text-on-surface/80">Canal Integrado de Mensagens</h3>
-                <p className="text-xs max-w-[280px] mx-auto leading-relaxed">
-                  Selecione um aluno na barra lateral para carregar a conversa e trocar mensagens em tempo real.
-                </p>
-              </div>
+            <div className="product-empty-state flex-1 flex flex-col items-center justify-center p-8">
+              <HugeiconsIcon icon={Chat01Icon} size={36} className="text-primary mb-2" strokeWidth={1.5} />
+              <h2 className="font-heading font-extrabold text-sm text-on-surface">Canal de Mensagens</h2>
+              <p className="text-xs text-on-surface-variant max-w-[280px] mx-auto text-center mt-1">
+                Selecione um aluno na barra lateral para trocar mensagens em tempo real.
+              </p>
             </div>
           )}
         </section>

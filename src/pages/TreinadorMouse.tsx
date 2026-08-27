@@ -849,24 +849,25 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
   };
 
   return (
-    <div className="app-page space-y-6 max-w-7xl mx-auto font-sans relative">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       
       {/* ——————————————————————————————
           1. CABEÇALHO DO TREINADOR DE MOUSE
          —————————————————————————————— */}
-      <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="product-card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary to-orange-700 text-white flex items-center justify-center shadow-md shadow-secondary/20 shrink-0">
-            <HugeiconsIcon icon={Cursor01Icon} size={26} />
+          <div className="w-11 h-11 rounded-product-control bg-secondary/10 text-secondary flex items-center justify-center border border-secondary/20 shrink-0">
+            <HugeiconsIcon icon={Cursor01Icon} size={24} strokeWidth={2} />
           </div>
           <div>
-            <h1 className="app-title flex items-center gap-2">
-              Treino de Mouse
+            <span className="product-section-kicker">Gamificação & Coordenação Motora</span>
+            <h1 className="product-section-heading mt-0 text-xl sm:text-2xl flex items-center gap-2">
+              <span>Treino de Mouse</span>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
                 Letramento & Precisão
               </span>
             </h1>
-            <p className="app-subtitle">
+            <p className="product-subtitle">
               Desenvolva firmeza, precisão no clique, agilidade motora e domínio completo das funções do mouse.
             </p>
           </div>
@@ -875,23 +876,23 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
         <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
           <button
             onClick={() => setMostrarGuia(true)}
-            className="app-secondary-action text-xs"
+            className="product-secondary-action text-xs"
             title="Ver Guia de Postura e Ergonomia do Mouse"
           >
-            <HugeiconsIcon icon={InformationCircleIcon} size={16} className="text-secondary" />
+            <HugeiconsIcon icon={InformationCircleIcon} size={15} className="text-secondary" strokeWidth={2} />
             <span>Guia Ergonômico</span>
           </button>
 
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="app-secondary-action text-xs"
+            className="product-secondary-action text-xs"
             title="Ajustar Áudio e Preferências"
           >
-            <HugeiconsIcon icon={Settings01Icon} size={16} />
+            <HugeiconsIcon icon={Settings01Icon} size={15} strokeWidth={2} />
             <span>Preferências</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ——————————————————————————————
           2. GRADE DE MÓDULOS (VISÃO GERAL)
@@ -910,9 +911,9 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                   onClick={() => {
                     if (desbloqueado) iniciarModulo(mod);
                   }}
-                  className={`app-card-padded relative overflow-hidden transition-all duration-300 flex flex-col justify-between gap-4 border-2 ${
+                  className={`product-card p-5 relative overflow-hidden transition-all duration-300 flex flex-col justify-between gap-4 border-2 ${
                     desbloqueado
-                      ? 'cursor-pointer hover-lift hover:border-primary/50'
+                      ? 'cursor-pointer hover:border-primary/50'
                       : 'opacity-60 cursor-not-allowed border-dashed'
                   }`}
                 >
@@ -925,24 +926,24 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
                     </div>
 
                     <div>
-                      <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
+                      <h3 className="font-heading font-extrabold text-sm text-on-surface">
                         {mod.titulo}
                       </h3>
                       <p className="text-xs font-bold text-primary mt-0.5">{mod.subtitulo}</p>
                     </div>
 
-                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed font-medium">
                       {mod.descricao}
                     </p>
                   </div>
 
-                  <div className="space-y-2 pt-3 border-t border-outline-variant/20">
+                  <div className="space-y-2 pt-3 border-t border-outline-variant/60">
                     <div className="flex justify-between items-center text-xs font-bold">
                       <span className="text-on-surface-variant">
                         {mod.desafios.length} desafios práticos
                       </span>
                       <span className={concluido ? 'text-emerald-500 flex items-center gap-1' : 'text-on-surface-variant'}>
-                        {concluido ? <><HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} /> Concluído</> : desbloqueado ? 'Disponível' : <><HugeiconsIcon icon={LockPasswordIcon} size={14} /> Bloqueado</>}
+                        {concluido ? <><HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} strokeWidth={2} /> Concluído</> : desbloqueado ? 'Disponível' : <><HugeiconsIcon icon={LockPasswordIcon} size={14} strokeWidth={2} /> Bloqueado</>}
                       </span>
                     </div>
 
@@ -967,14 +968,14 @@ export const TreinadorMouse: React.FC<TreinadorMouseProps> = ({ session }) => {
         <div className="space-y-5 animate-fade-in">
           
           {/* Top Bar with Live Telemetry & Mouse Guide */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-3xl border border-outline-variant/30 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 product-card p-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setModuloAtivo(null)}
-                className="app-icon-button"
+                className="product-icon-action"
                 title="Voltar para a seleção de módulos"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={2} />
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
               </button>
               <div>
                 <div className="flex items-center gap-2">

@@ -187,35 +187,35 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
       </div>
 
       {/* Role Switcher Tab */}
-      <div className="grid grid-cols-2 gap-1 p-1 bg-surface-container-low dark:bg-slate-800 rounded-xl border border-outline-variant/30 mb-6 text-xs font-bold">
+      <div className="grid grid-cols-2 gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs font-bold mb-5">
         <button
           type="button"
           onClick={onNavigateToStudentSignup}
-          className="py-2 rounded-lg text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 transition-all"
+          className="py-1.5 rounded-product-control text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 transition-all cursor-pointer"
         >
-          <HugeiconsIcon icon={UserIcon} size={14} />
-          Sou Aluno
+          <HugeiconsIcon icon={UserIcon} size={14} strokeWidth={2} />
+          <span>Sou Aluno</span>
         </button>
         <button
           type="button"
-          className="py-2 rounded-lg bg-primary text-on-primary shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-default"
+          className="py-1.5 rounded-product-control bg-brand-navy text-white shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-default"
         >
-          <HugeiconsIcon icon={Award01Icon} size={14} />
-          Sou Professor
+          <HugeiconsIcon icon={Award01Icon} size={14} strokeWidth={2} />
+          <span>Sou Professor</span>
         </button>
       </div>
 
       {/* Feedback Messages */}
       {errorMessage && (
-        <div className="p-3.5 bg-error-container/30 border border-error/20 rounded-xl text-error text-label-md flex items-start gap-2.5 mb-5 animate-in fade-in duration-200">
-          <HugeiconsIcon icon={Alert01Icon} size={18} className="mt-0.5 shrink-0" />
+        <div className="p-3.5 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2.5 mb-5 animate-in fade-in duration-200">
+          <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" strokeWidth={2} />
           <span className="leading-tight">{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 text-label-md flex items-start gap-2.5 mb-5 animate-in fade-in duration-200">
-          <HugeiconsIcon icon={Tick01Icon} size={18} className="mt-0.5 shrink-0" />
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2.5 mb-5 animate-in fade-in duration-200">
+          <HugeiconsIcon icon={Tick01Icon} size={16} className="mt-0.5 shrink-0" strokeWidth={2} />
           <span className="leading-tight">{successMessage}</span>
         </div>
       )}
@@ -225,20 +225,18 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
         
         {/* Full Name */}
         <div className="space-y-1.5">
-          <label className="text-label-sm font-bold text-on-surface block">
+          <label className="text-xs font-bold text-on-surface block">
             Nome Completo
           </label>
           <div className="relative">
-            <HugeiconsIcon icon={UserIcon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
+            <HugeiconsIcon icon={UserIcon} size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Ex: Carlos Eduardo Silva"
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-surface-container-lowest dark:bg-slate-800 text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none transition-all ${
-                !isNameValid ? 'border-error focus:border-error ring-1 ring-error/20' : 'border-outline-variant/30 focus:border-primary'
-              }`}
+              className={`product-control text-xs pl-10 ${!isNameValid ? '!border-error' : ''}`}
             />
           </div>
           {!isNameValid && (
@@ -248,47 +246,43 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label className="text-label-sm font-bold text-on-surface block">
+          <label className="text-xs font-bold text-on-surface block">
             E-mail Institucional
           </label>
           <div className="relative">
-            <HugeiconsIcon icon={Mail01Icon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
+            <HugeiconsIcon icon={Mail01Icon} size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu.email@senac.br"
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-surface-container-lowest dark:bg-slate-800 text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none transition-all ${
-                !isEmailValid ? 'border-error focus:border-error ring-1 ring-error/20' : 'border-outline-variant/30 focus:border-primary'
-              }`}
+              className={`product-control text-xs pl-10 ${!isEmailValid ? '!border-error' : ''}`}
             />
           </div>
         </div>
 
         {/* Password */}
         <div className="space-y-1.5">
-          <label className="text-label-sm font-bold text-on-surface block">
+          <label className="text-xs font-bold text-on-surface block">
             Senha de Acesso
           </label>
           <div className="relative">
-            <HugeiconsIcon icon={AccessIcon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
+            <HugeiconsIcon icon={AccessIcon} size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
             <input
               type={showPassword ? 'text' : 'password'}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 6 caracteres"
-              className={`w-full pl-10 pr-10 py-2.5 rounded-xl border bg-surface-container-lowest dark:bg-slate-800 text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none transition-all ${
-                !isPasswordValid ? 'border-error focus:border-error ring-1 ring-error/20' : 'border-outline-variant/30 focus:border-primary'
-              }`}
+              className={`product-control text-xs pl-10 pr-10 ${!isPasswordValid ? '!border-error' : ''}`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-on-surface p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1"
             >
-              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={16} />
+              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={16} strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -296,22 +290,20 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
         {/* Teacher Access Key */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-label-sm font-bold text-on-surface block">
+            <label className="text-xs font-bold text-on-surface block">
               Chave de Acesso Docente
             </label>
-            <span className="text-[11px] text-secondary font-semibold">Institucional</span>
+            <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">Institucional</span>
           </div>
           <div className="relative">
-            <HugeiconsIcon icon={Award01Icon} size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" />
+            <HugeiconsIcon icon={Award01Icon} size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" strokeWidth={2} />
             <input
               type="text"
               required
               value={teacherKey}
               onChange={(e) => setTeacherKey(e.target.value)}
               placeholder="Digite a chave institucional recebida"
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-surface-container-lowest dark:bg-slate-800 text-body-md font-mono tracking-wider text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none transition-all ${
-                !isKeyValid ? 'border-error focus:border-error ring-1 ring-error/20' : 'border-secondary/40 focus:border-secondary'
-              }`}
+              className={`product-control text-xs pl-10 font-mono tracking-wider font-bold ${!isKeyValid ? '!border-error' : ''}`}
             />
           </div>
           <p className="text-[11px] text-on-surface-variant">
@@ -323,7 +315,7 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-2 py-3 px-4 bg-primary hover:bg-primary/90 text-on-primary font-heading font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full product-primary-action text-xs justify-center"
         >
           {loading ? (
             <>
@@ -333,15 +325,15 @@ export const CadastroProfessor: React.FC<CadastroProfessorProps> = ({
           ) : (
             <>
               <span>Concluir Cadastro Docente</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={18} />
+              <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
             </>
           )}
         </button>
       </form>
 
       {/* Footer Navigation */}
-      <div className="mt-6 pt-4 border-t border-outline-variant/30 text-center space-y-2">
-        <p className="text-label-sm text-on-surface-variant">
+      <div className="mt-6 pt-3 border-t border-outline-variant/60 text-center space-y-2">
+        <p className="text-xs text-on-surface-variant">
           Já possui cadastro docente?{' '}
           <button
             type="button"

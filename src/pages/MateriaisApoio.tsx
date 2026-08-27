@@ -109,57 +109,58 @@ export const MateriaisApoio: React.FC = () => {
   };
 
   return (
-    <div className="app-card-padded space-y-6">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/20">
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="app-section-title flex items-center gap-2 text-on-surface">
-            <HugeiconsIcon icon={SparklesIcon} className="text-primary" size={20} />
-            Assistente de Prompt de IA (Preparação de Conteúdos)
-          </h3>
-          <p className="text-body-md text-on-surface-variant mt-1">
-            Copie os prompts padronizados e use-os no <strong>Gemini</strong> ou <strong>ChatGPT</strong> para processar seus materiais e alimentar a IA do Estudea.
+          <span className="product-section-kicker">Materiais & Engenharia de Prompts</span>
+          <h1 className="product-section-heading mt-0 text-xl sm:text-2xl flex items-center gap-2">
+            <HugeiconsIcon icon={SparklesIcon} className="text-primary animate-pulse" size={20} strokeWidth={2} />
+            <span>Assistente de Prompts de IA</span>
+          </h1>
+          <p className="product-subtitle">
+            Copie os prompts padronizados para alimentar o <strong>Gemini</strong> ou <strong>ChatGPT</strong> e gerar estruturas compatíveis com o Estudea.
           </p>
         </div>
-      </div>
+      </header>
 
       {/* Sub-Tabs for selecting template type */}
-      <div className="flex border-b border-outline-variant/40 mb-4 bg-surface-container-lowest p-1 rounded-xl gap-2 max-w-md">
+      <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs w-fit">
         <button
           onClick={() => { setActiveSubTab('lessons'); setCopied(false); }}
-          className={`flex-1 py-2 px-3 rounded-lg text-label-sm font-heading font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-1.5 px-3 rounded-product-control font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeSubTab === 'lessons'
-              ? 'bg-primary text-on-primary shadow-sm'
-              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+              ? 'bg-brand-navy text-white shadow-xs'
+              : 'text-on-surface-variant hover:text-on-surface'
           }`}
         >
-          <HugeiconsIcon icon={BookOpen01Icon} size={14} />
-          Preparação de Aulas
+          <HugeiconsIcon icon={BookOpen01Icon} size={14} strokeWidth={2} />
+          <span>Preparação de Aulas</span>
         </button>
         <button
           onClick={() => { setActiveSubTab('arena'); setCopied(false); }}
-          className={`flex-1 py-2 px-3 rounded-lg text-label-sm font-heading font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-1.5 px-3 rounded-product-control font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeSubTab === 'arena'
-              ? 'bg-primary text-on-primary shadow-sm'
-              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+              ? 'bg-secondary text-white shadow-xs'
+              : 'text-on-surface-variant hover:text-on-surface'
           }`}
         >
-          <HugeiconsIcon icon={Award01Icon} size={14} />
-          Preparação da Arena Live
+          <HugeiconsIcon icon={Award01Icon} size={14} strokeWidth={2} />
+          <span>Preparação da Arena Live</span>
         </button>
       </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Explanatory Section */}
-        <div className="lg:col-span-1 space-y-5 text-left">
-          <h4 className="font-heading font-bold text-body-md text-on-surface border-b border-outline-variant/30 pb-2">Como utilizar este fluxo?</h4>
+        <div className="lg:col-span-1 product-card p-4 sm:p-5 space-y-4 text-left h-fit">
+          <h4 className="font-heading font-extrabold text-sm text-on-surface border-b border-outline-variant/60 pb-2">Como utilizar este fluxo?</h4>
           <div className="space-y-4">
             <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-label-sm shrink-0">1</div>
+              <div className="w-6 h-6 rounded-product-control bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xs shrink-0 border border-primary/20">1</div>
               <div>
-                <p className="text-label-md font-bold text-on-surface">Copie o Prompt Temático</p>
-                <p className="text-body-sm text-on-surface-variant mt-0.5">
+                <p className="text-xs font-bold text-on-surface">Copie o Prompt Temático</p>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed mt-0.5 font-medium">
                   {activeSubTab === 'lessons'
                     ? 'Clique em "Copiar Prompt" para copiar as diretrizes de aulas conceituais, atividades e quiz geral.'
                     : 'Clique em "Copiar Prompt" para copiar as diretrizes de extração de perguntas curtas para a competição multiplayer.'}
@@ -168,21 +169,21 @@ export const MateriaisApoio: React.FC = () => {
             </div>
 
             <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-label-sm shrink-0">2</div>
+              <div className="w-6 h-6 rounded-product-control bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xs shrink-0 border border-primary/20">2</div>
               <div>
-                <p className="text-label-md font-bold text-on-surface">Processe seu PDF Externamente</p>
-                <p className="text-body-sm text-on-surface-variant mt-0.5">Abra a IA externa de sua preferência, envie seu material de apoio (PDF/Texto) e envie junto com o prompt copiado.</p>
+                <p className="text-xs font-bold text-on-surface">Processe seu PDF Externamente</p>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed mt-0.5 font-medium">Abra o Gemini ou ChatGPT, envie seu material de apoio (PDF/Texto) junto com o prompt copiado.</p>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-label-sm shrink-0">3</div>
+              <div className="w-6 h-6 rounded-product-control bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xs shrink-0 border border-primary/20">3</div>
               <div>
-                <p className="text-label-md font-bold text-on-surface">Insira no Estudea</p>
-                <p className="text-body-sm text-on-surface-variant mt-0.5">
+                <p className="text-xs font-bold text-on-surface">Insira no Estudea</p>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed mt-0.5 font-medium">
                   {activeSubTab === 'lessons'
-                    ? 'Copie o texto com as tags (ex: [TÍTULO], [ATIVIDADE]) gerado pela IA, vá ao Course Builder, ative "Criar com IA" e cole para montar a aula!'
-                    : 'Copie a lista de perguntas gerada sob [ARENA_QUESTÕES], abra o gerador de questões da Arena (Kahoot) no criador da aula e cole na caixa de texto da IA!'}
+                    ? 'Copie o texto com as tags geradas pela IA, vá ao Course Builder, ative "Criar com IA" e cole para montar a aula!'
+                    : 'Copie a lista de perguntas gerada sob [ARENA_QUESTÕES], abra o criador da aula na aba Arena e cole na caixa da IA!'}
                 </p>
               </div>
             </div>
@@ -190,28 +191,26 @@ export const MateriaisApoio: React.FC = () => {
         </div>
 
         {/* Prompt Textbox Section */}
-        <div className="lg:col-span-2 space-y-3 flex flex-col">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+        <div className="lg:col-span-2 product-card p-4 sm:p-5 space-y-3 flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-outline-variant/60 pb-3">
+            <span className="text-[11px] font-extrabold text-on-surface-variant uppercase tracking-wider font-mono">
               {activeSubTab === 'lessons' ? 'Prompt de Preparação de Aula' : 'Prompt de Preparação da Arena (Kahoot)'}
             </span>
             <button
               onClick={handleCopyPrompt}
-              className={`px-4 py-2 rounded-xl text-label-sm font-heading font-bold flex items-center gap-1.5 transition-all cursor-pointer select-none ${
-                copied
-                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                  : 'bg-primary text-on-primary hover:bg-primary-container hover:shadow-md hover:-translate-y-0.5'
+              className={`product-primary-action text-xs !min-h-8 ${
+                copied ? '!bg-emerald-600 !text-white' : ''
               }`}
             >
-              <HugeiconsIcon icon={copied ? Tick01Icon : SparklesIcon} size={14} />
-              {copied ? 'Copiado!' : 'Copiar Prompt de IA'}
+              <HugeiconsIcon icon={copied ? Tick01Icon : SparklesIcon} size={14} strokeWidth={2} />
+              <span>{copied ? 'Copiado!' : 'Copiar Prompt de IA'}</span>
             </button>
           </div>
 
           <textarea
             readOnly
             value={activeSubTab === 'lessons' ? AI_LESSON_PROMPT : AI_ARENA_PROMPT}
-            className="w-full h-[380px] p-4 text-[13px] font-mono leading-relaxed bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 outline-none resize-none overflow-y-auto"
+            className="w-full h-[380px] p-4 text-xs font-mono leading-relaxed bg-surface-container-lowest text-on-surface rounded-product-control border border-outline-variant/60 outline-none resize-none overflow-y-auto"
           />
         </div>
       </div>

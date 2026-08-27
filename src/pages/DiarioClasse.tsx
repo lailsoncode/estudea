@@ -8,7 +8,10 @@ import {
   SchoolIcon,
   ArrowDown01Icon,
   Tick01Icon,
-  BookOpen01Icon
+  BookOpen01Icon,
+  Calendar01Icon,
+  UserGroupIcon,
+  Clock01Icon
 } from '@hugeicons/core-free-icons';
 
 interface Student {
@@ -83,7 +86,6 @@ export const DiarioClasse: React.FC = () => {
     }
   }, [selectedTurma, selectedAula]);
 
-  // Fetch all classes
   const fetchTurmas = async () => {
     try {
       const { data, error: err } = await supabase
@@ -99,212 +101,183 @@ export const DiarioClasse: React.FC = () => {
         const defaultTurma = data.find((t) => t.id === storedTurmaId) || data[0];
         setSelectedTurma(defaultTurma);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching classes:', err);
-      setError('Erro ao buscar turmas no banco de dados');
     }
   };
 
-  // Fetch count of unique registered lessons for the class
   const fetchRegisteredLessonsCount = async (turmaId: string) => {
     try {
-      const { data, error: err } = await supabase
+      const { data, error: countErr } = await supabase
         .from('diario_classe')
         .select('aula_id')
         .eq('turma_id', turmaId);
 
-      if (err) throw err;
+      if (countErr) throw countErr;
 
       if (data) {
-        const uniqueIds = new Set(data.map((r: any) => r.aula_id));
-        setRegisteredAulasCount(uniqueIds.size);
-      } else {
-        setRegisteredAulasCount(0);
+        const uniqueAulas = new Set(data.map(d => d.aula_id));
+        setRegisteredAulasCount(uniqueAulas.size);
       }
     } catch (err) {
-      console.error('Error fetching registered lessons count:', err);
+      console.error('Error fetching registered count:', err);
     }
   };
 
-  // Delete all attendance logs for selected class and lesson
-  const handleClearAttendance = async () => {
-    if (!selectedTurma || !selectedAula) return;
-    if (
-      !window.confirm(
-        'Tem certeza de que deseja excluir todos os registros de chamada desta aula? Esta ação é irreversível e atualizará a frequência de todos os alunos.'
-      )
-    )
-      return;
-
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const { error: deleteError } = await supabase
-        .from('diario_classe')
-        .delete()
-        .eq('turma_id', selectedTurma.id)
-        .eq('aula_id', selectedAula.id);
-
-      if (deleteError) throw deleteError;
-
-      setSuccess('Registros de chamada excluídos com sucesso!');
-      setIsRegistered(false);
-      fetchRegisteredLessonsCount(selectedTurma.id);
-
-      // Reset local attendance to default present
-      const resetAttendance: Record<string, AttendanceRecord> = {};
-      students.forEach((s) => {
-        resetAttendance[s.id] = {
-          status: 'presente',
-          observacao: '',
-          compreendeu: 'S',
-          participou: 'S',
-          precisou_apoio: 'N'
-        };
-      });
-      setAttendance(resetAttendance);
-
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-    } catch (err: any) {
-      console.error('Error clearing attendance:', err);
-      setError(err.message || 'Erro ao excluir chamada do banco');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Fetch all lessons linked to the course
   const fetchAulas = async (cursoId: string | null) => {
     if (!cursoId) {
       setAulas([]);
       setSelectedAula(null);
       return;
     }
+
     setLoadingAulas(true);
     try {
-      // 1. Fetch modules for this course
-      const { data: modulesData, error: modulesError } = await supabase
+      const { data: modulosData, error: modError } = await supabase
         .from('modulos')
-        .select('id')
-        .eq('curso_id', cursoId);
+        .select('id, ordem')
+        .eq('curso_id', cursoId)
+        .order('ordem', { ascending: true });
 
-      if (modulesError) throw modulesError;
+      if (modError) throw modError;
 
-      const moduleIds = (modulesData || []).map((m: any) => m.id);
-
-      if (moduleIds.length > 0) {
-        // 2. Fetch lessons (aulas) for these modules
-        const { data: aulasData, error: aulasError } = await supabase
+      if (modulosData && modulosData.length > 0) {
+        const moduloIds = modulosData.map(m => m.id);
+        const { data: aulasData, error: aError } = await supabase
           .from('aulas')
-          .select('id, titulo, numero_aula')
-          .in('modulo_id', moduleIds)
-          .order('numero_aula', { ascending: true });
+          .select('id, modulo_id, ordem, numero_aula, titulo')
+          .in('modulo_id', moduloIds);
 
-        if (aulasError) throw aulasError;
+        if (aError) throw aError;
 
-        setAulas(aulasData || []);
-        if (aulasData && aulasData.length > 0) {
-          setSelectedAula(aulasData[0]);
+        const modIdToOrder = new Map(modulosData.map((m, idx) => [m.id, idx]));
+        const sorted = (aulasData || []).sort((a, b) => {
+          const orderA = modIdToOrder.get(a.modulo_id!) ?? 999;
+          const orderB = modIdToOrder.get(b.modulo_id!) ?? 999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.ordem ?? 0) - (b.ordem ?? 0);
+        });
+
+        setAulas(sorted);
+        if (sorted.length > 0) {
+          setSelectedAula(sorted[0]);
         } else {
           setSelectedAula(null);
         }
       } else {
-        setAulas([]);
-        setSelectedAula(null);
+        const { data: globalAulas, error: gError } = await supabase
+          .from('aulas')
+          .select('id, numero_aula, titulo')
+          .is('modulo_id', null)
+          .order('numero_aula', { ascending: true });
+
+        if (gError) throw gError;
+        setAulas(globalAulas || []);
+        if (globalAulas && globalAulas.length > 0) {
+          setSelectedAula(globalAulas[0]);
+        } else {
+          setSelectedAula(null);
+        }
       }
-    } catch (err: any) {
-      console.error('Error fetching lessons:', err);
-      setError('Erro ao carregar as aulas vinculadas ao curso.');
+    } catch (err) {
+      console.error('Error fetching lessons for class:', err);
+      setAulas([]);
+      setSelectedAula(null);
     } finally {
       setLoadingAulas(false);
     }
   };
 
-  // Fetch attendance records and student profiles
   const fetchAttendance = async (turmaId: string, aulaId: string) => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch Students registered in this class
-      const { data: studentsData, error: studentsError } = await supabase
+      const { data: studentsData, error: sErr } = await supabase
         .from('profiles')
         .select('id, nome, avatar_url')
-        .eq('role', 'student')
         .eq('turma_id', turmaId)
+        .eq('role', 'student')
         .order('nome', { ascending: true });
 
-      if (studentsError) throw studentsError;
+      if (sErr) throw sErr;
+      setStudents(studentsData || []);
 
-      const studentList = (studentsData || []).map((s: any) => ({
-        id: s.id,
-        nome: s.nome || 'Estudante Sem Nome',
-        avatar_url: s.avatar_url
-      }));
-      setStudents(studentList);
-
-      // 2. Fetch existing Attendance logs for this class and lesson
-      const { data: attendanceData, error: attendanceError } = await supabase
+      const { data: attendanceData, error: aErr } = await supabase
         .from('diario_classe')
-        .select('aluno_id, status, observacao, compreendeu, participou, precisou_apoio, data')
+        .select('*')
         .eq('turma_id', turmaId)
         .eq('aula_id', aulaId);
 
-      if (attendanceError) throw attendanceError;
+      if (aErr) throw aErr;
 
-      // Update date picker value if a record already exists
+      const recordMap: Record<string, AttendanceRecord> = {};
+      let hasRecords = false;
+
       if (attendanceData && attendanceData.length > 0) {
-        const recordDate = attendanceData[0].data;
-        if (recordDate) {
-          setSelectedDate(recordDate);
-        }
-      }
+        hasRecords = true;
+        setSelectedDate(attendanceData[0].data || new Date().toISOString().split('T')[0]);
 
-      // 3. Map logs to active state
-      const initialAttendance: Record<string, AttendanceRecord> = {};
-      
-      // Seed default presence for all students
-      studentList.forEach(s => {
-        initialAttendance[s.id] = {
-          status: 'presente',
-          observacao: '',
-          compreendeu: 'S',
-          participou: 'S',
-          precisou_apoio: 'N'
-        };
-      });
-
-      // Override with actual database logs
-      let registered = false;
-      if (attendanceData && attendanceData.length > 0) {
-        registered = true;
         attendanceData.forEach((record: any) => {
-          if (initialAttendance[record.aluno_id]) {
-            initialAttendance[record.aluno_id] = {
-              status: record.status as 'presente' | 'falta' | 'atrasado',
-              observacao: record.observacao || '',
-              compreendeu: (record.compreendeu || 'S') as 'S' | 'P' | 'N',
-              participou: (record.participou || 'S') as 'S' | 'P' | 'N',
-              precisou_apoio: (record.precisou_apoio || 'N') as 'S' | 'P' | 'N'
-            };
-          }
+          recordMap[record.aluno_id] = {
+            status: record.status || 'presente',
+            observacao: record.observacao || '',
+            compreendeu: record.compreendeu || 'S',
+            participou: record.participou || 'S',
+            precisou_apoio: record.precisou_apoio || 'N'
+          };
         });
       }
 
-      setAttendance(initialAttendance);
-      setIsRegistered(registered);
+      (studentsData || []).forEach(s => {
+        if (!recordMap[s.id]) {
+          recordMap[s.id] = {
+            status: 'presente',
+            observacao: '',
+            compreendeu: 'S',
+            participou: 'S',
+            precisou_apoio: 'N'
+          };
+        }
+      });
+
+      setAttendance(recordMap);
+      setIsRegistered(hasRecords);
+
     } catch (err: any) {
-      console.error('Error fetching attendance:', err);
-      setError(err.message || 'Erro ao carregar diário de classe');
+      console.error('Error fetching attendance records:', err);
+      setError(err.message || 'Erro ao carregar lista de presença');
     } finally {
       setLoading(false);
     }
   };
 
-  // Toggle status for a student
+  const handleClearAttendance = async () => {
+    if (!selectedTurma || !selectedAula) return;
+    if (!window.confirm('Tem certeza que deseja apagar o registro desta chamada?')) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const { error: delError } = await supabase
+        .from('diario_classe')
+        .delete()
+        .eq('turma_id', selectedTurma.id)
+        .eq('aula_id', selectedAula.id);
+
+      if (delError) throw delError;
+
+      setIsRegistered(false);
+      setSuccess('Registro de chamada apagado.');
+      fetchRegisteredLessonsCount(selectedTurma.id);
+      fetchAttendance(selectedTurma.id, selectedAula.id);
+    } catch (err: any) {
+      console.error('Error clearing attendance:', err);
+      setError(err.message || 'Erro ao apagar chamada.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleToggleStatus = (alunoId: string, status: 'presente' | 'falta' | 'atrasado') => {
     setAttendance(prev => ({
       ...prev,
@@ -315,43 +288,30 @@ export const DiarioClasse: React.FC = () => {
     }));
   };
 
-  // Toggle engagement toggles
-  const handleToggleEngagement = (
-    alunoId: string,
-    field: 'compreendeu' | 'participou' | 'precisou_apoio',
-    val: 'S' | 'P' | 'N'
-  ) => {
+  const handleToggleEngagement = (alunoId: string, field: 'compreendeu' | 'participou' | 'precisou_apoio', value: 'S' | 'P' | 'N') => {
     setAttendance(prev => ({
       ...prev,
       [alunoId]: {
         ...prev[alunoId],
-        [field]: val
+        [field]: value
       }
     }));
   };
 
-  // Helper to get color classes for S/P/N buttons
-  const getEngagementColor = (
-    field: 'compreendeu' | 'participou' | 'precisou_apoio',
-    val: 'S' | 'P' | 'N',
-    currentVal: 'S' | 'P' | 'N'
-  ) => {
-    const isActive = val === currentVal;
-    if (!isActive) {
-      return 'text-slate-400 hover:bg-slate-200/50 hover:text-slate-600 bg-transparent';
-    }
+  const getEngagementColor = (field: 'compreendeu' | 'participou' | 'precisou_apoio', value: 'S' | 'P' | 'N', currentValue: 'S' | 'P' | 'N') => {
+    if (value !== currentValue) return 'text-on-surface-variant hover:bg-surface-container';
+
     if (field === 'precisou_apoio') {
-      if (val === 'S') return 'bg-red-500 text-white shadow-sm';
-      if (val === 'P') return 'bg-amber-500 text-white shadow-sm';
-      return 'bg-emerald-500 text-white shadow-sm'; // N
-    } else {
-      if (val === 'S') return 'bg-emerald-500 text-white shadow-sm';
-      if (val === 'P') return 'bg-amber-500 text-white shadow-sm';
-      return 'bg-red-500 text-white shadow-sm'; // N
+      if (value === 'S') return 'bg-error text-white shadow-sm';
+      if (value === 'P') return 'bg-amber-500 text-white shadow-sm';
+      return 'bg-emerald-500 text-white shadow-sm';
     }
+
+    if (value === 'S') return 'bg-emerald-500 text-white shadow-sm';
+    if (value === 'P') return 'bg-amber-500 text-white shadow-sm';
+    return 'bg-error text-white shadow-sm';
   };
 
-  // Update observation text
   const handleObserveChange = (alunoId: string, text: string) => {
     setAttendance(prev => ({
       ...prev,
@@ -362,7 +322,6 @@ export const DiarioClasse: React.FC = () => {
     }));
   };
 
-  // Save all records to database
   const handleSaveAll = async () => {
     if (!selectedTurma || !selectedAula || !selectedDate) return;
     setSaving(true);
@@ -410,7 +369,6 @@ export const DiarioClasse: React.FC = () => {
     }
   };
 
-  // Mark all students as present
   const handleMarkAllPresent = () => {
     setAttendance(prev => {
       const next = { ...prev };
@@ -424,7 +382,6 @@ export const DiarioClasse: React.FC = () => {
     });
   };
 
-  // Get initials for profile placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -434,7 +391,6 @@ export const DiarioClasse: React.FC = () => {
       .toUpperCase();
   };
 
-  // Calculate day summary metrics
   const totalStudents = students.length;
   const presentsCount = Object.values(attendance).filter(a => a.status === 'presente').length;
   const latesCount = Object.values(attendance).filter(a => a.status === 'atrasado').length;
@@ -444,263 +400,271 @@ export const DiarioClasse: React.FC = () => {
     : 100;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-12">
-      {/* Top feedback warnings */}
+    <div className="product-page max-w-7xl mx-auto relative animate-fade-in pb-10 space-y-6">
+      
+      {/* Top feedback alerts */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-error rounded-xl text-xs font-semibold flex items-center gap-2">
-          <HugeiconsIcon icon={Alert01Icon} size={18} />
+        <div className="p-4 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-center gap-2">
+          <HugeiconsIcon icon={Alert01Icon} size={16} strokeWidth={2} />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-300">
-          <HugeiconsIcon icon={Tick01Icon} size={18} />
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-300">
+          <HugeiconsIcon icon={Tick01Icon} size={16} strokeWidth={2} />
           <span>{success}</span>
         </div>
       )}
 
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="font-heading font-extrabold text-2xl text-on-surface">Diário de Classe</h2>
-            {selectedAula && (
-              isRegistered ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100/50 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Chamada Registrada
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100/50 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                  Pendente de Registro
-                </span>
-              )
-            )}
+      <header className="product-card p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+              <HugeiconsIcon icon={Calendar01Icon} size={22} strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="product-section-kicker">Gestão de Presenças</span>
+                {selectedAula && (
+                  isRegistered ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Registrada
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      Pendente
+                    </span>
+                  )
+                )}
+              </div>
+              <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Diário de Classe</h1>
+              <p className="mt-1 text-sm text-on-surface-variant">Registre presenças, atrasos e acompanhe o engajamento dos alunos por aula.</p>
+            </div>
           </div>
-          <p className="text-on-surface-variant/70 text-xs font-semibold mt-1">Registre presenças, atrasos e acompanhe o engajamento dos alunos por aula.</p>
-        </div>
 
-        {/* Date & Save Actions */}
-        {selectedTurma?.curso_id && (
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase mb-1">Data de Realização</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 bg-white border border-outline-variant/60 rounded-xl text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
+          {/* Date & Save Actions */}
+          {selectedTurma?.curso_id && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider mb-1">Data</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="product-control py-1.5 text-xs font-semibold"
+                />
+              </div>
+
+              {isRegistered && (
+                <button
+                  onClick={handleClearAttendance}
+                  disabled={saving || loading || !selectedAula}
+                  className="product-secondary-action !min-h-10 text-xs text-error hover:bg-error/10 hover:border-error/30 self-end"
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
+                  <span>Limpar</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleSaveAll}
+                disabled={saving || loading || !selectedAula}
+                className="product-primary-action !min-h-10 text-xs self-end"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} />
+                    <span>Salvar Chamada</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Toolbar: Turma & Aula Selectors */}
+      <div className="product-toolbar" aria-label="Seletores de turma e aula">
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Turma selection */}
+            <div className="relative">
+              <button
+                onClick={() => setShowTurmaDropdown(!showTurmaDropdown)}
+                className="product-secondary-action text-xs"
+              >
+                <HugeiconsIcon icon={SchoolIcon} size={15} strokeWidth={2} className="text-primary" />
+                <span>{selectedTurma ? selectedTurma.nome : 'Selecionar Turma'}</span>
+                <HugeiconsIcon icon={ArrowDown01Icon} size={14} className={`transition-transform ${showTurmaDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showTurmaDropdown && (
+                <div className="absolute left-0 mt-2 z-20 w-64 bg-surface-container-lowest border border-outline-variant/70 rounded-product-control shadow-xl py-1.5">
+                  {turmas.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setSelectedTurma(t);
+                        setShowTurmaDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-surface-container-low transition-colors ${
+                        selectedTurma?.id === t.id ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface'
+                      }`}
+                    >
+                      {t.nome}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {isRegistered && (
-              <button
-                onClick={handleClearAttendance}
-                disabled={saving || loading || !selectedAula}
-                className="px-4 py-2.5 bg-red-50 hover:bg-red-100/60 border border-red-200 text-error rounded-xl text-sm font-bold flex items-center gap-1.5 transition-all self-end shadow-sm"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
-                <span>Limpar Registro</span>
-              </button>
-            )}
+            {/* Aula selection */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-extrabold text-on-surface-variant flex items-center gap-1.5">
+                <HugeiconsIcon icon={BookOpen01Icon} size={15} strokeWidth={2} className="text-secondary" />
+                <span>Aula:</span>
+              </span>
 
-            <button
-              onClick={handleSaveAll}
-              disabled={saving || loading || !selectedAula}
-              className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-primary/95 disabled:opacity-50 transition-all shadow-sm shadow-primary/10 self-end"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Salvando...</span>
-                </>
+              {loadingAulas ? (
+                <span className="text-xs text-on-surface-variant animate-pulse font-bold">Buscando aulas...</span>
+              ) : !selectedTurma ? (
+                <span className="text-xs text-on-surface-variant italic font-semibold">Selecione uma turma</span>
+              ) : !selectedTurma.curso_id ? (
+                <span className="text-xs text-error font-extrabold bg-error/10 border border-error/20 px-2.5 py-1 rounded-full">Sem Curso Vinculado</span>
+              ) : aulas.length === 0 ? (
+                <span className="text-xs text-on-surface-variant italic font-semibold">Sem aulas cadastradas</span>
               ) : (
-                <>
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2} />
-                  <span>Salvar Chamada</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Class & Lesson Selectors */}
-      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white border border-outline-variant/30 rounded-2xl p-4.5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Class selection dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowTurmaDropdown(!showTurmaDropdown)}
-              className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100/80 border border-outline-variant/40 px-4 py-2.5 rounded-xl text-sm font-bold text-on-surface transition-colors"
-            >
-              <HugeiconsIcon icon={SchoolIcon} size={18} strokeWidth={2} className="text-primary" />
-              <span>{selectedTurma ? selectedTurma.nome : 'Selecionar Turma'}</span>
-              <HugeiconsIcon icon={ArrowDown01Icon} size={16} className={`ml-1 transition-transform ${showTurmaDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showTurmaDropdown && (
-              <div className="absolute left-0 mt-2 z-20 w-64 bg-white border border-outline-variant/35 rounded-xl shadow-level-2 py-1 animate-in fade-in duration-200">
-                {turmas.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      setSelectedTurma(t);
-                      setShowTurmaDropdown(false);
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedAula?.id || ''}
+                    onChange={(e) => {
+                      const aula = aulas.find(a => a.id === e.target.value);
+                      if (aula) setSelectedAula(aula);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 transition-colors ${
-                      selectedTurma?.id === t.id ? 'text-primary bg-primary/5' : 'text-on-surface-variant'
-                    }`}
+                    className="product-control py-1.5 text-xs font-bold"
                   >
-                    {t.nome}
-                  </button>
-                ))}
-              </div>
-            )}
+                    {aulas.map(a => (
+                      <option key={a.id} value={a.id}>
+                        Aula {a.numero_aula}: {a.titulo}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs font-bold text-on-surface-variant bg-surface-container-low border border-outline-variant/60 px-2.5 py-1.5 rounded-product-control">
+                    {registeredAulasCount} / {aulas.length}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Lesson selection dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold text-on-surface-variant/75 flex items-center gap-1.5 bg-slate-50 px-3 py-2.5 rounded-xl border border-outline-variant/30">
-              <HugeiconsIcon icon={BookOpen01Icon} size={16} strokeWidth={2} className="text-secondary" />
-              <span>Aula:</span>
-            </span>
-
-            {loadingAulas ? (
-              <span className="text-xs text-on-surface-variant/50 animate-pulse font-bold">Buscando aulas...</span>
-            ) : !selectedTurma ? (
-              <span className="text-xs text-on-surface-variant/40 italic font-semibold">Selecione uma turma para carregar aulas</span>
-            ) : !selectedTurma.curso_id ? (
-              <span className="text-xs text-red-500 font-extrabold bg-red-50 border border-red-100 px-3 py-2 rounded-xl">Sem Curso Vinculado</span>
-            ) : aulas.length === 0 ? (
-              <span className="text-xs text-on-surface-variant/40 italic font-semibold">Este curso não possui aulas cadastradas</span>
-            ) : (
-              <div className="flex items-center gap-2.5">
-                <select
-                  value={selectedAula?.id || ''}
-                  onChange={(e) => {
-                    const aula = aulas.find(a => a.id === e.target.value);
-                    if (aula) setSelectedAula(aula);
-                  }}
-                  className="bg-slate-50 hover:bg-slate-100/80 border border-outline-variant/40 px-3 py-2.5 rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer pr-10 animate-fade-in"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 12px center',
-                    backgroundSize: '12px'
-                  }}
-                >
-                  {aulas.map(a => (
-                    <option key={a.id} value={a.id}>
-                      Aula {a.numero_aula}: {a.titulo}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs font-bold text-on-surface-variant/65 bg-slate-50 border border-outline-variant/30 px-3 py-2 rounded-xl">
-                  {registeredAulasCount} / {aulas.length} registradas
-                </span>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={handleMarkAllPresent}
+            disabled={students.length === 0 || !selectedAula}
+            className="product-secondary-action text-xs self-start md:self-auto disabled:opacity-40"
+          >
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={15} strokeWidth={2} className="text-emerald-600 dark:text-emerald-400" />
+            <span>Todos Presentes</span>
+          </button>
         </div>
-
-        {/* Quick actions */}
-        <button
-          onClick={handleMarkAllPresent}
-          disabled={students.length === 0 || !selectedAula}
-          className="text-xs font-extrabold text-primary hover:text-primary/80 transition-colors px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10 self-start md:self-auto disabled:opacity-40"
-        >
-          Marcar Todos Como Presentes
-        </button>
       </div>
 
       {selectedTurma && !selectedTurma.curso_id ? (
-        <div className="bg-white border border-outline-variant/30 rounded-2xl p-16 text-center shadow-sm space-y-4 max-w-xl mx-auto">
-          <div className="w-16 h-16 bg-red-50 text-error rounded-full flex items-center justify-center mx-auto border border-red-100">
-            <HugeiconsIcon icon={Alert01Icon} size={28} strokeWidth={2} className="text-error" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-heading font-extrabold text-lg text-on-surface">Chamada Bloqueada</h3>
-            <p className="text-xs text-on-surface-variant/75 font-semibold leading-relaxed">
-              Não é possível realizar a chamada ou registrar presenças em turmas que não possuem um curso associado. 
-              Por favor, vá para a aba **"Gerenciar Turmas"**, edite a turma correspondente e vincule um curso para liberar o diário de classe.
-            </p>
-          </div>
+        <div className="product-empty-state max-w-xl mx-auto p-10">
+          <HugeiconsIcon icon={Alert01Icon} size={36} strokeWidth={2} className="text-error mb-2" />
+          <h2 className="font-heading font-extrabold text-base text-on-surface">Chamada Bloqueada</h2>
+          <p className="text-xs text-on-surface-variant mt-1 max-w-md">
+            Não é possível realizar chamada em turmas sem curso associado. Vá em <strong>Gerenciar Turmas</strong> e vincule um curso para liberar o diário.
+          </p>
         </div>
       ) : (
         <>
-          {/* Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Presence rate */}
-            <div className="bg-white border border-outline-variant/30 rounded-2xl p-5 shadow-sm space-y-1">
-              <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-wider">Presença Geral</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-on-surface font-heading">{attendancePercentage}%</span>
-                <span className="text-xs font-semibold text-emerald-500">do dia</span>
+          {/* Metrics HUD Row */}
+          <section aria-label="Resumo da chamada do dia" className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-primary/10 text-primary">
+                <HugeiconsIcon icon={UserGroupIcon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Presença Geral</span>
+                <strong className="product-metric-value">{attendancePercentage}%</strong>
+                <span className="block truncate text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">do dia</span>
               </div>
             </div>
 
-            {/* Present counts */}
-            <div className="bg-white border border-outline-variant/30 rounded-2xl p-5 shadow-sm space-y-1">
-              <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-wider">Presentes</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-emerald-600 font-heading">{presentsCount}</span>
-                <span className="text-xs font-semibold text-on-surface-variant/65">alunos</span>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Presentes</span>
+                <strong className="product-metric-value text-emerald-600 dark:text-emerald-400">{presentsCount}</strong>
+                <span className="block truncate text-[10px] font-semibold text-on-surface-variant">alunos</span>
               </div>
             </div>
 
-            {/* Late counts */}
-            <div className="bg-white border border-outline-variant/30 rounded-2xl p-5 shadow-sm space-y-1">
-              <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-wider">Atrasos</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-amber-500 font-heading">{latesCount}</span>
-                <span className="text-xs font-semibold text-on-surface-variant/65">alunos</span>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                <HugeiconsIcon icon={Clock01Icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Atrasos</span>
+                <strong className="product-metric-value text-amber-600 dark:text-amber-400">{latesCount}</strong>
+                <span className="block truncate text-[10px] font-semibold text-on-surface-variant">alunos</span>
               </div>
             </div>
 
-            {/* Absence counts */}
-            <div className="bg-white border border-outline-variant/30 rounded-2xl p-5 shadow-sm space-y-1">
-              <p className="text-[10px] font-extrabold text-on-surface-variant/50 uppercase tracking-wider">Faltas</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-red-500 font-heading">{absencesCount}</span>
-                <span className="text-xs font-semibold text-on-surface-variant/65">alunos</span>
+            <div className="product-metric sm:min-h-[86px] sm:p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-product-control bg-error/10 text-error">
+                <HugeiconsIcon icon={Cancel01Icon} size={21} strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <span className="product-metric-label">Faltas</span>
+                <strong className="product-metric-value text-error">{absencesCount}</strong>
+                <span className="block truncate text-[10px] font-semibold text-on-surface-variant">alunos</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Student List & Attendance Table */}
-          <div className="bg-white rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
+          {/* Attendance Table */}
+          <div className="product-card overflow-hidden">
             {loading ? (
-              <div className="p-16 text-center space-y-4">
-                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-sm font-semibold text-on-surface-variant animate-pulse">Carregando diário de classe...</p>
+              <div className="p-16 text-center space-y-3">
+                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs font-semibold text-on-surface-variant animate-pulse">Carregando diário de classe...</p>
               </div>
             ) : !selectedAula ? (
-              <div className="p-16 text-center text-slate-400 space-y-2">
-                <HugeiconsIcon icon={SchoolIcon} size={40} className="mx-auto text-slate-300" />
-                <p className="text-sm font-bold text-on-surface">Nenhuma aula selecionada.</p>
-                <p className="text-xs">Selecione uma turma e aula válidas acima para abrir a folha de presença.</p>
+              <div className="product-empty-state py-12">
+                <HugeiconsIcon icon={SchoolIcon} size={32} className="text-primary mb-2" />
+                <p className="font-heading text-sm font-extrabold text-on-surface">Nenhuma aula selecionada</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">Selecione uma turma e aula válidas acima para abrir a folha de presença.</p>
               </div>
             ) : students.length === 0 ? (
-              <div className="p-16 text-center text-slate-400 space-y-2">
-                <HugeiconsIcon icon={SchoolIcon} size={40} className="mx-auto text-slate-300" />
-                <p className="text-sm font-bold text-on-surface">Nenhum aluno nesta turma.</p>
-                <p className="text-xs">Os alunos matriculados nesta turma aparecerão aqui para chamada.</p>
+              <div className="product-empty-state py-12">
+                <HugeiconsIcon icon={UserGroupIcon} size={32} className="text-primary mb-2" />
+                <p className="font-heading text-sm font-extrabold text-on-surface">Nenhum aluno nesta turma</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">Os alunos matriculados nesta turma aparecerão aqui para chamada.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/70 border-b border-outline-variant/30">
-                      <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider">Aluno</th>
-                      <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center w-64">Presença</th>
-                      <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center w-[350px]">Acompanhamento de Engajamento</th>
-                      <th className="px-6 py-4 text-[12px] font-extrabold text-on-surface-variant uppercase tracking-wider">Notas / Observação</th>
+                    <tr className="bg-surface-container-low/60 border-b border-outline-variant/70">
+                      <th className="px-5 py-3.5 text-[11px] font-extrabold text-on-surface-variant uppercase tracking-wider">Estudante</th>
+                      <th className="px-5 py-3.5 text-[11px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center w-64">Presença</th>
+                      <th className="px-5 py-3.5 text-[11px] font-extrabold text-on-surface-variant uppercase tracking-wider text-center w-[350px]">Engajamento</th>
+                      <th className="px-5 py-3.5 text-[11px] font-extrabold text-on-surface-variant uppercase tracking-wider">Observações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant/20">
+                  <tbody className="divide-y divide-outline-variant/40">
                     {students.map((student) => {
                       const record = attendance[student.id] || { 
                         status: 'presente', 
@@ -712,18 +676,18 @@ export const DiarioClasse: React.FC = () => {
                       const status = record.status;
 
                       return (
-                        <tr key={student.id} className="hover:bg-slate-50/20 transition-colors">
+                        <tr key={student.id} className="hover:bg-surface-container-low/40 transition-colors">
                           {/* Name & Avatar */}
-                          <td className="px-6 py-4">
+                          <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
                               {student.avatar_url ? (
                                 <img
                                   src={student.avatar_url}
                                   alt={student.nome}
-                                  className="w-9 h-9 rounded-full object-cover border border-outline-variant/20"
+                                  className="w-9 h-9 rounded-product-control object-cover border border-outline-variant/60"
                                 />
                               ) : (
-                                <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-heading text-xs font-bold shadow-inner">
+                                <div className="w-9 h-9 rounded-product-control bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-extrabold shadow-inner">
                                   {getInitials(student.nome)}
                                 </div>
                               )}
@@ -731,65 +695,66 @@ export const DiarioClasse: React.FC = () => {
                                 <span className="font-heading font-extrabold text-xs text-on-surface block leading-tight">
                                   {student.nome}
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-400 mt-0.5 block">{student.id.slice(0, 8)}...</span>
+                                <span className="text-[10px] font-mono text-on-surface-variant mt-0.5 block">{student.id.slice(0, 8)}...</span>
                               </div>
                             </div>
                           </td>
 
                           {/* Status Toggle Buttons */}
-                          <td className="px-6 py-4">
-                            <div className="flex justify-center gap-1.5 max-w-xs mx-auto bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                              {/* Presente */}
+                          <td className="px-5 py-3.5">
+                            <div className="flex justify-center gap-1 max-w-xs mx-auto bg-surface-container-low p-1 rounded-product-control border border-outline-variant/60">
                               <button
+                                type="button"
                                 onClick={() => handleToggleStatus(student.id, 'presente')}
-                                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                                className={`flex-1 py-1 px-2 rounded-product-control text-xs font-bold flex items-center justify-center gap-1 transition-all ${
                                   status === 'presente'
-                                    ? 'bg-emerald-500 text-white shadow-sm scale-[1.03]'
-                                    : 'text-slate-400 hover:bg-slate-200/50 hover:text-slate-600'
+                                    ? 'bg-emerald-500 text-white shadow-xs'
+                                    : 'text-on-surface-variant hover:bg-surface-container'
                                 }`}
                               >
-                                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} strokeWidth={2.5} />
+                                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={13} strokeWidth={2.5} />
                                 <span>Pres.</span>
                               </button>
 
-                              {/* Atrasado */}
                               <button
+                                type="button"
                                 onClick={() => handleToggleStatus(student.id, 'atrasado')}
-                                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                                className={`flex-1 py-1 px-2 rounded-product-control text-xs font-bold flex items-center justify-center gap-1 transition-all ${
                                   status === 'atrasado'
-                                    ? 'bg-amber-500 text-white shadow-sm scale-[1.03]'
-                                    : 'text-slate-400 hover:bg-slate-200/50 hover:text-slate-600'
+                                    ? 'bg-amber-500 text-white shadow-xs'
+                                    : 'text-on-surface-variant hover:bg-surface-container'
                                 }`}
                               >
-                                <HugeiconsIcon icon={Alert01Icon} size={14} strokeWidth={2.5} />
+                                <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={2.5} />
                                 <span>Atras.</span>
                               </button>
 
-                              {/* Falta */}
                               <button
+                                type="button"
                                 onClick={() => handleToggleStatus(student.id, 'falta')}
-                                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+                                className={`flex-1 py-1 px-2 rounded-product-control text-xs font-bold flex items-center justify-center gap-1 transition-all ${
                                   status === 'falta'
-                                    ? 'bg-red-500 text-white shadow-sm scale-[1.03]'
-                                    : 'text-slate-400 hover:bg-slate-200/50 hover:text-slate-600'
+                                    ? 'bg-error text-white shadow-xs'
+                                    : 'text-on-surface-variant hover:bg-surface-container'
                                 }`}
                               >
-                                <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={2.5} />
+                                <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={2.5} />
                                 <span>Falta</span>
                               </button>
                             </div>
                           </td>
 
-                          {/* Student Engagement Toggles */}
-                          <td className="px-6 py-4">
-                            <div className="flex flex-row gap-6 justify-center items-center text-xs font-semibold">
+                          {/* Engagement Toggles */}
+                          <td className="px-5 py-3.5">
+                            <div className="flex flex-row gap-5 justify-center items-center text-xs font-semibold">
                               {/* Compreendeu */}
-                              <div className="flex flex-col items-center gap-1.5">
-                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Compreensão</span>
-                                <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-on-surface-variant text-[9px] uppercase font-extrabold tracking-wider">Compreensão</span>
+                                <div className="flex gap-0.5 bg-surface-container-low p-0.5 rounded-full border border-outline-variant/60">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'compreendeu', 'S')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('compreendeu', 'S', record.compreendeu)
                                     }`}
                                     title="Sim"
@@ -797,8 +762,9 @@ export const DiarioClasse: React.FC = () => {
                                     S
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'compreendeu', 'P')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('compreendeu', 'P', record.compreendeu)
                                     }`}
                                     title="Parcialmente"
@@ -806,8 +772,9 @@ export const DiarioClasse: React.FC = () => {
                                     P
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'compreendeu', 'N')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('compreendeu', 'N', record.compreendeu)
                                     }`}
                                     title="Não"
@@ -818,12 +785,13 @@ export const DiarioClasse: React.FC = () => {
                               </div>
 
                               {/* Participou */}
-                              <div className="flex flex-col items-center gap-1.5">
-                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Participação</span>
-                                <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-on-surface-variant text-[9px] uppercase font-extrabold tracking-wider">Participação</span>
+                                <div className="flex gap-0.5 bg-surface-container-low p-0.5 rounded-full border border-outline-variant/60">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'participou', 'S')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('participou', 'S', record.participou)
                                     }`}
                                     title="Sim"
@@ -831,8 +799,9 @@ export const DiarioClasse: React.FC = () => {
                                     S
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'participou', 'P')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('participou', 'P', record.participou)
                                     }`}
                                     title="Parcialmente"
@@ -840,8 +809,9 @@ export const DiarioClasse: React.FC = () => {
                                     P
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'participou', 'N')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('participou', 'N', record.participou)
                                     }`}
                                     title="Não"
@@ -852,12 +822,13 @@ export const DiarioClasse: React.FC = () => {
                               </div>
 
                               {/* Precisou Apoio */}
-                              <div className="flex flex-col items-center gap-1.5">
-                                <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-wider">Apoio</span>
-                                <div className="flex gap-1 bg-slate-50 p-0.5 rounded-full border border-slate-100">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-on-surface-variant text-[9px] uppercase font-extrabold tracking-wider">Apoio</span>
+                                <div className="flex gap-0.5 bg-surface-container-low p-0.5 rounded-full border border-outline-variant/60">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'precisou_apoio', 'S')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('precisou_apoio', 'S', record.precisou_apoio)
                                     }`}
                                     title="Sim"
@@ -865,8 +836,9 @@ export const DiarioClasse: React.FC = () => {
                                     S
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'precisou_apoio', 'P')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('precisou_apoio', 'P', record.precisou_apoio)
                                     }`}
                                     title="Parcialmente"
@@ -874,8 +846,9 @@ export const DiarioClasse: React.FC = () => {
                                     P
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleEngagement(student.id, 'precisou_apoio', 'N')}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold transition-all ${
                                       getEngagementColor('precisou_apoio', 'N', record.precisou_apoio)
                                     }`}
                                     title="Não"
@@ -887,14 +860,14 @@ export const DiarioClasse: React.FC = () => {
                             </div>
                           </td>
 
-                          {/* Observations Note Input */}
-                          <td className="px-6 py-4">
+                          {/* Observations Input */}
+                          <td className="px-5 py-3.5">
                             <input
                               type="text"
                               value={record.observacao}
                               onChange={(e) => handleObserveChange(student.id, e.target.value)}
                               placeholder="Observação opcional..."
-                              className="w-full bg-slate-50 border border-outline-variant/35 rounded-xl px-4 py-2 text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary transition-all"
+                              className="product-control py-1.5 px-3 text-xs"
                             />
                           </td>
                         </tr>

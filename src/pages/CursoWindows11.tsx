@@ -165,63 +165,58 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
   const isCourseComplete = concluidas.length === aulasWindows11.length;
 
   return (
-    <div className="app-page animate-fade-in pb-12">
-      {/* Header com estilo Mica / Windows 11 Glassmorphism */}
-      <div className="app-page-header glass-card relative overflow-hidden">
-        {/* Background gradient decorativo */}
-        <div className="absolute -top-10 -right-10 w-44 h-44 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="app-page-header-row relative z-10">
-          <div className="space-y-1">
-            <span className="app-eyebrow flex items-center gap-1.5 text-primary">
-              <HugeiconsIcon icon={Award01Icon} size={14} className="animate-pulse" />
-              Curso de Informática Básica
-            </span>
-            <h2 className="app-title flex items-center gap-2.5">
-              Windows 11 Básico
-            </h2>
-            <p className="app-subtitle">
-              Aprenda a dominar o sistema operacional utilizado em nosso laboratório de informática. Conheça a Área de Trabalho, Menu Iniciar, Arquivos e os principais atalhos.
-            </p>
-          </div>
-
-          {/* Card de Progresso */}
-          <div className="flex flex-col sm:items-end justify-center min-w-[200px] bg-surface-container-low/60 border border-outline-variant/30 rounded-xl p-3.5 shadow-sm">
-            <div className="flex items-center justify-between w-full mb-1.5">
-              <span className="text-label-sm font-bold text-on-surface-variant">Progresso Geral</span>
-              <span className="text-label-sm font-bold text-primary">{progressPercent}%</span>
-            </div>
-            
-            {/* Barra de Progresso */}
-            <div className="w-full bg-surface-container-high rounded-full h-2.5 overflow-hidden relative">
-              <div
-                className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <span className="text-[11px] font-semibold text-on-surface-variant/80 mt-1.5">
-              {concluidas.length} de {aulasWindows11.length} aulas concluídas
-            </span>
-          </div>
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
+      {/* Header com estilo Estudea Product UI */}
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="product-section-kicker flex items-center gap-1.5 text-primary">
+            <HugeiconsIcon icon={Award01Icon} size={14} className="animate-pulse" strokeWidth={2} />
+            <span>Curso de Informática Básica</span>
+          </span>
+          <h1 className="product-section-heading mt-0 text-xl sm:text-2xl flex items-center gap-2.5">
+            Windows 11 Básico
+          </h1>
+          <p className="product-subtitle">
+            Aprenda a dominar o sistema operacional utilizado em nosso laboratório de informática. Conheça a Área de Trabalho, Menu Iniciar, Arquivos e os principais atalhos.
+          </p>
         </div>
-      </div>
+
+        {/* Card de Progresso */}
+        <div className="flex flex-col sm:items-end justify-center min-w-[220px] bg-surface-container-low border border-outline-variant/60 rounded-product-control p-3.5 shadow-xs">
+          <div className="flex items-center justify-between w-full mb-1.5 text-xs font-bold">
+            <span className="text-on-surface-variant">Progresso Geral</span>
+            <span className="text-primary font-mono">{progressPercent}%</span>
+          </div>
+          
+          {/* Barra de Progresso */}
+          <div className="w-full bg-surface-container-high rounded-full h-2 overflow-hidden relative">
+            <div
+              className="bg-primary h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <span className="text-[10px] font-medium text-on-surface-variant mt-1.5">
+            {concluidas.length} de {aulasWindows11.length} aulas concluídas
+          </span>
+        </div>
+      </header>
 
       {/* Alerta de curso completo */}
       {isCourseComplete && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 animate-scale-up">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <HugeiconsIcon icon={Award01Icon} size={28} />
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-product-control p-5 flex flex-col sm:flex-row items-center gap-4 animate-scale-up">
+          <div className="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <HugeiconsIcon icon={Award01Icon} size={24} strokeWidth={2} />
           </div>
           <div className="space-y-1 text-center sm:text-left flex-1">
-            <h4 className="font-heading font-bold text-body-lg text-emerald-800 dark:text-emerald-200">Parabéns! Você concluiu o Curso de Windows 11! 🎓</h4>
-            <p className="text-body-sm text-emerald-700/90 dark:text-emerald-300/80">
+            <h4 className="font-heading font-extrabold text-sm text-emerald-800 dark:text-emerald-300">Parabéns! Você concluiu o Curso de Windows 11! 🎓</h4>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
               Você assistiu a todas as aulas de introdução e agora conhece os conceitos essenciais do sistema operacional para usar o laboratório com autonomia. Continue praticando!
             </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => dispararCelebracao()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-heading font-bold text-label-sm rounded-xl transition-all shadow-sm shadow-emerald-600/15 shrink-0 cursor-pointer"
+              className="product-primary-action text-xs !bg-emerald-600 hover:!bg-emerald-700"
             >
               Celebrar Novamente!
             </button>
@@ -234,15 +229,15 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
         
         {/* Painel Esquerdo: Lista de Aulas */}
         <div className="col-span-12 lg:col-span-4 space-y-4">
-          <div className="app-card overflow-hidden">
-            <div className="p-4 border-b border-outline-variant/30 bg-surface-container-lowest flex items-center justify-between">
-              <h3 className="app-section-title text-on-surface">Lista de Aulas</h3>
-              <span className="text-[11px] font-bold text-slate-500 uppercase font-mono bg-surface-container-low px-2 py-0.5 rounded">
+          <div className="product-card p-0 overflow-hidden">
+            <div className="p-4 border-b border-outline-variant/60 bg-surface-container-low flex items-center justify-between">
+              <h3 className="font-heading font-extrabold text-sm text-on-surface">Lista de Aulas</h3>
+              <span className="text-[10px] font-extrabold text-on-surface-variant uppercase font-mono bg-surface-container px-2 py-0.5 rounded">
                 8 vídeos
               </span>
             </div>
 
-            <div className="divide-y divide-outline-variant/20 max-h-[580px] overflow-y-auto bg-surface-container-lowest">
+            <div className="divide-y divide-outline-variant/40 max-h-[580px] overflow-y-auto bg-surface-container-lowest">
               {aulasWindows11.map((aula) => {
                 const isSelected = selectedAula.id === aula.id;
                 const isCompleted = concluidas.includes(aula.id);
@@ -251,10 +246,10 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
                   <button
                     key={aula.id}
                     onClick={() => setSelectedAula(aula)}
-                    className={`w-full text-left p-4 transition-all flex items-start gap-3.5 hover:bg-surface-container-lowest cursor-pointer select-none group relative ${
+                    className={`w-full text-left p-3.5 transition-all flex items-start gap-3 hover:bg-surface-container-low cursor-pointer select-none group relative ${
                       isSelected
-                        ? 'bg-blue-50/40 dark:bg-blue-950/15 border-l-4 border-blue-600'
-                        : 'border-l-4 border-transparent'
+                        ? 'bg-primary/10 border-l-4 border-primary text-primary font-bold'
+                        : 'border-l-4 border-transparent text-on-surface'
                     }`}
                   >
                     {/* Indicador de Status do Vídeo */}
@@ -263,7 +258,7 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
                         <HugeiconsIcon
                           icon={CheckmarkCircle02Icon}
                           className="text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform"
-                          size={20}
+                          size={18}
                           strokeWidth={2.5}
                         />
                       ) : (
@@ -271,29 +266,30 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
                           icon={PlayCircleIcon}
                           className={`group-hover:scale-110 transition-transform ${
                             isSelected
-                              ? 'text-blue-600'
-                              : 'text-on-surface-variant/50 group-hover:text-on-surface'
+                              ? 'text-primary'
+                              : 'text-on-surface-variant/60 group-hover:text-on-surface'
                           }`}
-                          size={20}
+                          size={18}
+                          strokeWidth={2}
                         />
                       )}
                     </div>
 
                     {/* Detalhes da Aula */}
-                    <div className="space-y-1">
-                      <p className={`text-label-md font-bold leading-snug transition-colors ${
+                    <div className="space-y-0.5">
+                      <p className={`text-xs font-bold leading-snug transition-colors ${
                         isSelected
-                          ? 'text-blue-700 dark:text-blue-400'
+                          ? 'text-primary'
                           : 'text-on-surface group-hover:text-primary'
                       }`}>
                         {aula.titulo}
                       </p>
-                      <div className="flex items-center gap-2 text-[11px] text-on-surface-variant font-medium">
-                        <span className="bg-surface-container px-1.5 py-0.5 rounded font-mono">
+                      <div className="flex items-center gap-2 text-[10px] text-on-surface-variant font-medium">
+                        <span className="bg-surface-container-low px-1.5 py-0.5 rounded font-mono">
                           {aula.duracao}
                         </span>
                         {isCompleted && (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
                             <HugeiconsIcon icon={Tick01Icon} size={11} strokeWidth={3} /> Concluída
                           </span>
                         )}
@@ -310,8 +306,8 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
         <div className="col-span-12 lg:col-span-8 space-y-6">
           
           {/* Player com aspect-video */}
-          <div className="app-card overflow-hidden shadow-md border border-outline-variant/30">
-            <div className="aspect-video w-full bg-slate-950 relative">
+          <div className="product-card p-0 overflow-hidden shadow-sm">
+            <div className="aspect-video w-full bg-black relative">
               <iframe
                 src={`https://www.youtube.com/embed/${selectedAula.youtubeId}?rel=0&modestbranding=1&showinfo=0`}
                 title={selectedAula.titulo}
@@ -322,12 +318,12 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
             </div>
             
             {/* Rodapé do Player / Título e Ação */}
-            <div className="p-5 bg-surface-container-lowest border-t border-outline-variant/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="p-4 sm:p-5 bg-surface-container-lowest border-t border-outline-variant/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="space-y-1">
-                <h3 className="font-heading font-bold text-body-lg text-on-surface leading-tight">
+                <h3 className="font-heading font-extrabold text-sm sm:text-base text-on-surface leading-tight">
                   {selectedAula.titulo}
                 </h3>
-                <p className="text-label-sm font-semibold text-on-surface-variant flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
                   Duração da aula: <span className="font-mono bg-surface-container-low px-1.5 py-0.5 rounded">{selectedAula.duracao}</span>
                 </p>
               </div>
@@ -335,18 +331,18 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
               {/* Botão de marcar como concluída */}
               <button
                 onClick={() => handleToggleConclusao(selectedAula.id)}
-                className={`px-5 py-2.5 rounded-xl font-heading font-bold text-label-md flex items-center gap-2 cursor-pointer transition-all select-none border active:scale-95 hover:shadow-md ${
+                className={`product-primary-action text-xs ${
                   concluidas.includes(selectedAula.id)
-                    ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:hover:bg-emerald-900/40 dark:text-emerald-300'
-                    : 'bg-primary text-on-primary border-primary hover:bg-primary-container hover:text-on-primary-container shadow-sm shadow-primary/10'
+                    ? '!bg-emerald-600 hover:!bg-emerald-700'
+                    : ''
                 }`}
               >
                 <HugeiconsIcon
                   icon={concluidas.includes(selectedAula.id) ? CheckmarkCircle02Icon : PlayCircleIcon}
-                  size={18}
-                  strokeWidth={2.5}
+                  size={16}
+                  strokeWidth={2}
                 />
-                {concluidas.includes(selectedAula.id) ? 'Concluída!' : 'Marcar como Concluída'}
+                <span>{concluidas.includes(selectedAula.id) ? 'Concluída!' : 'Marcar como Concluída'}</span>
               </button>
             </div>
           </div>
@@ -355,36 +351,36 @@ export const CursoWindows11: React.FC<CursoWindows11Props> = ({ session }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Notas Didáticas */}
-            <div className="app-card-padded space-y-4">
-              <h4 className="app-section-title flex items-center gap-2 text-on-surface">
-                <HugeiconsIcon icon={InformationCircleIcon} className="text-blue-500" size={18} />
-                Notas Didáticas
+            <div className="product-card p-4 sm:p-5 space-y-3">
+              <h4 className="font-heading font-extrabold text-xs text-on-surface flex items-center gap-2">
+                <HugeiconsIcon icon={InformationCircleIcon} className="text-primary" size={16} strokeWidth={2} />
+                <span>Notas Didáticas</span>
               </h4>
-              <p className="text-body-md text-on-surface-variant leading-relaxed">
+              <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
                 {selectedAula.descricao}
               </p>
-              <div className="text-xs text-on-surface-variant/80 border-t border-outline-variant/30 pt-3 flex items-start gap-1.5">
-                <span className="font-bold text-blue-600 dark:text-blue-400">💡 Dica do Laboratório:</span>
+              <div className="text-[11px] text-on-surface-variant border-t border-outline-variant/60 pt-3 flex items-start gap-1.5 font-medium">
+                <span className="font-bold text-primary">💡 Dica:</span>
                 <span>Assista ao vídeo atentamente e tente reproduzir os mesmos cliques e configurações no computador que você está usando agora.</span>
               </div>
             </div>
 
             {/* Atalhos Rápidos */}
-            <div className="app-card-padded space-y-4">
-              <h4 className="app-section-title flex items-center gap-2 text-on-surface">
-                <HugeiconsIcon icon={KeyboardIcon} className="text-indigo-500" size={18} />
-                Atalhos do Teclado
+            <div className="product-card p-4 sm:p-5 space-y-3">
+              <h4 className="font-heading font-extrabold text-xs text-on-surface flex items-center gap-2">
+                <HugeiconsIcon icon={KeyboardIcon} className="text-secondary" size={16} strokeWidth={2} />
+                <span>Atalhos do Teclado</span>
               </h4>
-              <p className="text-body-sm text-on-surface-variant leading-tight">
-                No Windows 11, o uso de atalhos acelera seu trabalho e demonstra proficiência digital. Tente pressionar estas teclas no seu teclado:
+              <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
+                No Windows 11, o uso de atalhos acelera seu trabalho e demonstra proficiência digital:
               </p>
-              <div className="space-y-3 pt-1">
+              <div className="space-y-2.5 pt-1">
                 {selectedAula.atalhos.map((at, idx) => (
-                  <div key={idx} className="flex flex-col gap-1 border-b border-outline-variant/10 pb-2.5 last:border-none last:pb-0">
-                    <span className="font-mono bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-slate-100 text-xs px-2.5 py-1 rounded-md border border-slate-700/50 w-fit font-bold shadow-sm select-all">
+                  <div key={idx} className="flex flex-col gap-1 border-b border-outline-variant/40 pb-2 last:border-none last:pb-0">
+                    <span className="font-mono bg-surface-container-low text-primary text-xs px-2.5 py-0.5 rounded-product-control border border-outline-variant/60 w-fit font-bold select-all">
                       {at.tecla}
                     </span>
-                    <span className="text-label-sm text-on-surface-variant">
+                    <span className="text-xs text-on-surface-variant font-medium">
                       {at.acao}
                     </span>
                   </div>

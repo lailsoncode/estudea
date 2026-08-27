@@ -1888,19 +1888,19 @@ export const CourseBuilder: React.FC = () => {
   };
 
   return (
-    <div className="app-page relative overflow-hidden">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-error-container/30 border border-error/20 rounded-xl text-error text-label-md flex items-start gap-2 animate-in fade-in duration-300">
-          <HugeiconsIcon icon={Alert01Icon} size={20} className="mt-0.5 shrink-0" />
+        <div className="p-4 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-300">
+          <HugeiconsIcon icon={Alert01Icon} size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-secondary-container/10 border border-secondary/20 rounded-xl text-secondary text-label-md flex items-start gap-2 animate-in fade-in duration-300">
-          <HugeiconsIcon icon={Tick01Icon} size={20} className="mt-0.5 shrink-0" />
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-300">
+          <HugeiconsIcon icon={Tick01Icon} size={18} className="mt-0.5 shrink-0" />
           <span>{success}</span>
         </div>
       )}
@@ -1908,27 +1908,28 @@ export const CourseBuilder: React.FC = () => {
       {/* STAGE 1: Course List & Selection */}
       {view === 'courses' && (
         <div className="space-y-6">
-          <div className="app-page-header app-page-header-row">
+          <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="app-title">Criação de Cursos</h2>
-              <p className="app-subtitle">Gerencie a grade curricular, crie módulos e organize lições e atividades práticas.</p>
+              <span className="product-section-kicker">Gestão Curricular</span>
+              <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Criação de Cursos</h1>
+              <p className="product-subtitle">Gerencie a grade curricular, crie módulos e organize lições e atividades práticas.</p>
             </div>
             <button
               onClick={handleOpenCreateCourse}
-              className="app-primary-action"
+              className="product-primary-action text-xs"
             >
-              <HugeiconsIcon icon={AddCircleIcon} size={20} />
-              Criar Novo Curso
+              <HugeiconsIcon icon={AddCircleIcon} size={16} strokeWidth={2} />
+              <span>Criar Novo Curso</span>
             </button>
-          </div>
+          </header>
 
           {/* Course Tabs Filter */}
-          <div className="flex items-center gap-2 p-1 bg-surface-container-low dark:bg-slate-800/80 rounded-xl border border-outline-variant/30 text-xs w-fit">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs w-fit">
             <button
               onClick={() => setCourseTabFilter('todos')}
-              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+              className={`py-1.5 px-3 rounded-product-control font-bold transition-all text-center ${
                 courseTabFilter === 'todos'
-                  ? 'bg-white dark:bg-slate-700 text-on-surface shadow-xs'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -1936,9 +1937,9 @@ export const CourseBuilder: React.FC = () => {
             </button>
             <button
               onClick={() => setCourseTabFilter('meus')}
-              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+              className={`py-1.5 px-3 rounded-product-control font-bold transition-all text-center ${
                 courseTabFilter === 'meus'
-                  ? 'bg-primary text-on-primary shadow-xs'
+                  ? 'bg-brand-navy text-white shadow-xs'
                   : 'text-on-surface-variant hover:text-primary'
               }`}
             >
@@ -1946,9 +1947,9 @@ export const CourseBuilder: React.FC = () => {
             </button>
             <button
               onClick={() => setCourseTabFilter('compartilhados')}
-              className={`py-1.5 px-3 rounded-lg font-bold transition-all text-center ${
+              className={`py-1.5 px-3 rounded-product-control font-bold transition-all text-center ${
                 courseTabFilter === 'compartilhados'
-                  ? 'bg-secondary text-on-secondary shadow-xs'
+                  ? 'bg-secondary text-white shadow-xs'
                   : 'text-on-surface-variant hover:text-secondary'
               }`}
             >
@@ -1957,21 +1958,24 @@ export const CourseBuilder: React.FC = () => {
           </div>
 
           {loading ? (
-            <p className="text-center text-slate-500 py-12">Carregando cursos...</p>
+            <div className="product-card p-12 text-center space-y-3">
+              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs font-semibold text-on-surface-variant animate-pulse">Carregando cursos...</p>
+            </div>
           ) : cursos.length === 0 ? (
-            <div className="app-card-padded text-center text-slate-400 space-y-4">
-              <HugeiconsIcon icon={BookOpen01Icon} size={48} className="mx-auto text-slate-300" />
-              <p className="text-body-lg font-bold text-on-surface">Nenhum curso cadastrado ainda.</p>
-              <p className="text-label-sm max-w-sm mx-auto">Clique em "Criar Novo Curso" para começar a desenhar sua jornada de ensino.</p>
+            <div className="product-empty-state space-y-3 p-10">
+              <HugeiconsIcon icon={BookOpen01Icon} size={40} className="mx-auto text-primary" />
+              <p className="font-heading font-extrabold text-sm text-on-surface">Nenhum curso cadastrado ainda.</p>
+              <p className="text-xs text-on-surface-variant max-w-sm mx-auto">Clique em "Criar Novo Curso" para começar a desenhar sua jornada de ensino.</p>
               <button
                 onClick={handleOpenCreateCourse}
-                className="mt-2 px-5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/60 text-primary font-label-md hover:bg-surface-container transition-all"
+                className="product-secondary-action text-xs mx-auto mt-2"
               >
                 Criar Curso
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {cursos
                 .filter(c => {
                   if (courseTabFilter === 'meus') return c.criado_por === currentUserId;
@@ -1982,31 +1986,31 @@ export const CourseBuilder: React.FC = () => {
                 <div
                   key={c.id}
                   onClick={() => handleOpenCourse(c)}
-                  className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/30 hover:border-primary/40 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+                  className="product-card-interactive p-0 overflow-hidden cursor-pointer group flex flex-col justify-between"
                 >
                   <div>
                     {/* Cover Photo */}
-                    <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-b border-outline-variant/20">
+                    <div className="w-full h-40 bg-surface-container-high overflow-hidden relative border-b border-outline-variant/60">
                       <img
                         src={c.imagem_capa || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAtFIMvkZnyEfatqV4viqIQ0qouFfUsJFbC047wwUyKILQPYzvsK0uPEnyeHRBj7thqqT5pUBZs-hPqMChs2xyFalhqbF89Qt4YqROVx_lATJeZjsjgTRp6e4wWqQ9ByL5xdT1O9rVr51uW58HcPkBKc6vjuxE42HVBFtUd95tIDwhUEaCi5fBdaAqo7pgM4uORSEB3vOTuflxF9REKz_rlWJDzJU-q6MF0KI25Tl4xALwMnEYC--UAeWWcwOmYCbgYCs1Ns1tVD4'}
                         alt={c.titulo}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white font-mono text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
+                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white font-mono text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-product-control">
                         {c.nivel}
                       </div>
                     </div>
 
                     {/* Metadata */}
-                    <div className="p-5 space-y-2">
-                      <div className="flex justify-between items-center text-label-sm text-primary">
-                        <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded border border-primary/20 font-bold">{c.categoria}</span>
-                        <span className="text-on-surface-variant font-medium">{c.duracao}</span>
+                    <div className="p-4 space-y-2">
+                      <div className="flex justify-between items-center text-xs text-primary">
+                        <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full border border-primary/20 font-bold text-[10px]">{c.categoria}</span>
+                        <span className="text-on-surface-variant font-medium text-[11px]">{c.duracao}</span>
                       </div>
-                      <h3 className="font-heading font-extrabold text-body-lg text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-heading font-extrabold text-sm text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
                         {c.titulo}
                       </h3>
-                      <p className="text-on-surface-variant text-label-sm line-clamp-2 leading-relaxed">
+                      <p className="text-on-surface-variant text-xs line-clamp-2 leading-relaxed font-medium">
                         {c.descricao || 'Sem descrição fornecida.'}
                       </p>
                       
@@ -2018,28 +2022,27 @@ export const CourseBuilder: React.FC = () => {
                   </div>
 
                   {/* Actions footer */}
-                  <div className="px-5 py-4 border-t border-outline-variant/20 bg-surface-container-low dark:bg-slate-800/50 flex items-center justify-between">
-                    <span className="text-primary font-heading font-bold text-label-md flex items-center gap-1 group-hover:translate-x-1 transition-all">
+                  <div className="px-4 py-3 border-t border-outline-variant/60 bg-surface-container-low flex items-center justify-between">
+                    <span className="text-primary font-heading font-extrabold text-xs flex items-center gap-1 group-hover:translate-x-1 transition-all">
                       Organizar Grade
-                      <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                      <HugeiconsIcon icon={ArrowRight01Icon} size={15} strokeWidth={2} />
                     </span>
                     
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => handleCloneCourse(c, e)}
-                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors flex items-center gap-1 text-[11px] font-bold"
+                        className="product-icon-action !h-7 !w-7"
                         title="Duplicar / Clonar Curso"
                       >
-                        <HugeiconsIcon icon={Copy01Icon} size={16} />
-                        <span className="hidden sm:inline">Duplicar</span>
+                        <HugeiconsIcon icon={Copy01Icon} size={14} strokeWidth={2} />
                       </button>
 
                       <button
                         onClick={(e) => handleDeleteCourse(c.id, e)}
-                        className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
+                        className="product-icon-action !h-7 !w-7 text-error hover:bg-error/10"
                         title="Excluir Curso"
                       >
-                        <HugeiconsIcon icon={Delete02Icon} size={16} />
+                        <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -2054,28 +2057,28 @@ export const CourseBuilder: React.FC = () => {
       {view === 'builder' && selectedCourse && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Breadcrumb Header */}
-          <div className="app-page-header app-page-header-row">
+          <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-on-surface-variant text-label-sm cursor-pointer" onClick={() => setView('courses')}>
+              <div className="flex items-center gap-1.5 text-on-surface-variant text-xs cursor-pointer font-medium" onClick={() => setView('courses')}>
                 <span>Cursos</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                 <span className="text-primary font-bold">{selectedCourse.titulo}</span>
               </div>
-              <h2 className="app-title">Grade do Curso</h2>
+              <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Grade do Curso</h1>
             </div>
             <button
               onClick={() => setView('courses')}
-              className="app-secondary-action"
+              className="product-secondary-action text-xs"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-              Voltar para Cursos
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={15} strokeWidth={2} />
+              <span>Voltar para Cursos</span>
             </button>
-          </div>
+          </header>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               {/* Course Identity Details Widget */}
-            <div className="xl:col-span-1 app-card-padded space-y-4 h-fit">
-              <div className="w-full h-32 bg-slate-100 rounded-xl overflow-hidden relative">
+            <div className="xl:col-span-1 product-card p-4 sm:p-5 space-y-4 h-fit">
+              <div className="w-full h-32 bg-surface-container-high rounded-product-control overflow-hidden relative border border-outline-variant/60">
                 <img
                   src={selectedCourse.imagem_capa || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAtFIMvkZnyEfatqV4viqIQ0qouFfUsJFbC047wwUyKILQPYzvsK0uPEnyeHRBj7thqqT5pUBZs-hPqMChs2xyFalhqbF89Qt4YqROVx_lATJeZjsjgTRp6e4wWqQ9ByL5xdT1O9rVr51uW58HcPkBKc6vjuxE42HVBFtUd95tIDwhUEaCi5fBdaAqo7pgM4uORSEB3vOTuflxF9REKz_rlWJDzJU-q6MF0KI25Tl4xALwMnEYC--UAeWWcwOmYCbgYCs1Ns1tVD4'}
                   alt={selectedCourse.titulo}
@@ -2083,19 +2086,19 @@ export const CourseBuilder: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <h3 className="font-heading font-extrabold text-body-lg text-on-surface">{selectedCourse.titulo}</h3>
-                <p className="text-on-surface-variant text-label-sm leading-relaxed">{selectedCourse.descricao || 'Sem descrição.'}</p>
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 text-label-sm text-slate-600 font-semibold mb-3">
-                  <span className="bg-slate-100 px-2.5 py-1 rounded-md">{selectedCourse.categoria}</span>
-                  <span className="bg-slate-100 px-2.5 py-1 rounded-md">{selectedCourse.nivel}</span>
-                  <span className="bg-slate-100 px-2.5 py-1 rounded-md">{selectedCourse.duracao}</span>
+                <h3 className="font-heading font-extrabold text-sm text-on-surface">{selectedCourse.titulo}</h3>
+                <p className="text-on-surface-variant text-xs leading-relaxed font-medium">{selectedCourse.descricao || 'Sem descrição.'}</p>
+                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-outline-variant/60 text-xs text-on-surface font-semibold mb-2">
+                  <span className="bg-surface-container-low px-2.5 py-0.5 rounded-full border border-outline-variant/60 text-[10px] font-bold">{selectedCourse.categoria}</span>
+                  <span className="bg-surface-container-low px-2.5 py-0.5 rounded-full border border-outline-variant/60 text-[10px] font-bold">{selectedCourse.nivel}</span>
+                  <span className="bg-surface-container-low px-2.5 py-0.5 rounded-full border border-outline-variant/60 text-[10px] font-bold">{selectedCourse.duracao}</span>
                 </div>
                 <button
                   onClick={() => handleOpenEditCourse(selectedCourse)}
-                  className="w-full py-2 border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-heading font-bold text-label-sm rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  className="product-secondary-action w-full text-xs"
                 >
-                  <HugeiconsIcon icon={Edit01Icon} size={16} />
-                  Editar Detalhes do Curso
+                  <HugeiconsIcon icon={Edit01Icon} size={15} strokeWidth={2} />
+                  <span>Editar Detalhes do Curso</span>
                 </button>
               </div>
             </div>
@@ -2103,18 +2106,21 @@ export const CourseBuilder: React.FC = () => {
             {/* Modules List and Builder Area */}
             <div className="xl:col-span-2 space-y-5">
               <div className="flex items-center justify-between pb-1">
-                <h3 className="app-section-title">Módulos do Curso</h3>
-                <span className="text-label-sm font-semibold bg-primary/5 text-primary border border-primary/10 px-2.5 py-1 rounded-full">
+                <h3 className="font-heading font-extrabold text-sm text-on-surface">Módulos do Curso</h3>
+                <span className="text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full">
                   {modulos.length} Módulos adicionados
                 </span>
               </div>
 
               {loading ? (
-                <p className="text-center py-8 text-slate-500">Buscando módulos...</p>
+                <div className="product-card p-8 text-center space-y-2">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs text-on-surface-variant animate-pulse font-medium">Buscando módulos...</p>
+                </div>
               ) : modulos.length === 0 ? (
-                <div className="app-card-padded text-center text-slate-400 space-y-2">
-                  <p className="text-body-md font-bold text-on-surface">Grade curricular em branco.</p>
-                  <p className="text-label-sm">Crie seu primeiro módulo no formulário abaixo.</p>
+                <div className="product-empty-state space-y-2 p-8">
+                  <p className="font-heading font-extrabold text-xs text-on-surface">Grade curricular em branco.</p>
+                  <p className="text-xs text-on-surface-variant">Crie seu primeiro módulo no formulário abaixo.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -2368,29 +2374,29 @@ export const CourseBuilder: React.FC = () => {
       {view === 'lesson_creator' && selectedModule && selectedCourse && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Breadcrumbs Header */}
-          <div className="app-page-header app-page-header-row">
+          <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-on-surface-variant text-label-sm">
+              <div className="flex items-center gap-1 text-on-surface-variant text-xs font-medium">
                 <span className="cursor-pointer hover:text-primary" onClick={() => { setView('courses'); setSelectedCourse(null); setSelectedModule(null); setSelectedLesson(null); setModulos([]); }}>Cursos</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                 <span className="cursor-pointer hover:text-primary" onClick={() => { setView('builder'); setSelectedLesson(null); }}>{selectedCourse.titulo}</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
-                <span className="text-slate-400 font-medium line-clamp-1 max-w-[150px]">{selectedModule.titulo}</span>
+                <span className="text-on-surface-variant font-medium line-clamp-1 max-w-[150px]">{selectedModule.titulo}</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                 <span className="text-primary font-bold">{selectedLesson ? 'Editar Aula' : 'Nova Aula'}</span>
               </div>
-              <h2 className="app-title">
+              <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">
                 {selectedLesson ? 'Editar Aula e Atividade' : 'Cadastrar Aula e Atividade'}
-              </h2>
+              </h1>
             </div>
             <button
               onClick={() => { setView('builder'); setSelectedLesson(null); }}
-              className="app-secondary-action"
+              className="product-secondary-action text-xs"
             >
-              <HugeiconsIcon icon={Cancel01Icon} size={18} />
-              Cancelar
+              <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
+              <span>Cancelar</span>
             </button>
-          </div>
+          </header>
 
           <div className="flex flex-col xl:flex-row gap-6">
             
@@ -2398,18 +2404,18 @@ export const CourseBuilder: React.FC = () => {
             <div className="flex-1 space-y-6">
               
               {/* AI Assistant Card */}
-              <section className="app-card-padded bg-gradient-to-br from-primary/10 via-surface to-secondary/10 dark:from-primary/15 dark:via-surface-container-lowest dark:to-secondary/15 border border-primary/20 dark:border-primary/20 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
-                  <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2">
-                    <HugeiconsIcon icon={SparklesIcon} size={22} className="text-primary animate-pulse" />
-                    Assistente de Criação com IA
+              <section className="product-card p-4 sm:p-5 bg-gradient-to-br from-primary/10 via-surface-container-lowest to-secondary/10 border border-primary/20 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+                  <h3 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-2">
+                    <HugeiconsIcon icon={SparklesIcon} size={18} className="text-primary animate-pulse" />
+                    <span>Assistente de Criação com IA</span>
                   </h3>
-                  <span className="text-[10px] font-extrabold uppercase bg-primary/15 text-primary px-2 py-0.5 rounded border border-primary/20">
+                  <span className="text-[10px] font-extrabold uppercase bg-primary/15 text-primary px-2 py-0.5 rounded-full border border-primary/20">
                     Gemini Ativo
                   </span>
                 </div>
 
-                <p className="text-label-sm text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
                   Digite ou cole instruções para que a inteligência artificial configure a aula automaticamente. Ela criará o título, descrição, conteúdo teórico, materiais complementares (links/PDFs) e questionários!
                 </p>
 
@@ -2422,21 +2428,21 @@ export const CourseBuilder: React.FC = () => {
                       if (aiError) setAiError(null);
                       if (aiSuccess) setAiSuccess(null);
                     }}
-                    rows={4}
+                    rows={3}
                     disabled={aiLoading}
-                    className="w-full px-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none transition-all text-body-md"
+                    className="product-control text-xs leading-relaxed"
                   />
 
                   {aiError && (
-                    <div className="p-3 bg-error-container/30 border border-error/20 rounded-xl text-label-sm text-error font-medium leading-relaxed flex items-center gap-2">
-                      <HugeiconsIcon icon={Alert01Icon} size={16} strokeWidth={2} className="shrink-0" />
+                    <div className="p-3 bg-error/10 border border-error/20 rounded-product-control text-xs text-error font-medium leading-relaxed flex items-center gap-2">
+                      <HugeiconsIcon icon={Alert01Icon} size={15} strokeWidth={2} className="shrink-0" />
                       <span>{aiError}</span>
                     </div>
                   )}
 
                   {aiSuccess && (
-                    <div className="p-3 bg-emerald-50/20 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl text-label-sm text-emerald-600 dark:text-emerald-300 font-semibold leading-relaxed flex items-center gap-2">
-                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} className="shrink-0" />
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-xs text-emerald-700 dark:text-emerald-300 font-semibold leading-relaxed flex items-center gap-2">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={15} strokeWidth={2} className="shrink-0" />
                       <span>{aiSuccess}</span>
                     </div>
                   )}
@@ -2446,17 +2452,17 @@ export const CourseBuilder: React.FC = () => {
                       type="button"
                       onClick={handleGenerateWithAI}
                       disabled={aiLoading || !aiPrompt.trim()}
-                      className="app-primary-action"
+                      className="product-primary-action text-xs"
                     >
                       {aiLoading ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Configurando aula...
+                          <span>Configurando aula...</span>
                         </>
                       ) : (
                         <>
-                          <HugeiconsIcon icon={SparklesIcon} size={16} />
-                          Gerar Configurações
+                          <HugeiconsIcon icon={SparklesIcon} size={15} strokeWidth={2} />
+                          <span>Gerar Configurações</span>
                         </>
                       )}
                     </button>
@@ -2465,14 +2471,14 @@ export const CourseBuilder: React.FC = () => {
               </section>
 
               {/* Basic Info Card */}
-              <section className="app-card-padded space-y-4">
-                <h3 className="app-section-title flex items-center gap-2">
-                  <HugeiconsIcon icon={Edit01Icon} size={20} className="text-primary" />
-                  Informações Básicas
+              <section className="product-card p-4 sm:p-5 space-y-4">
+                <h3 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-2">
+                  <HugeiconsIcon icon={Edit01Icon} size={17} strokeWidth={2} className="text-primary" />
+                  <span>Informações Básicas</span>
                 </h3>
                 <div className="space-y-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-label-sm font-bold text-slate-600">Título da Aula</label>
+                    <label className="text-xs font-bold text-on-surface">Título da Aula</label>
                     <input
                       type="text"
                       placeholder="Ex: Introdução à Teoria das Cores"
@@ -2495,7 +2501,7 @@ export const CourseBuilder: React.FC = () => {
               </section>
 
               {/* Lesson Type Selector Card */}
-              <section className="app-card-padded">
+              <section className="product-card p-4 sm:p-5">
                 <h3 className="text-label-sm font-extrabold text-slate-500 mb-4 uppercase tracking-wider">Formatos de Conteúdo da Aula</h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2571,7 +2577,7 @@ export const CourseBuilder: React.FC = () => {
 
               {/* Dynamic Content Inputs */}
               {activeTypes.video && (
-                <section className="app-card-padded space-y-4">
+                <section className="product-card p-4 sm:p-5 space-y-4">
                   <h4 className="font-heading font-extrabold text-body-md text-on-surface">Configurações de Vídeo</h4>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label-sm font-bold text-slate-600">URL do Vídeo (Youtube, Vimeo, etc.)</label>
@@ -2587,7 +2593,7 @@ export const CourseBuilder: React.FC = () => {
               )}
 
               {activeTypes.arquivo && (
-                <section className="app-card-padded space-y-4">
+                <section className="product-card p-4 sm:p-5 space-y-4">
                   <h4 className="font-heading font-extrabold text-body-md text-on-surface">Material de Apoio</h4>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label-sm font-bold text-slate-600">Link do Arquivo / PDF (Google Drive, Dropbox, etc.)</label>
@@ -2621,7 +2627,7 @@ export const CourseBuilder: React.FC = () => {
               )}
 
               {activeTypes.texto && (
-                <section className="app-card-padded space-y-4">
+                <section className="product-card p-4 sm:p-5 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h4 className="font-heading font-extrabold text-body-md text-on-surface">Texto da Aula</h4>
                     <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
@@ -2760,7 +2766,7 @@ export const CourseBuilder: React.FC = () => {
               )}
 
               {/* ATIVIDADE PRÁTICA CARD */}
-              <section className="app-card-padded space-y-4">
+              <section className="product-card p-4 sm:p-5 space-y-4">
                 <div className="flex items-start justify-between pb-2 border-b border-slate-100 gap-4">
                   <div>
                     <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Atividade Prática Vinculada</h3>
@@ -3125,7 +3131,7 @@ export const CourseBuilder: React.FC = () => {
 
               {/* QUIZ BUILDER AREA */}
               {(activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'))) && (
-                <section className="app-card-padded relative overflow-hidden space-y-6">
+                <section className="product-card p-4 sm:p-5 relative overflow-hidden space-y-6">
                   {/* Quiz tabs */}
                   <div className="flex border-b border-slate-100">
                     {activeTypes.quiz && (
@@ -3585,7 +3591,7 @@ export const CourseBuilder: React.FC = () => {
 
             {/* Right Column: Settings Panel */}
             <div className="w-full xl:w-80 space-y-6 shrink-0">
-              <aside className="app-card-padded space-y-6">
+              <aside className="product-card p-4 sm:p-5 space-y-6">
                 <h3 className="font-heading font-extrabold text-body-lg text-on-surface flex items-center gap-2 pb-2 border-b border-slate-100">
                   <HugeiconsIcon icon={Settings01Icon} size={20} className="text-primary" />
                   Configurações

@@ -379,57 +379,58 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
   }, [selectedTurma, alunos]);
 
   return (
-    <div className="app-page relative overflow-hidden">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       
       {/* Feedback Messages */}
       {error && (
-        <div className="p-4 bg-error-container/30 border border-error/20 rounded-xl text-error text-label-md flex items-start gap-2 animate-in fade-in duration-300">
-          <HugeiconsIcon icon={Alert01Icon} size={20} className="mt-0.5 shrink-0" />
+        <div className="p-4 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-300">
+          <HugeiconsIcon icon={Alert01Icon} size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-secondary-container/10 border border-secondary/20 rounded-xl text-secondary text-label-md flex items-start gap-2 animate-in fade-in duration-300">
-          <HugeiconsIcon icon={Tick01Icon} size={20} className="mt-0.5 shrink-0" />
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-300">
+          <HugeiconsIcon icon={Tick01Icon} size={18} className="mt-0.5 shrink-0" />
           <span>{success}</span>
         </div>
       )}
 
       {/* Header Panel */}
-      <div className="app-page-header app-page-header-row">
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="app-title">Administração e Finalização de Turmas</h2>
-          <p className="app-subtitle">Gerencie códigos de acesso, atribua professores responsáveis e acompanhe enturmação.</p>
+          <span className="product-section-kicker">Gestão de Turmas</span>
+          <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Administração e Finalização de Turmas</h1>
+          <p className="product-subtitle">Gerencie códigos de acesso, atribua professores responsáveis e acompanhe enturmação.</p>
         </div>
         <button
           onClick={handleOpenCreateClass}
-          className="app-primary-action"
+          className="product-primary-action text-xs"
         >
-          <HugeiconsIcon icon={AddCircleIcon} size={20} />
-          Nova Turma
+          <HugeiconsIcon icon={AddCircleIcon} size={16} strokeWidth={2} />
+          <span>Nova Turma</span>
         </button>
-      </div>
+      </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
         {/* Left Columns: Classes List */}
         <div className="xl:col-span-1 space-y-4">
           <div className="flex items-center justify-between pb-1">
-            <h3 className="app-section-title">Turmas</h3>
-            <span className="text-label-sm font-semibold bg-primary/5 text-primary border border-primary/10 px-2.5 py-1 rounded-full">
+            <h3 className="font-heading font-extrabold text-sm text-on-surface">Turmas</h3>
+            <span className="text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full">
               {filteredTurmas.length} {filteredTurmas.length === 1 ? 'Turma' : 'Turmas'}
             </span>
           </div>
 
-          {/* Professor Filter (Available for Admin or Multi-teacher environments) */}
+          {/* Professor Filter */}
           {professores.length > 1 && (
             <div className="flex items-center gap-2">
               <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider shrink-0">Professor:</label>
               <select
                 value={professorFilter}
                 onChange={(e) => setProfessorFilter(e.target.value)}
-                className="w-full text-xs font-semibold py-1.5 px-3 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary"
+                className="product-control py-1 px-3 text-xs"
               >
                 <option value="todos">Todos os Professores ({turmas.length})</option>
                 {professores.map(p => (
@@ -442,12 +443,12 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
           )}
 
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low dark:bg-slate-800/80 rounded-xl border border-outline-variant/30 text-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs">
             <button
               onClick={() => setStatusFilter('todas')}
-              className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center ${
+              className={`flex-1 py-1.5 px-2 rounded-product-control font-bold transition-all text-center ${
                 statusFilter === 'todas'
-                  ? 'bg-white dark:bg-slate-700 text-on-surface shadow-xs'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -455,9 +456,9 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
             </button>
             <button
               onClick={() => setStatusFilter('em_andamento')}
-              className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center flex items-center justify-center gap-1 ${
+              className={`flex-1 py-1.5 px-2 rounded-product-control font-bold transition-all text-center flex items-center justify-center gap-1 ${
                 statusFilter === 'em_andamento'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-xs'
                   : 'text-on-surface-variant hover:text-emerald-600'
               }`}
             >
@@ -466,9 +467,9 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
             </button>
             <button
               onClick={() => setStatusFilter('concluida')}
-              className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center flex items-center justify-center gap-1 ${
+              className={`flex-1 py-1.5 px-2 rounded-product-control font-bold transition-all text-center flex items-center justify-center gap-1 ${
                 statusFilter === 'concluida'
-                  ? 'bg-primary/15 text-primary border border-primary/20 shadow-xs'
+                  ? 'bg-primary/10 text-primary border border-primary/20 shadow-xs'
                   : 'text-on-surface-variant hover:text-primary'
               }`}
             >
@@ -479,28 +480,28 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
 
           {/* Search Turma Input */}
           <div className="relative">
-            <HugeiconsIcon icon={Search01Icon} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+            <HugeiconsIcon icon={Search01Icon} size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
             <input
               type="text"
               value={searchTurma}
               onChange={(e) => setSearchTurma(e.target.value)}
-              placeholder="Filtrar turmas por nome, código, curso ou professor..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant/30 text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary"
+              placeholder="Filtrar turmas por nome, código ou professor..."
+              className="product-control pl-8 pr-3 py-2 text-xs"
             />
           </div>
 
           {loading && turmas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2 text-on-surface-variant">
-              <div className="w-6 h-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-              <p className="text-xs">Buscando turmas...</p>
+            <div className="product-card p-8 text-center space-y-2">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-on-surface-variant animate-pulse font-medium">Buscando turmas...</p>
             </div>
           ) : filteredTurmas.length === 0 ? (
-            <div className="app-card-padded text-center text-slate-400 space-y-3">
-              <HugeiconsIcon icon={UserGroupIcon} size={40} className="mx-auto text-slate-300" />
-              <p className="text-body-md font-bold text-on-surface">Nenhuma turma encontrada.</p>
+            <div className="product-empty-state space-y-2 p-8">
+              <HugeiconsIcon icon={UserGroupIcon} size={32} className="mx-auto text-primary" />
+              <p className="font-heading font-extrabold text-xs text-on-surface">Nenhuma turma encontrada.</p>
               <button
                 onClick={handleOpenCreateClass}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-primary font-label-md"
+                className="product-secondary-action text-xs mx-auto mt-2"
               >
                 Criar Turma
               </button>
@@ -515,31 +516,31 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                   <div
                     key={t.id}
                     onClick={() => handleSelectClass(t)}
-                    className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-xs flex flex-col justify-between gap-3 ${
+                    className={`product-card-interactive p-4 cursor-pointer flex flex-col justify-between gap-3 ${
                       isActive 
-                        ? 'bg-primary/5 dark:bg-primary/10 border-primary/40 ring-1 ring-primary/20' 
-                        : 'bg-surface-container-lowest dark:bg-slate-800 border-outline-variant/30 hover:border-primary/30'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm' 
+                        : ''
                     }`}
                   >
                     <div className="space-y-1.5">
                       <div className="flex justify-between items-start gap-2">
-                        <h4 className="font-heading font-extrabold text-body-md text-on-surface line-clamp-1">{t.nome}</h4>
+                        <h4 className="font-heading font-extrabold text-sm text-on-surface line-clamp-1">{t.nome}</h4>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
                             isConcluida
                               ? 'bg-primary/10 text-primary border-primary/20'
-                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                           }`}>
                             {isConcluida ? 'Concluída' : 'Ativa'}
                           </span>
-                          <span className="bg-surface-container text-on-surface-variant border border-outline-variant/30 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
+                          <span className="bg-surface-container-high text-on-surface-variant border border-outline-variant/60 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
                             {t.codigo_acesso}
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label-sm text-on-surface-variant">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-on-surface-variant font-medium">
                         <p className="flex items-center gap-1 min-w-0">
-                          <HugeiconsIcon icon={BookOpen01Icon} size={14} className="shrink-0 text-primary" />
+                          <HugeiconsIcon icon={BookOpen01Icon} size={14} className="shrink-0 text-primary" strokeWidth={2} />
                           <span className="truncate">{t.curso_titulo}</span>
                         </p>
                         <span className="text-[11px] font-bold text-secondary shrink-0">
@@ -548,39 +549,34 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-outline-variant/20 dark:border-slate-700/60 pt-3 text-xs">
-                      <span className="text-on-surface-variant font-semibold">
+                    <div className="flex items-center justify-between border-t border-outline-variant/50 pt-2.5 text-xs">
+                      <span className="text-on-surface-variant font-semibold text-[11px]">
                         {t.total_alunos} {t.total_alunos === 1 ? 'Aluno' : 'Alunos'}
                       </span>
                       
                       <div className="flex items-center gap-1">
-                        {/* Quick Finalize / View Ata Button */}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleOpenFinalizarTurma(t); }}
-                          className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 font-bold text-[11px] ${
-                            isConcluida
-                              ? 'text-primary hover:bg-primary/10'
-                              : 'text-primary hover:bg-primary/10'
-                          }`}
+                          className="product-secondary-action !min-h-7 !px-2 text-xs"
                           title={isConcluida ? 'Ver Ata de Conclusão' : 'Finalizar Turma / Gerar Ata'}
                         >
-                          <HugeiconsIcon icon={Award01Icon} size={16} />
-                          <span className="hidden sm:inline">{isConcluida ? 'Ata' : 'Finalizar'}</span>
+                          <HugeiconsIcon icon={Award01Icon} size={14} strokeWidth={2} />
+                          <span>{isConcluida ? 'Ata' : 'Finalizar'}</span>
                         </button>
 
                         <button
                           onClick={(e) => { e.stopPropagation(); handleOpenEditClass(t); }}
-                          className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
+                          className="product-icon-action !h-7 !w-7"
                           title="Editar Turma"
                         >
-                          <HugeiconsIcon icon={Edit01Icon} size={16} />
+                          <HugeiconsIcon icon={Edit01Icon} size={14} strokeWidth={2} />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteClass(t.id); }}
-                          className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
+                          className="product-icon-action !h-7 !w-7 text-error hover:bg-error/10"
                           title="Excluir Turma"
                         >
-                          <HugeiconsIcon icon={Delete02Icon} size={16} />
+                          <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
                         </button>
                       </div>
                     </div>
@@ -594,45 +590,44 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
         {/* Right Columns: Students Workspace */}
         <div className="xl:col-span-2 space-y-4">
           {selectedTurma ? (
-            <div className="app-card-padded space-y-5 animate-in fade-in duration-300">
+            <div className="product-card p-5 space-y-5 animate-in fade-in duration-300">
               
               {/* Header of Selected Cohort */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-outline-variant/30 dark:border-slate-800 pb-4 gap-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-outline-variant/60 pb-4 gap-3">
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <h3 className="font-heading font-extrabold text-body-lg text-on-surface">{selectedTurma.nome}</h3>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                    <h3 className="font-heading font-extrabold text-base text-on-surface">{selectedTurma.nome}</h3>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
                       selectedTurma.status === 'concluida'
                         ? 'bg-primary/10 text-primary border-primary/20'
-                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                        : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                     }`}>
                       {selectedTurma.status === 'concluida' ? 'Turma Concluída' : 'Turma em Andamento'}
                     </span>
                   </div>
-                  <p className="text-on-surface-variant text-label-sm mt-0.5">
+                  <p className="text-on-surface-variant text-xs mt-0.5 font-medium">
                     Código de Acesso para matrícula: <strong className="font-mono text-primary text-sm ml-1 select-all">{selectedTurma.codigo_acesso}</strong>
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  {/* Finalizar / Ata Master Button */}
                   <button
                     onClick={() => handleOpenFinalizarTurma(selectedTurma)}
-                    className="app-primary-action !text-xs !py-2.5"
+                    className="product-primary-action text-xs"
                   >
-                    <HugeiconsIcon icon={Award01Icon} size={17} />
-                    {selectedTurma.status === 'concluida' ? 'Ver Ata / Resultados' : 'Finalizar Turma / Gerar Ata'}
+                    <HugeiconsIcon icon={Award01Icon} size={15} strokeWidth={2} />
+                    <span>{selectedTurma.status === 'concluida' ? 'Ver Ata / Resultados' : 'Finalizar Turma / Gerar Ata'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Concluded Class Results Banner */}
               {selectedTurma.status === 'concluida' && classResultsSummary && (
-                <div className="p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-3">
+                <div className="p-4 rounded-product-control bg-primary/5 border border-primary/20 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} className="text-primary" />
-                      <h4 className="font-heading font-bold text-sm text-on-surface">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-primary" strokeWidth={2} />
+                      <h4 className="font-heading font-extrabold text-sm text-on-surface">
                         Resultados Finais da Turma
                       </h4>
                     </div>
@@ -643,64 +638,64 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                    <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30">
-                      <span className="text-on-surface-variant text-[10px] uppercase font-bold block">Aprovados</span>
-                      <strong className="text-emerald-600 dark:text-emerald-400 text-base">{classResultsSummary.aprovados}</strong>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+                    <div className="product-metric !min-h-[60px] p-2.5 flex-col justify-center">
+                      <span className="product-metric-label">Aprovados</span>
+                      <strong className="text-emerald-600 dark:text-emerald-400 text-lg font-extrabold">{classResultsSummary.aprovados}</strong>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-purple-200/50 dark:border-slate-700">
-                      <span className="text-on-surface-variant text-[10px] uppercase font-bold block">Reprovados</span>
-                      <strong className="text-rose-600 dark:text-rose-400 text-base">{classResultsSummary.reprovados}</strong>
+                    <div className="product-metric !min-h-[60px] p-2.5 flex-col justify-center">
+                      <span className="product-metric-label">Reprovados</span>
+                      <strong className="text-rose-600 dark:text-rose-400 text-lg font-extrabold">{classResultsSummary.reprovados}</strong>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-purple-200/50 dark:border-slate-700">
-                      <span className="text-on-surface-variant text-[10px] uppercase font-bold block">Desistentes</span>
-                      <strong className="text-amber-600 dark:text-amber-400 text-base">{classResultsSummary.desistentes}</strong>
+                    <div className="product-metric !min-h-[60px] p-2.5 flex-col justify-center">
+                      <span className="product-metric-label">Desistentes</span>
+                      <strong className="text-amber-600 dark:text-amber-400 text-lg font-extrabold">{classResultsSummary.desistentes}</strong>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-purple-200/50 dark:border-slate-700">
-                      <span className="text-on-surface-variant text-[10px] uppercase font-bold block">Total Concluintes</span>
-                      <strong className="text-on-surface text-base">{classResultsSummary.total}</strong>
+                    <div className="product-metric !min-h-[60px] p-2.5 flex-col justify-center">
+                      <span className="product-metric-label">Total Concluintes</span>
+                      <strong className="text-on-surface text-lg font-extrabold">{classResultsSummary.total}</strong>
                     </div>
                   </div>
                 </div>
               )}
 
               {alunos.length === 0 ? (
-                <div className="text-center py-16 text-on-surface-variant space-y-1">
-                  <p className="text-body-md font-bold text-on-surface">Turma vazia.</p>
-                  <p className="text-label-sm">Os alunos entrarão aqui ao usar o código de acesso no cadastro.</p>
+                <div className="product-empty-state py-12">
+                  <p className="font-heading font-extrabold text-xs text-on-surface">Turma vazia.</p>
+                  <p className="text-xs text-on-surface-variant">Os alunos entrarão aqui ao usar o código de acesso no cadastro.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-outline-variant/30 text-on-surface-variant font-bold text-label-sm text-xs uppercase tracking-wider">
+                      <tr className="border-b border-outline-variant/60 text-on-surface-variant font-extrabold text-[11px] uppercase tracking-wider">
                         <th className="pb-3 pl-2">Estudante</th>
                         <th className="pb-3 text-center">Frequência</th>
-                        <th className="pb-3 text-center">Situação Acadêmica</th>
+                        <th className="pb-3 text-center">Situação</th>
                         <th className="pb-3">Acesso</th>
                         <th className="pb-3 text-right pr-2">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-outline-variant/20 dark:divide-slate-800 text-xs">
+                    <tbody className="divide-y divide-outline-variant/30 text-xs">
                       {alunos.map(aluno => {
                         const situacao = aluno.situacao_final || 'cursando';
 
                         return (
-                          <tr key={aluno.id} className="hover:bg-surface-container-low/40 dark:hover:bg-slate-800/40 transition-colors">
+                          <tr key={aluno.id} className="hover:bg-surface-container-low/40 transition-colors">
                             <td className="py-3.5 pl-2">
-                              <span className="font-heading font-semibold text-sm text-on-surface block">{aluno.nome || 'Sem nome'}</span>
+                              <span className="font-heading font-extrabold text-xs text-on-surface block leading-tight">{aluno.nome || 'Sem nome'}</span>
                               <span className="text-[11px] text-on-surface-variant font-mono">{aluno.email || aluno.id.slice(0, 8) + '...'}</span>
                             </td>
 
                             <td className="py-3.5 text-center">
-                              <span className="font-bold font-mono text-[11px] text-on-surface">
+                              <span className="font-bold font-mono text-xs text-on-surface">
                                 {typeof aluno.frequencia === 'number' ? `${aluno.frequencia}%` : '100%'}
                               </span>
                             </td>
 
                             {/* Situação Acadêmica Badge */}
                             <td className="py-3.5 text-center">
-                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
                                 situacao === 'aprovado'
                                   ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                                   : situacao === 'reprovado'
@@ -721,7 +716,7 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                                 aluno.status === 'bloqueado' 
                                   ? 'bg-error/10 border-error/20 text-error' 
-                                  : 'bg-surface-container text-on-surface-variant border-outline-variant/30'
+                                  : 'bg-surface-container-high text-on-surface-variant border-outline-variant/60'
                               }`}>
                                 {aluno.status === 'bloqueado' ? 'Bloqueado' : 'Liberado'}
                               </span>
@@ -729,45 +724,41 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
 
                             <td className="py-3.5 text-right pr-2">
                               <div className="inline-flex items-center gap-1">
-                                {/* Acompanhar Button */}
                                 {onSelectStudent && (
                                   <button
                                     onClick={() => onSelectStudent(aluno.id, 'ficha')}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-bold border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-colors"
+                                    className="product-secondary-action !min-h-7 !px-2 text-xs"
                                   >
                                     Acompanhar
                                   </button>
                                 )}
 
-                                {/* Block/Unblock Button */}
                                 <button
                                   onClick={() => handleToggleBlockStudent(aluno)}
-                                  className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                                  className={`px-2 py-1 rounded-product-control text-xs font-bold border transition-colors ${
                                     aluno.status === 'bloqueado'
-                                      ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                      : 'bg-error/5 hover:bg-error/10 border-error/10 text-error'
+                                      ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                                      : 'bg-error/10 hover:bg-error/20 border-error/20 text-error'
                                   }`}
                                   title={aluno.status === 'bloqueado' ? 'Desbloquear acesso' : 'Bloquear acesso'}
                                 >
                                   {aluno.status === 'bloqueado' ? 'Desbloquear' : 'Bloquear'}
                                 </button>
 
-                                {/* Transfer Button */}
                                 <button
                                   onClick={() => setTransferringAluno(aluno)}
-                                  className="px-2 py-1 rounded-lg text-xs font-bold border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant transition-colors"
+                                  className="product-secondary-action !min-h-7 !px-2 text-xs"
                                   title="Transferir para outra turma"
                                 >
                                   Transferir
                                 </button>
 
-                                {/* Remove Button */}
                                 <button
                                   onClick={() => handleRemoveStudentFromClass(aluno)}
-                                  className="p-1 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-lg transition-colors"
+                                  className="product-icon-action !h-7 !w-7 text-error hover:bg-error/10"
                                   title="Remover da Turma"
                                 >
-                                  <HugeiconsIcon icon={Cancel01Icon} size={15} />
+                                  <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={2} />
                                 </button>
                               </div>
                             </td>
@@ -780,10 +771,10 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
               )}
             </div>
           ) : (
-            <div className="app-card-padded text-center text-slate-400 space-y-3">
-              <HugeiconsIcon icon={UserGroupIcon} size={48} className="mx-auto text-slate-300" />
-              <p className="text-body-md font-bold text-on-surface">Selecione uma turma à esquerda</p>
-              <p className="text-label-sm max-w-xs mx-auto">Selecione uma das turmas ativas ou concluídas para visualizar seus alunos matriculados, lançar a ata de encerramento e administrar permissões de acesso.</p>
+            <div className="product-empty-state p-12">
+              <HugeiconsIcon icon={UserGroupIcon} size={40} className="mx-auto text-primary mb-2" />
+              <p className="font-heading font-extrabold text-sm text-on-surface">Selecione uma turma à esquerda</p>
+              <p className="text-xs text-on-surface-variant max-w-xs mx-auto mt-1">Selecione uma das turmas para visualizar seus alunos matriculados, lançar a ata de encerramento e administrar permissões de acesso.</p>
             </div>
           )}
         </div>
@@ -792,51 +783,49 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
 
       {/* Modal: Criar / Editar Turma */}
       {showClassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest dark:bg-slate-900 w-full max-w-md border border-outline-variant/30 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden font-sans">
-            {/* Header */}
-            <div className="p-5 border-b border-outline-variant/30 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-body-lg font-heading font-extrabold text-on-surface flex items-center gap-2">
-                <HugeiconsIcon icon={UserGroupIcon} size={20} className="text-primary" />
-                {editingTurma ? 'Editar Turma' : 'Criar Nova Turma'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="product-dialog max-w-md animate-scale-up">
+            <div className="product-dialog-header border-b flex items-center justify-between">
+              <h3 className="font-heading font-extrabold text-sm text-on-surface flex items-center gap-2">
+                <HugeiconsIcon icon={UserGroupIcon} size={18} className="text-primary" strokeWidth={2} />
+                <span>{editingTurma ? 'Editar Turma' : 'Criar Nova Turma'}</span>
               </h3>
               <button
                 onClick={() => setShowClassModal(false)}
-                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
+                className="product-icon-action !h-7 !w-7"
               >
-                <HugeiconsIcon icon={Cancel01Icon} size={20} />
+                <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSaveClass} className="p-5 space-y-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-label-sm font-bold text-on-surface">Nome da Turma</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-on-surface">Nome da Turma</label>
                 <input
                   type="text"
                   placeholder="Ex: Desenvolvimento Web - Noturno"
                   value={classForm.nome}
                   onChange={(e) => setClassForm({ ...classForm, nome: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-body-md text-on-surface"
+                  className="product-control text-xs"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-label-sm font-bold text-on-surface">Código de Acesso</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-on-surface">Código de Acesso</label>
                 <input
                   type="text"
                   value={classForm.codigo_acesso}
                   onChange={(e) => setClassForm({ ...classForm, codigo_acesso: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-body-md font-mono tracking-wider font-bold text-center text-on-surface"
+                  className="product-control text-xs font-mono tracking-wider font-bold text-center"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-label-sm font-bold text-on-surface">Curso Vinculado</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-on-surface">Curso Vinculado</label>
                 <select
                   value={classForm.curso_id}
                   onChange={(e) => setClassForm({ ...classForm, curso_id: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-label-md text-on-surface"
+                  className="product-control text-xs"
                 >
                   <option value="">Nenhum Curso (Desvinculado)</option>
                   {cursos.map(c => (
@@ -846,12 +835,12 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
               </div>
 
               {professores.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-label-sm font-bold text-on-surface">Professor Responsável</label>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-on-surface">Professor Responsável</label>
                   <select
                     value={classForm.professor_id}
                     onChange={(e) => setClassForm({ ...classForm, professor_id: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest dark:bg-slate-800 focus:border-primary focus:outline-none text-label-md text-on-surface"
+                    className="product-control text-xs"
                   >
                     {professores.map(p => (
                       <option key={p.id} value={p.id}>
@@ -862,18 +851,18 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/30">
+              <div className="product-dialog-footer flex justify-end gap-2 pt-2 border-t">
                 <button
                   type="button"
                   onClick={() => setShowClassModal(false)}
-                  className="px-4 py-2 border border-outline-variant/40 text-on-surface rounded-xl hover:bg-surface-container font-heading font-semibold text-label-sm"
+                  className="product-secondary-action text-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 bg-primary text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm hover:shadow hover:bg-primary/90 transition-all"
+                  className="product-primary-action text-xs"
                 >
                   {saving ? 'Salvando...' : (editingTurma ? 'Salvar Alterações' : 'Criar Turma')}
                 </button>
@@ -885,21 +874,21 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
 
       {/* Modal: Transferência de Aluno */}
       {transferringAluno && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest dark:bg-slate-900 w-full max-w-sm border border-outline-variant/30 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden font-sans">
-            <div className="p-5 border-b border-outline-variant/30 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-body-lg font-heading font-extrabold text-on-surface">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="product-dialog max-w-sm animate-scale-up">
+            <div className="product-dialog-header border-b flex items-center justify-between">
+              <h3 className="font-heading font-extrabold text-sm text-on-surface">
                 Transferir Aluno
               </h3>
               <button
                 onClick={() => setTransferringAluno(null)}
-                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
+                className="product-icon-action !h-7 !w-7"
               >
-                <HugeiconsIcon icon={Cancel01Icon} size={20} />
+                <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2} />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-label-sm text-on-surface-variant leading-relaxed">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
                 Selecione a turma de destino para o aluno <strong className="text-on-surface font-semibold">{transferringAluno.nome}</strong>:
               </p>
               
@@ -908,22 +897,22 @@ export const GerenciadorTurmas: React.FC<GerenciadorTurmasProps> = ({ session, o
                   <button
                     key={t.id}
                     onClick={() => handleTransferStudent(t.id)}
-                    className="w-full text-left p-3 rounded-xl border border-outline-variant/30 hover:border-primary/40 hover:bg-primary/5 transition-all text-label-md font-semibold text-on-surface flex justify-between items-center"
+                    className="w-full text-left p-3 rounded-product-control border border-outline-variant/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-xs font-semibold text-on-surface flex justify-between items-center"
                   >
                     <span>{t.nome}</span>
-                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} className="text-primary" />
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={15} className="text-primary" strokeWidth={2} />
                   </button>
                 ))}
                 
                 {turmas.filter(t => t.id !== selectedTurma?.id).length === 0 && (
-                  <p className="text-center py-4 text-on-surface-variant text-label-sm">Nenhuma outra turma ativa para transferência.</p>
+                  <p className="text-center py-4 text-on-surface-variant text-xs">Nenhuma outra turma ativa para transferência.</p>
                 )}
               </div>
 
-              <div className="flex justify-end pt-2 border-t border-outline-variant/30">
+              <div className="product-dialog-footer flex justify-end pt-2 border-t">
                 <button
                   onClick={() => setTransferringAluno(null)}
-                  className="px-4 py-2 border border-outline-variant/40 text-on-surface rounded-xl hover:bg-surface-container font-heading font-semibold text-label-sm"
+                  className="product-secondary-action text-xs"
                 >
                   Cancelar
                 </button>

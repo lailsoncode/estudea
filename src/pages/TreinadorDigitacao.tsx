@@ -1215,24 +1215,25 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
   const coresNivel = nivelAtivo ? NIVEIS.find(n => n.id === nivelAtivo) : null;
 
   return (
-    <div className="app-page space-y-6 max-w-7xl mx-auto font-sans relative">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       
       {/* ——————————————————————————————
           1. HEADER & HUD DO TREINADOR
          —————————————————————————————— */}
-      <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="product-card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-[#002b54] text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
-            <HugeiconsIcon icon={KeyboardIcon} size={26} />
+          <div className="w-11 h-11 rounded-product-control bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+            <HugeiconsIcon icon={KeyboardIcon} size={24} strokeWidth={2} />
           </div>
           <div>
-            <h1 className="app-title flex items-center gap-2">
-              Treino de Digitação
+            <span className="product-section-kicker">Gamificação & Habilidade</span>
+            <h1 className="product-section-heading mt-0 text-xl sm:text-2xl flex items-center gap-2">
+              <span>Treino de Digitação</span>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                 Pro
               </span>
             </h1>
-            <p className="app-subtitle">
+            <p className="product-subtitle">
               Aprenda datilografia profissional, aumente sua velocidade (WPM) e desenvolva memória muscular sem olhar para o teclado.
             </p>
           </div>
@@ -1241,23 +1242,23 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
         <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
           <button
             onClick={() => setMostrarGuia(true)}
-            className="app-secondary-action text-xs"
+            className="product-secondary-action text-xs"
             title="Ver Guia de Postura e Ergonomia"
           >
-            <HugeiconsIcon icon={InformationCircleIcon} size={16} className="text-secondary" />
+            <HugeiconsIcon icon={InformationCircleIcon} size={15} className="text-secondary" strokeWidth={2} />
             <span>Guia de Postura</span>
           </button>
 
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="app-secondary-action text-xs"
+            className="product-secondary-action text-xs"
             title="Ajustar Preferências de Teclado, Mãos e Sons"
           >
-            <HugeiconsIcon icon={Settings01Icon} size={16} />
+            <HugeiconsIcon icon={Settings01Icon} size={15} strokeWidth={2} />
             <span>Preferências</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ——————————————————————————————
           2. SELEÇÃO DE NÍVEL (SE NÃO HOUVER LIÇÃO ATIVA)
@@ -1278,11 +1279,11 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
                       setNivelAtivo(nivel.id);
                     }
                   }}
-                  className={`app-card-padded relative overflow-hidden transition-all duration-300 flex flex-col justify-between gap-5 border-2 ${
+                  className={`product-card p-5 relative overflow-hidden transition-all duration-300 flex flex-col justify-between gap-5 border-2 ${
                     nivel.desbloqueado
-                      ? 'cursor-pointer hover-lift hover:border-primary/50'
+                      ? 'cursor-pointer hover:border-primary/50'
                       : 'opacity-60 cursor-not-allowed border-dashed'
-                  } ${isSelected ? 'border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/20' : 'border-outline-variant/30'}`}
+                  } ${isSelected ? 'border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/20' : 'border-outline-variant/60'}`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -1293,18 +1294,18 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
                     </div>
 
                     <div>
-                      <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
+                      <h3 className="font-heading font-extrabold text-sm text-on-surface">
                         {nivel.titulo}
                       </h3>
                       <p className="text-xs font-bold text-primary mt-0.5">{nivel.subtitulo}</p>
                     </div>
 
-                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed font-medium">
                       {nivel.descricao}
                     </p>
                   </div>
 
-                  <div className="space-y-3 pt-3 border-t border-outline-variant/20">
+                  <div className="space-y-3 pt-3 border-t border-outline-variant/60">
                     <div className="flex justify-between items-center text-xs font-bold">
                       <span className="text-on-surface-variant">{nivel.concluidas} de {nivel.total} lições</span>
                       <span className="text-primary">{percentual}%</span>
@@ -1330,12 +1331,12 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
 
           {/* Lessons List for Selected Level */}
           {nivelAtivo && (
-            <div className="app-card-padded space-y-5 animate-fade-in">
-              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+            <div className="product-card p-5 space-y-5 animate-fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/60">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{coresNivel?.emoji}</span>
                   <div>
-                    <h3 className="font-heading font-extrabold text-body-lg text-on-surface">
+                    <h3 className="font-heading font-extrabold text-sm text-on-surface">
                       Lições: {coresNivel?.titulo} — {coresNivel?.subtitulo}
                     </h3>
                     <p className="text-xs text-on-surface-variant">Selecione uma lição para iniciar o treinamento interativo.</p>
@@ -1344,10 +1345,10 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
                 
                 <button
                   onClick={() => setNivelAtivo(null)}
-                  className="text-xs text-on-surface-variant hover:text-on-surface font-bold flex items-center gap-1"
+                  className="product-secondary-action text-xs !min-h-7 !px-2.5"
                 >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-                  Ver Todos os Níveis
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
+                  <span>Ver Todos os Níveis</span>
                 </button>
               </div>
 
@@ -1363,22 +1364,22 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
                       onClick={() => {
                         if (desbloqueada) iniciarLicao(licao);
                       }}
-                      className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between gap-3 ${
+                      className={`p-4 rounded-product-control border transition-all duration-200 flex flex-col justify-between gap-3 ${
                         desbloqueada
-                          ? 'bg-surface-container-lowest hover:bg-surface-container-low border-outline-variant/30 hover:border-primary/40 cursor-pointer shadow-xs hover:shadow-md'
-                          : 'bg-surface-container-low/40 border-outline-variant/20 opacity-50 cursor-not-allowed'
+                          ? 'bg-surface-container-low hover:bg-surface-container border-outline-variant/60 hover:border-primary/40 cursor-pointer shadow-xs hover:shadow-md'
+                          : 'bg-surface-container-low/40 border-outline-variant/30 opacity-50 cursor-not-allowed'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-xl font-heading font-extrabold text-xs flex items-center justify-center shrink-0 ${
+                          <div className={`w-8 h-8 rounded-product-control font-heading font-extrabold text-xs flex items-center justify-center shrink-0 ${
                             concluida
                               ? 'bg-emerald-500 text-white shadow-xs'
                               : desbloqueada
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-surface-container text-on-surface-variant'
+                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                : 'bg-surface-container-high text-on-surface-variant'
                           }`}>
-                            {concluida ? <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} /> : idx + 1}
+                            {concluida ? <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} /> : idx + 1}
                           </div>
                           <div>
                             <h4 className="font-heading font-extrabold text-xs text-on-surface line-clamp-1">
@@ -1395,11 +1396,11 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
                         )}
                       </div>
 
-                      <p className="text-[11px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-on-surface-variant line-clamp-2 leading-relaxed font-medium">
                         {licao.descricao}
                       </p>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20 text-[11px]">
+                      <div className="flex items-center justify-between pt-2 border-t border-outline-variant/60 text-[11px]">
                         <span className="font-bold text-on-surface-variant">
                           {concluida ? 'Concluída' : desbloqueada ? 'Disponível' : 'Bloqueada'}
                         </span>
@@ -1425,14 +1426,14 @@ export const TreinadorDigitacao: React.FC<TreinadorDigitacaoProps> = ({ session 
         <div className="space-y-6 animate-fade-in">
           
           {/* Top Bar of Active Lesson */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/30 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 product-card p-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setLicaoAtiva(null)}
-                className="app-icon-button"
+                className="product-icon-action"
                 title="Voltar para a seleção de lições"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={2} />
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
               </button>
               <div>
                 <div className="flex items-center gap-2">

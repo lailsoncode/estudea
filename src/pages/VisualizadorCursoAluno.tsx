@@ -391,19 +391,19 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
   if (loading) {
     return (
-      <div className="app-card-padded text-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-slate-500">Buscando conteúdo do curso...</p>
+      <div className="product-card p-12 text-center space-y-3">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-on-surface-variant font-semibold animate-pulse">Buscando conteúdo do curso...</p>
       </div>
     );
   }
 
   if (!turmaId) {
     return (
-      <div className="app-card-padded text-center space-y-3">
+      <div className="product-empty-state space-y-3 p-10">
         <HugeiconsIcon icon={Alert01Icon} size={40} className="text-amber-500 mx-auto" />
-        <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Turma não encontrada</h3>
-        <p className="text-label-sm text-slate-500 max-w-sm mx-auto">
+        <h3 className="font-heading font-extrabold text-sm text-on-surface">Turma não encontrada</h3>
+        <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
           Você não está enturmado em nenhuma classe ativa. Por favor, fale com a secretaria do curso para obter o código de acesso.
         </p>
       </div>
@@ -412,10 +412,10 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
   if (!curso) {
     return (
-      <div className="app-card-padded text-center space-y-3">
-        <HugeiconsIcon icon={BookOpen01Icon} size={40} className="text-slate-400 mx-auto" />
-        <h3 className="font-heading font-extrabold text-body-lg text-on-surface">Nenhum curso associado</h3>
-        <p className="text-label-sm text-slate-500 max-w-sm mx-auto">
+      <div className="product-empty-state space-y-3 p-10">
+        <HugeiconsIcon icon={BookOpen01Icon} size={40} className="text-primary mx-auto" />
+        <h3 className="font-heading font-extrabold text-sm text-on-surface">Nenhum curso associado</h3>
+        <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
           Sua turma ainda não foi vinculada a um curso pelo professor. Entre em contato com ele para liberar os materiais de estudos.
         </p>
       </div>
@@ -428,47 +428,45 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
   const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   return (
-    <div className="app-page">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       
       {/* Course Header & Progress */}
-      <div className="app-page-header app-page-header-row">
+      <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider">
-            Meu Curso
-          </span>
-          <h2 className="app-title mt-2">{curso.titulo}</h2>
-          <p className="text-on-surface-variant text-label-sm mt-1">{curso.descricao || 'Estude no seu ritmo e conclua as tarefas abaixo.'}</p>
+          <span className="product-section-kicker">Meu Curso</span>
+          <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">{curso.titulo}</h1>
+          <p className="product-subtitle">{curso.descricao || 'Estude no seu ritmo e conclua as tarefas abaixo.'}</p>
         </div>
 
         {/* Progress percent widget */}
-        <div className="w-full md:w-64 space-y-2 shrink-0 bg-slate-50 p-4 rounded-xl border border-slate-100">
-          <div className="flex justify-between items-center text-label-sm">
-            <span className="text-slate-500 font-semibold flex items-center gap-1">
-              <HugeiconsIcon icon={Progress01Icon} size={16} className="text-primary" />
+        <div className="w-full md:w-64 space-y-2 shrink-0 bg-surface-container-low p-3.5 rounded-product-control border border-outline-variant/60">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-on-surface-variant font-semibold flex items-center gap-1">
+              <HugeiconsIcon icon={Progress01Icon} size={15} className="text-primary" strokeWidth={2} />
               Progresso
             </span>
-            <span className="font-bold text-primary">{progressPercent}%</span>
+            <span className="font-extrabold text-primary font-mono">{progressPercent}%</span>
           </div>
-          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
             <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
           </div>
-          <div className="text-[10px] text-slate-400 text-center font-semibold">
+          <div className="text-[10px] text-on-surface-variant text-center font-medium">
             {completedLessons} de {totalLessons} aulas concluídas
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Study Workspace */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         
         {/* Left Side: Index / Sidebar list of classes */}
-        <div className="xl:col-span-1 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 max-h-[70vh] overflow-y-auto">
-          <h3 className="app-section-title pb-2 border-b border-slate-100 flex items-center gap-2">
-            <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" />
-            Conteúdo Programático
-          </h3>
+        <div className="xl:col-span-1 product-card p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div className="flex items-center gap-2 border-b border-outline-variant/60 pb-3">
+            <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" strokeWidth={2} />
+            <h3 className="font-heading font-extrabold text-sm text-on-surface">Conteúdo Programático</h3>
+          </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {modulos.map((modulo) => {
               const moduloAulas = aulas.filter(a => a.modulo_id === modulo.id);
               
@@ -476,7 +474,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
               return (
                 <div key={modulo.id} className="space-y-2">
-                  <h4 className="font-heading font-bold text-label-md text-slate-500 uppercase tracking-wider">
+                  <h4 className="font-heading font-extrabold text-[11px] text-on-surface-variant uppercase tracking-wider">
                     {modulo.titulo}
                   </h4>
                   <div className="space-y-1.5 pl-1">
@@ -484,7 +482,6 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                       const isSelected = selectedAula?.id === aula.id;
                       const hasCompleted = progresso.some(p => p.aula_id === aula.id);
                       
-                      // Check assignment status if there are any
                       const activities = aula.atividades || [];
                       let statusBadge = null;
 
@@ -494,64 +491,71 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                           const allDelivered = deliveries.length === activities.length;
                           
                           if (allDelivered) {
-                            // Filter activities that count for grades
                             const gradedActivities = activities.filter(act => act.pontua !== false);
                             if (gradedActivities.length > 0) {
                               const gradedDeliveries = gradedActivities.map(act => entregas.find(e => e.atividade_id === act.id)).filter((e): e is Entrega => e !== undefined);
-                              const anyPending = gradedDeliveries.some(d => d.nota === null);
-                              if (anyPending) {
-                                statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente</span>;
+                              const allGraded = gradedDeliveries.length === gradedActivities.length && gradedDeliveries.every(d => d.nota !== null);
+                              
+                              if (allGraded) {
+                                const totalGrade = gradedDeliveries.reduce((sum, d) => sum + (d.nota || 0), 0) / gradedDeliveries.length;
+                                statusBadge = (
+                                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                    Nota {Math.round(totalGrade)}
+                                  </span>
+                                );
                               } else {
-                                const totalGrade = gradedDeliveries.reduce((sum, d) => sum + (d.nota || 0), 0);
-                                const avgGrade = Math.round(totalGrade / gradedActivities.length);
-                                statusBadge = <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Nota: {avgGrade}</span>;
+                                statusBadge = (
+                                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                    Entregue
+                                  </span>
+                                );
                               }
                             } else {
-                              // Only non-graded activities, all delivered
-                              statusBadge = <HugeiconsIcon icon={Tick01Icon} size={14} className="text-emerald-500 shrink-0" />;
+                              statusBadge = (
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                  Concluída
+                                </span>
+                              );
                             }
                           } else {
-                            // Some activities not delivered yet
-                            statusBadge = <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-bold px-1.5 py-0.5 rounded font-sans uppercase">Pendente ({deliveries.length}/{activities.length})</span>;
+                            statusBadge = (
+                              <span className="text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-2 py-0.5 rounded-full">
+                                Pendente
+                              </span>
+                            );
                           }
                         } else {
-                          statusBadge = <HugeiconsIcon icon={Tick01Icon} size={14} className="text-emerald-500 shrink-0" />;
+                          statusBadge = (
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                              Concluída
+                            </span>
+                          );
                         }
                       }
 
-                      const isLiberada = aulasLiberadas.includes(aula.id);
                       return (
                         <button
                           key={aula.id}
-                          disabled={!isLiberada}
-                          onClick={() => {
-                            setSelectedAula(aula);
-                            setError(null);
-                            setSuccess(null);
-                          }}
-                          className={`w-full text-left p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
-                            !isLiberada
-                              ? 'bg-slate-50 border-transparent opacity-50 cursor-not-allowed'
-                              : isSelected
-                                ? 'bg-primary/5 border-primary/20 text-primary font-bold shadow-sm'
-                                : 'bg-white border-slate-100 hover:border-slate-200 text-on-surface-variant'
+                          onClick={() => setSelectedAula(aula)}
+                          className={`w-full text-left p-3 rounded-product-control border transition-all text-xs font-semibold flex items-center justify-between gap-2 cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary/10 border-primary text-primary font-bold shadow-xs'
+                              : 'bg-surface-container-low border-outline-variant/60 text-on-surface hover:border-primary/40 hover:bg-surface-container'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 truncate">
-                            <span className="font-mono text-xs text-slate-400 font-bold shrink-0">
-                              {aula.numero_aula.toString().padStart(2, '0')}
+                          <div className="flex items-center gap-2 truncate min-w-0">
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                              hasCompleted
+                                ? 'bg-emerald-500 text-white'
+                                : isSelected
+                                ? 'bg-primary text-white'
+                                : 'bg-surface-container-high text-on-surface-variant'
+                            }`}>
+                              {hasCompleted ? '✓' : aula.numero_aula}
                             </span>
-                            <span className="truncate text-label-md">{aula.titulo}</span>
+                            <span className="truncate">{aula.titulo}</span>
                           </div>
-                          <div className="shrink-0 flex items-center gap-1">
-                            {!isLiberada && (
-                              <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                              </svg>
-                            )}
-                            {statusBadge}
-                          </div>
+                          {statusBadge}
                         </button>
                       );
                     })}
@@ -559,62 +563,58 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                 </div>
               );
             })}
-
-            {aulas.length === 0 && (
-              <p className="text-slate-400 text-center py-6 text-label-sm">Nenhuma aula cadastrada neste curso.</p>
-            )}
           </div>
         </div>
 
-        {/* Right Side: Lesson Viewer */}
+        {/* Right Side: Active Lesson Workspace */}
         <div className="xl:col-span-2 space-y-6">
           {selectedAula ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="product-card p-5 sm:p-6 space-y-5 animate-in fade-in duration-300">
               
-              {/* Notifications */}
+              {/* Messages */}
               {error && (
-                <div className="p-4 bg-error-container/30 border border-error/20 rounded-xl text-error text-label-md flex items-start gap-2">
-                  <HugeiconsIcon icon={Alert01Icon} size={20} className="mt-0.5 shrink-0" />
+                <div className="p-4 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2">
+                  <HugeiconsIcon icon={Alert01Icon} size={18} className="mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
               {success && (
-                <div className="p-4 bg-secondary-container/10 border border-secondary/20 rounded-xl text-secondary text-label-md flex items-start gap-2">
-                  <HugeiconsIcon icon={Tick01Icon} size={20} className="mt-0.5 shrink-0" />
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2">
+                  <HugeiconsIcon icon={Tick01Icon} size={18} className="mt-0.5 shrink-0" />
                   <span>{success}</span>
                 </div>
               )}
 
               {/* Lesson Title */}
-              <div className="border-b border-slate-100 pb-4 flex justify-between items-start flex-wrap gap-4">
+              <div className="border-b border-outline-variant/60 pb-4 flex justify-between items-start flex-wrap gap-4">
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">
+                  <span className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-widest font-mono">
                     Aula {selectedAula.numero_aula} • {selectedAula.tipo === 'video' ? 'Vídeoula' : 'Material de Leitura'}
                   </span>
-                  <h3 className="app-title">
+                  <h3 className="font-heading font-extrabold text-base text-on-surface">
                     {selectedAula.titulo}
                   </h3>
                 </div>
 
                 {progresso.some(p => p.aula_id === selectedAula.id) && !selectedAula.atividades?.[0] && (
-                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-label-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wide">
-                    <HugeiconsIcon icon={Tick01Icon} size={14} />
+                  <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-wide">
+                    <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={2} />
                     Concluída
                   </span>
                 )}
               </div>
 
               {!aulasLiberadas.includes(selectedAula.id) ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-10 text-center space-y-4 flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 bg-amber-50 border border-amber-200 text-amber-500 rounded-full flex items-center justify-center shadow-inner">
-                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <div className="bg-surface-container-low border border-outline-variant/60 rounded-product-control p-10 text-center space-y-4 flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-full flex items-center justify-center shadow-inner">
+                    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                   </div>
-                  <div className="max-w-md space-y-1.5">
-                    <h4 className="app-section-title">Conteúdo Bloqueado</h4>
-                    <p className="text-body-md text-on-surface-variant font-medium">
+                  <div className="max-w-md space-y-1">
+                    <h4 className="font-heading font-extrabold text-sm text-on-surface">Conteúdo Bloqueado</h4>
+                    <p className="text-xs text-on-surface-variant font-medium">
                       Esta aula foi cadastrada pelo professor, mas ainda não está liberada para acesso. Aguarde a liberação.
                     </p>
                   </div>
@@ -623,7 +623,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                  <>
                    {/* Video Embed if present */}
                    {selectedAula.video_url && (
-                     <div className="aspect-video w-full rounded-2xl border border-slate-200 overflow-hidden bg-black shadow-inner">
+                     <div className="aspect-video w-full rounded-product-control border border-outline-variant/60 overflow-hidden bg-black shadow-inner">
                        {selectedAula.video_url.includes('youtube.com') || selectedAula.video_url.includes('youtu.be') ? (
                          <iframe
                            src={selectedAula.video_url.replace('watch?v=', 'embed/').split('&')[0]}
@@ -649,12 +649,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                         <>
                           {/* Description / Objectives block */}
                           {parsed.descricao && (
-                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2.5 shadow-sm">
+                            <div className="bg-surface-container-low border border-outline-variant/60 rounded-product-control p-4 space-y-2 shadow-xs">
                               <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                                 Descrição & Objetivos da Aula
                               </p>
-                              <p className="text-body-md text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
+                              <p className="text-xs text-on-surface-variant font-medium leading-relaxed whitespace-pre-wrap">
                                 {parsed.descricao}
                               </p>
                             </div>
@@ -662,7 +662,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                           {/* Lesson Text Content */}
                           {(parsed.conteudo || selectedAula.tipo === 'texto') && (
-                            <div className="prose max-w-none text-body-lg text-on-surface leading-relaxed bg-slate-50/50 p-6 rounded-2xl border border-slate-100 font-sans space-y-2">
+                            <div className="prose max-w-none text-xs text-on-surface leading-relaxed bg-surface-container-low/50 p-5 rounded-product-control border border-outline-variant/60 font-sans space-y-2">
                               {parsed.conteudo ? (
                                 parsed.conteudo.split('\n').map((paragraph, pIdx) => {
                                   const trimmed = paragraph.trim();
@@ -670,35 +670,35 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                                   if (trimmed.startsWith('###')) {
                                     return (
-                                      <h5 key={pIdx} className="font-heading font-extrabold text-lg text-slate-900 pt-4">
+                                      <h5 key={pIdx} className="font-heading font-extrabold text-sm text-on-surface pt-3">
                                         {renderFormattedText(trimmed.replace('###', '').trim())}
                                       </h5>
                                     );
                                   }
                                   if (trimmed.startsWith('##')) {
                                     return (
-                                      <h4 key={pIdx} className="font-heading font-extrabold text-xl text-slate-950 pt-6 pb-2 border-b border-slate-200">
+                                      <h4 key={pIdx} className="font-heading font-extrabold text-base text-on-surface pt-4 pb-1.5 border-b border-outline-variant/60">
                                         {renderFormattedText(trimmed.replace('##', '').trim())}
                                       </h4>
                                     );
                                   }
                                   if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
                                     return (
-                                      <ul key={pIdx} className="list-disc pl-6 space-y-1 my-1">
-                                        <li className="text-body-md text-slate-700">
+                                      <ul key={pIdx} className="list-disc pl-5 space-y-1 my-1">
+                                        <li className="text-xs text-on-surface-variant font-medium">
                                           {renderFormattedText(trimmed.substring(1).trim())}
                                         </li>
                                       </ul>
                                     );
                                   }
                                   return (
-                                    <p key={pIdx} className="my-2 leading-relaxed text-justify text-slate-700">
+                                    <p key={pIdx} className="my-1.5 leading-relaxed text-justify text-on-surface-variant font-medium">
                                       {renderFormattedText(paragraph)}
                                     </p>
                                   );
                                 })
                               ) : (
-                                <p className="italic text-slate-400">Nenhum conteúdo complementar para esta aula.</p>
+                                <p className="italic text-on-surface-variant text-xs font-medium">Nenhum conteúdo complementar para esta aula.</p>
                               )}
                             </div>
                           )}
@@ -708,16 +708,16 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                    {/* File Download if present */}
                    {selectedAula.arquivo_url && (
-                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between gap-4">
-                       <div className="flex items-center gap-3">
-                         <span className="text-primary font-bold">Material de Apoio:</span>
-                         <span className="text-body-md text-on-surface-variant font-medium">Esta aula contém material complementar para download.</span>
+                     <div className="bg-surface-container-low border border-outline-variant/60 rounded-product-control p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                       <div className="flex items-center gap-2.5">
+                         <HugeiconsIcon icon={Attachment01Icon} size={18} className="text-primary shrink-0" strokeWidth={2} />
+                         <span className="text-xs text-on-surface-variant font-medium">Esta aula contém material complementar para download.</span>
                        </div>
                        <a
                          href={selectedAula.arquivo_url}
                          target="_blank"
                          rel="noopener noreferrer"
-                         className="px-4 py-2 bg-primary hover:bg-primary-container text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm transition-all"
+                         className="product-primary-action text-xs"
                        >
                          Download do Arquivo
                        </a>
@@ -726,37 +726,37 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                    {/* Link Activity / Project submission */}
                    {selectedAula.atividades && selectedAula.atividades.length > 0 ? (
-                     <div className="border-t border-slate-100 pt-6 space-y-4">
-                       <h4 className="font-heading font-extrabold text-body-lg text-secondary flex items-center gap-2">
-                         <HugeiconsIcon icon={Task01Icon} size={20} />
-                         Atividade Prática
+                     <div className="border-t border-outline-variant/60 pt-5 space-y-4">
+                       <h4 className="font-heading font-extrabold text-sm text-secondary flex items-center gap-2">
+                         <HugeiconsIcon icon={Task01Icon} size={18} strokeWidth={2} />
+                         <span>Atividade Prática</span>
                        </h4>
 
                        {selectedAula.atividades.map((atividade) => {
                          const studentDelivery = entregas.find(e => e.atividade_id === atividade.id);
 
                          return (
-                           <div key={atividade.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                           <div key={atividade.id} className="bg-surface-container-low border border-outline-variant/60 rounded-product-control p-4 sm:p-5 space-y-4">
                              <div className="space-y-1.5">
-                               <p className="text-label-sm font-bold text-slate-400 uppercase tracking-wider">Instruções do Exercício</p>
-                               <p className="text-body-md text-on-surface leading-relaxed font-semibold">
+                               <p className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider">Instruções do Exercício</p>
+                               <p className="text-xs text-on-surface leading-relaxed font-semibold">
                                  {atividade.enunciado}
                                </p>
-                               <p className="text-[11px] text-slate-400 font-semibold">
-                                 Tipo de entrega exigida: <strong className="text-primary uppercase">{atividade.tipo_entrega}</strong>
+                               <p className="text-[11px] text-on-surface-variant font-medium">
+                                 Tipo de entrega exigida: <strong className="text-primary uppercase font-bold">{atividade.tipo_entrega}</strong>
                                </p>
                              </div>
 
                              {/* Grading Box if Graded */}
                               {studentDelivery && studentDelivery.nota !== null && (
-                                <div className="bg-emerald-50 border border-emerald-200/50 rounded-xl p-4 text-label-md text-emerald-800 space-y-2 shadow-sm">
-                                  <div className="flex items-center gap-1.5 font-bold text-emerald-700">
-                                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
+                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-product-control p-4 text-xs text-emerald-800 dark:text-emerald-300 space-y-2 shadow-xs">
+                                  <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
+                                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={2} />
                                     <span>Atividade Avaliada — Nota: {studentDelivery.nota}/100</span>
                                   </div>
                                   
                                   {/* User submission preview */}
-                                  <div className="bg-white/80 p-3 rounded-lg border border-emerald-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
+                                  <div className="bg-surface-container-lowest p-3 rounded-product-control border border-emerald-500/20 font-sans text-xs text-on-surface max-h-32 overflow-y-auto">
                                     {(() => {
                                       const isImage = (url: string) => {
                                         return url.match(/\.(jpeg|jpg|gif|png|webp)/i) || url.includes('atividades');
@@ -767,12 +767,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                           <div className="space-y-2 text-left">
                                             {isImage(studentDelivery.resposta) ? (
                                               <>
-                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-outline-variant/60" />
                                                 <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                               </>
                                             ) : (
-                                              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
-                                                <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                              <div className="flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60 text-xs">
+                                                <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                                 <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                               </div>
                                             )}
@@ -781,8 +781,8 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                       }
                                       if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
-                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
-                                            <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-surface-container-low p-2 rounded border border-outline-variant/60 text-left text-xs">
+                                            <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                             <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                           </div>
                                         );
@@ -797,12 +797,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                                 <div className="space-y-1">
                                                   {isImage(payload.imagem) ? (
                                                     <>
-                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-outline-variant/60" />
                                                       <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                                     </>
                                                   ) : (
-                                                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
-                                                      <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
+                                                    <div className="flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60 text-xs">
+                                                      <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
                                                       <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                                     </div>
                                                   )}
@@ -819,8 +819,8 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                   </div>
 
                                   {studentDelivery.feedback_professor && (
-                                    <p className="text-slate-650 text-body-md leading-relaxed border-t border-emerald-250/20 pt-2 text-left">
-                                      <strong className="text-emerald-700 font-bold">Feedback do Professor: </strong>
+                                    <p className="text-on-surface text-xs leading-relaxed border-t border-emerald-500/20 pt-2 text-left font-medium">
+                                      <strong className="text-emerald-700 dark:text-emerald-300 font-bold">Feedback do Professor: </strong>
                                       {studentDelivery.feedback_professor}
                                     </p>
                                   )}
@@ -829,12 +829,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                               {/* Submitted and pending review */}
                               {studentDelivery && studentDelivery.nota === null && (
-                                <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-label-md text-amber-800 space-y-2 shadow-sm">
-                                  <div className="flex items-center gap-1.5 font-bold text-amber-700">
-                                    <HugeiconsIcon icon={Progress01Icon} size={16} className="animate-spin" />
+                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-product-control p-4 text-xs text-amber-800 dark:text-amber-300 space-y-2 shadow-xs">
+                                  <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+                                    <HugeiconsIcon icon={Progress01Icon} size={16} className="animate-spin" strokeWidth={2} />
                                     <span>Resposta Enviada — Aguardando Avaliação</span>
                                   </div>
-                                  <div className="bg-white/80 p-3 rounded-lg border border-amber-100 font-sans text-body-md text-slate-650 max-h-32 overflow-y-auto">
+                                  <div className="bg-surface-container-lowest p-3 rounded-product-control border border-amber-500/20 font-sans text-xs text-on-surface max-h-32 overflow-y-auto">
                                     {(() => {
                                       const isImage = (url: string) => {
                                         return url.match(/\.(jpeg|jpg|gif|png|webp)/i) || url.includes('atividades');
@@ -845,12 +845,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                           <div className="space-y-2 text-left">
                                             {isImage(studentDelivery.resposta) ? (
                                               <>
-                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                <img src={studentDelivery.resposta} alt="Envio" className="max-h-24 object-contain rounded border border-outline-variant/60" />
                                                 <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                               </>
                                             ) : (
-                                              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
-                                                <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                              <div className="flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60 text-xs">
+                                                <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                                 <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                               </div>
                                             )}
@@ -859,8 +859,8 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                       }
                                       if (atividade.tipo_entrega === 'arquivo' && (studentDelivery.resposta.startsWith('http://') || studentDelivery.resposta.startsWith('https://'))) {
                                         return (
-                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-2 rounded-lg border border-slate-150 text-left font-sans text-xs">
-                                            <span className="text-xs text-slate-500 font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
+                                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-surface-container-low p-2 rounded border border-outline-variant/60 text-left text-xs">
+                                            <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs">{studentDelivery.resposta}</span>
                                             <a href={studentDelivery.resposta} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                           </div>
                                         );
@@ -875,12 +875,12 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                                 <div className="space-y-1">
                                                   {isImage(payload.imagem) ? (
                                                     <>
-                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-slate-150" />
+                                                      <img src={payload.imagem} alt="Envio" className="max-h-24 object-contain rounded border border-outline-variant/60" />
                                                       <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-[11px] block">Abrir imagem em nova guia ↗</a>
                                                     </>
                                                   ) : (
-                                                    <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-150 font-sans text-xs">
-                                                      <span className="text-xs text-slate-500 font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
+                                                    <div className="flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60 text-xs">
+                                                      <span className="text-xs text-on-surface-variant font-mono truncate max-w-xs font-bold">{payload.imagem}</span>
                                                       <a href={payload.imagem} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-xs whitespace-nowrap shrink-0">Baixar arquivo ↗</a>
                                                     </div>
                                                   )}
@@ -895,7 +895,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                       return <span className="whitespace-pre-wrap text-left block">{studentDelivery.resposta}</span>;
                                     })()}
                                   </div>
-                                  <p className="text-[10px] text-amber-600/90 font-semibold text-left">
+                                  <p className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold text-left">
                                     Você pode reenviar a atividade enviando uma nova resposta abaixo a qualquer momento.
                                   </p>
                                 </div>
@@ -904,8 +904,8 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                               {/* Form to submit or resubmit */}
                               {(!studentDelivery || studentDelivery.nota === null) && (
                                 <form onSubmit={(e) => handleSendAssignment(e, atividade.id, selectedAula.id)} className="space-y-3 pt-2 text-left">
-                                  <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-bold text-slate-650">
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-on-surface">
                                       {studentDelivery ? 'Atualizar minha resposta' : 'Minha resposta'}
                                     </label>
 
@@ -918,7 +918,7 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                         onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                         disabled={submitting}
                                         placeholder="Escreva a solução da sua atividade prática aqui..."
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md leading-relaxed font-sans"
+                                        className="product-control text-xs leading-relaxed"
                                       />
                                     )}
 
@@ -927,14 +927,14 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                       <div className="space-y-3">
                                         {/* Dropzone / File Selection Area */}
                                         {!selectedFiles[atividade.id] ? (
-                                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-primary rounded-2xl p-6 bg-slate-50 hover:bg-slate-100/30 cursor-pointer transition-all">
-                                            <div className="p-3 bg-white rounded-xl border border-slate-150 shadow-sm text-slate-400 group-hover:text-primary">
-                                              <HugeiconsIcon icon={Attachment01Icon} size={24} />
+                                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/70 hover:border-primary rounded-product-control p-6 bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+                                            <div className="p-2.5 bg-surface-container-lowest rounded-product-control border border-outline-variant/60 shadow-xs text-on-surface-variant group-hover:text-primary">
+                                              <HugeiconsIcon icon={Attachment01Icon} size={22} strokeWidth={2} />
                                             </div>
-                                            <span className="text-body-md font-bold text-slate-700 mt-3">
+                                            <span className="text-xs font-bold text-on-surface mt-2.5">
                                               {atividade.tipo_entrega === 'imagem' ? 'Fazer upload de Imagem' : 'Fazer upload de Arquivo'}
                                             </span>
-                                            <span className="text-[11px] text-slate-400 mt-1">
+                                            <span className="text-[10px] text-on-surface-variant mt-0.5">
                                               {atividade.tipo_entrega === 'imagem' 
                                                 ? 'Arraste ou clique para selecionar imagem (PNG, JPG, etc.)' 
                                                 : 'Arraste ou clique para selecionar arquivo (PDF, ZIP, DOCX, etc.)'}
@@ -948,49 +948,47 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                             />
                                           </label>
                                         ) : (
-                                          <div className="flex items-center justify-between bg-white border border-slate-200 p-3.5 rounded-2xl shadow-xs">
-                                            <div className="flex items-center gap-3 overflow-hidden">
+                                          <div className="flex items-center justify-between bg-surface-container-lowest border border-outline-variant/60 p-3 rounded-product-control shadow-xs">
+                                            <div className="flex items-center gap-2.5 overflow-hidden">
                                               {selectedFilePreviews[atividade.id] ? (
                                                 <img 
                                                   src={selectedFilePreviews[atividade.id]} 
                                                   alt="Preview" 
-                                                  className="w-12 h-12 rounded-lg object-cover border border-slate-150 shrink-0" 
+                                                  className="w-10 h-10 rounded-product-control object-cover border border-outline-variant/60 shrink-0" 
                                                 />
                                               ) : (
-                                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                  </svg>
+                                                <div className="w-10 h-10 rounded-product-control bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
+                                                  <HugeiconsIcon icon={Attachment01Icon} size={18} strokeWidth={2} />
                                                 </div>
                                               )}
                                               <div className="text-left overflow-hidden">
-                                                <span className="text-label-md font-bold text-slate-800 block truncate">{selectedFiles[atividade.id].name}</span>
-                                                <span className="text-[11px] text-slate-400 block">{(selectedFiles[atividade.id].size / 1024 / 1024).toFixed(2)} MB</span>
+                                                <span className="text-xs font-bold text-on-surface block truncate">{selectedFiles[atividade.id].name}</span>
+                                                <span className="text-[10px] text-on-surface-variant block">{(selectedFiles[atividade.id].size / 1024 / 1024).toFixed(2)} MB</span>
                                               </div>
                                             </div>
                                             <button
                                               type="button"
                                               onClick={() => handleRemoveFile(atividade.id)}
                                               disabled={submitting}
-                                              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all"
+                                              className="product-icon-action !h-7 !w-7 text-error hover:bg-error/10"
                                               title="Remover arquivo"
                                             >
-                                              <HugeiconsIcon icon={Cancel01Icon} size={18} />
+                                              <HugeiconsIcon icon={Cancel01Icon} size={15} strokeWidth={2} />
                                             </button>
                                           </div>
                                         )}
 
                                         {/* Fallback Text Input for image link, ONLY if tipo_entrega is 'imagem' */}
                                         {atividade.tipo_entrega === 'imagem' && !selectedFiles[atividade.id] && (
-                                          <div className="flex flex-col gap-1.5 pt-1">
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block text-center">Ou cole um link público da imagem</span>
+                                          <div className="flex flex-col gap-1 pt-1">
+                                            <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider block text-center">Ou cole um link público da imagem</span>
                                             <input
                                               type="url"
                                               value={respostaForm[atividade.id] || ''}
                                               onChange={(e) => setRespostaForm(prev => ({ ...prev, [atividade.id]: e.target.value }))}
                                               disabled={submitting}
                                               placeholder="https://exemplo.com/imagem.png"
-                                              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none text-body-md font-sans"
+                                              className="product-control text-xs"
                                             />
                                           </div>
                                         )}
@@ -1000,10 +998,10 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                                   <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm transition-all flex items-center gap-1.5"
+                                    className="product-primary-action text-xs"
                                   >
-                                    <HugeiconsIcon icon={Task01Icon} size={16} />
-                                    {submitting ? 'Enviando...' : (studentDelivery ? 'Reenviar Resposta' : 'Enviar Resposta')}
+                                    <HugeiconsIcon icon={Task01Icon} size={15} strokeWidth={2} />
+                                    <span>{submitting ? 'Enviando...' : (studentDelivery ? 'Reenviar Resposta' : 'Enviar Resposta')}</span>
                                   </button>
                                 </form>
                               )}
@@ -1013,19 +1011,19 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
                      </div>
                    ) : (
                      /* Regular class without activity: can mark as read/complete directly */
-                     <div className="border-t border-slate-100 pt-6 flex justify-end">
+                     <div className="border-t border-outline-variant/60 pt-5 flex justify-end">
                        {!progresso.some(p => p.aula_id === selectedAula.id) ? (
                          <button
                            onClick={() => handleMarkAsCompleted(selectedAula.id)}
-                           className="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-xl font-heading font-bold text-label-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-1.5"
+                           className="product-primary-action text-xs"
                          >
-                           <HugeiconsIcon icon={Tick01Icon} size={18} />
-                           Marcar Aula como Concluída
+                           <HugeiconsIcon icon={Tick01Icon} size={16} strokeWidth={2} />
+                           <span>Marcar Aula como Concluída</span>
                          </button>
                        ) : (
-                         <div className="text-label-sm text-emerald-600 font-bold flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl">
-                           <HugeiconsIcon icon={Tick01Icon} size={16} />
-                           Você concluiu esta aula!
+                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-product-control">
+                           <HugeiconsIcon icon={Tick01Icon} size={15} strokeWidth={2} />
+                           <span>Você concluiu esta aula!</span>
                          </div>
                        )}
                      </div>
@@ -1035,9 +1033,9 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
             </div>
           ) : (
-            <div className="app-card-padded text-center text-slate-400 space-y-3">
-              <HugeiconsIcon icon={BookOpen01Icon} size={48} className="mx-auto text-slate-300" />
-              <p className="text-body-md font-bold text-on-surface">Selecione uma aula à esquerda</p>
+            <div className="product-empty-state space-y-3 p-12">
+              <HugeiconsIcon icon={BookOpen01Icon} size={40} className="mx-auto text-primary" strokeWidth={2} />
+              <p className="font-heading font-extrabold text-sm text-on-surface">Selecione uma aula à esquerda</p>
             </div>
           )}
         </div>

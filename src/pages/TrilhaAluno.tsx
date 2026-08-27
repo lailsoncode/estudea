@@ -2084,21 +2084,21 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         /* VIEW 4: MODULE ROADMAP & DETAILS VIEW */
         <div className="space-y-6 animate-fade-in pb-12">
           {/* Module Header Section */}
-          <div className="app-page-header app-page-header-row flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <header className="product-card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <button
                 onClick={handleGoToDashboard}
-                className="app-icon-button bg-surface hover:bg-surface-container border border-outline-variant/30 rounded-xl"
+                className="product-icon-action !h-9 !w-9"
                 title="Voltar para o Dashboard"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={20} strokeWidth={2} />
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={2} />
               </button>
               <div>
-                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-label-sm font-semibold text-primary mb-2 uppercase tracking-wider font-mono">
+                <span className="product-section-kicker">
                   Módulo
                 </span>
-                <h1 className="app-title">{selectedModulo.titulo}</h1>
-                <p className="text-body-md text-on-surface-variant font-medium mt-1">
+                <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">{selectedModulo.titulo}</h1>
+                <p className="product-subtitle">
                   Acompanhe as lições e atividades deste módulo para avançar em sua jornada.
                 </p>
               </div>
@@ -2110,14 +2110,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
               if (!processed) return null;
               const percentModulo = processed.total > 0 ? Math.round((processed.completed / processed.total) * 100) : 0;
               return (
-                <div className="app-card-padded w-full md:w-auto md:min-w-[320px] shrink-0">
-                  <div className="flex justify-between items-end mb-3">
-                    <span className="font-semibold text-sm text-on-surface-variant uppercase tracking-wide">Progresso do Módulo</span>
-                    <span className="text-2xl font-bold text-primary">{percentModulo}%</span>
+                <div className="bg-surface-container-low border border-outline-variant/60 rounded-product-control p-4 w-full md:w-auto md:min-w-[320px] shrink-0">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="font-bold text-xs text-on-surface-variant uppercase tracking-wide">Progresso do Módulo</span>
+                    <span className="text-xl font-extrabold text-primary font-mono">{percentModulo}%</span>
                   </div>
-                  <div className="h-3 bg-surface-container-low rounded-full overflow-hidden shadow-inner relative">
+                  <div className="h-2 bg-surface-container-high rounded-full overflow-hidden relative">
                     <div 
-                      className="h-full rounded-full transition-all duration-500 ease-out" 
+                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out" 
                       style={{ 
                         width: `${percentModulo}%`,
                         background: 'linear-gradient(90deg, #712ae2 0%, #8a4cfc 100%)'
@@ -2132,7 +2132,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 </div>
               );
             })()}
-          </div>
+          </header>
 
           {/* Grid: Left roadmap and right stats */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -2152,18 +2152,18 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 return (
                   <div 
                     onClick={() => handleOpenAula(targetLesson)}
-                    className="app-card-padded hover-lift relative overflow-hidden group min-h-[160px] cursor-pointer"
+                    className="product-card p-5 hover-lift relative overflow-hidden group min-h-[160px] cursor-pointer"
                   >
-                    <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-secondary/10 to-transparent z-0"></div>
+                    <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent z-0"></div>
                     <div className="relative z-20 flex flex-col h-full justify-between">
                       <div>
-                        <span className="inline-block px-4 py-1.5 bg-white/60 text-secondary font-semibold text-xs rounded-full mb-4 backdrop-blur-md border border-white/50 uppercase tracking-wider">
+                        <span className="inline-block px-3 py-1 bg-surface-container-low text-primary font-bold text-xs rounded-product-control mb-3 border border-outline-variant/60 uppercase tracking-wider">
                           {isCompleted ? 'Módulo Concluído!' : 'Continuar Módulo'}
                         </span>
-                        <h3 className="app-title max-w-lg">
+                        <h3 className="product-section-heading mt-0 text-base sm:text-lg max-w-lg">
                           {isCompleted ? 'Todas as aulas concluídas!' : `Próxima Aula: Aula ${targetLesson.numero_aula} - ${targetLesson.titulo}`}
                         </h3>
-                        <p className="text-on-surface-variant mt-2 max-w-md font-medium text-body-md">
+                        <p className="text-on-surface-variant mt-1.5 max-w-md font-medium text-xs">
                           {isCompleted 
                             ? 'Excelente! Você pode reassistir a qualquer aula da lista abaixo.' 
                             : targetLesson.tipo === 'quiz' 
@@ -2171,20 +2171,16 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                               : 'Continue estudando de onde parou para completar o módulo.'}
                         </p>
                       </div>
-                      <div className="mt-6">
+                      <div className="mt-5">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenAula(targetLesson);
                           }}
-                          className="app-primary-action"
-                          style={{
-                            background: 'linear-gradient(135deg, #712ae2 0%, #8a4cfc 100%)',
-                            boxShadow: '0 4px 14px 0 rgba(113, 42, 226, 0.3)'
-                          }}
+                          className="product-primary-action text-xs"
                         >
-                          <HugeiconsIcon icon={PlayCircleIcon} size={18} />
-                          {isCompleted ? 'Reassistir Aula' : 'Estudar Agora'}
+                          <HugeiconsIcon icon={PlayCircleIcon} size={16} strokeWidth={2} />
+                          <span>{isCompleted ? 'Reassistir Aula' : 'Estudar Agora'}</span>
                         </button>
                       </div>
                     </div>
@@ -2194,14 +2190,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
               {/* List of lessons */}
               <div className="space-y-4">
-                <h2 className="app-section-title">Roteiro de Aulas</h2>
+                <h2 className="font-heading font-extrabold text-sm text-on-surface">Roteiro de Aulas</h2>
                   <div className="flex flex-col gap-3">
                   {(() => {
                     const processed = processedModulos.find(m => m.id === selectedModulo.id);
                     const moduloAulas = aulas.filter(a => a.modulo_id === selectedModulo.id);
                     if (moduloAulas.length === 0) {
                       return (
-                        <div className="app-card-padded text-center text-on-surface-variant italic">
+                        <div className="product-empty-state text-center text-on-surface-variant italic">
                           Nenhuma aula cadastrada neste módulo.
                         </div>
                       );
@@ -2340,42 +2336,42 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 });
 
                 return (
-                  <div className="app-card-padded">
-                    <h3 className="app-section-title mb-6">Métricas do Módulo</h3>
-                    <div className="flex flex-col gap-5">
+                  <div className="product-card p-5">
+                    <h3 className="font-heading font-extrabold text-sm text-on-surface mb-4">Métricas do Módulo</h3>
+                    <div className="flex flex-col gap-4">
                       
-                      <div className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
-                        <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-secondary shrink-0 shadow-sm">
-                          <HugeiconsIcon icon={BookOpen01Icon} size={22} strokeWidth={2} className="text-secondary" />
+                      <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded-product-control border border-outline-variant/40">
+                        <div className="w-10 h-10 rounded-product-control bg-secondary/10 flex items-center justify-center text-secondary shrink-0 border border-secondary/20">
+                          <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} className="text-secondary" />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-on-surface-variant">Conclusão de Aulas</div>
-                          <div className="text-2xl font-extrabold text-on-surface">
-                            {completedInModulo} <span className="text-sm text-on-surface-variant">de {moduloAulas.length}</span>
+                          <div className="text-xs font-semibold text-on-surface-variant">Conclusão de Aulas</div>
+                          <div className="text-lg font-extrabold text-on-surface font-mono">
+                            {completedInModulo} <span className="text-xs text-on-surface-variant font-medium">de {moduloAulas.length}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
-                        <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-primary shrink-0 shadow-sm">
-                          <HugeiconsIcon icon={Award01Icon} size={22} strokeWidth={2} className="text-primary" />
+                      <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded-product-control border border-outline-variant/40">
+                        <div className="w-10 h-10 rounded-product-control bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
+                          <HugeiconsIcon icon={Award01Icon} size={20} strokeWidth={2} className="text-primary" />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-on-surface-variant">Pontos Acumulados</div>
-                          <div className="text-2xl font-extrabold text-on-surface">
-                            {completedPoints} <span className="text-sm text-on-surface-variant font-medium">de {totalPoints} XP</span>
+                          <div className="text-xs font-semibold text-on-surface-variant">Pontos Acumulados</div>
+                          <div className="text-lg font-extrabold text-on-surface font-mono">
+                            {completedPoints} <span className="text-xs text-on-surface-variant font-medium">de {totalPoints} XP</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 bg-white/50 p-3 rounded-2xl">
-                        <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0 shadow-sm">
-                          <HugeiconsIcon icon={TaskDone01Icon} size={22} strokeWidth={2} className="text-green-600" />
+                      <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded-product-control border border-outline-variant/40">
+                        <div className="w-10 h-10 rounded-product-control bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-500/20">
+                          <HugeiconsIcon icon={TaskDone01Icon} size={20} strokeWidth={2} className="text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-on-surface-variant">Atividades Práticas</div>
-                          <div className="text-2xl font-extrabold text-on-surface">
-                            {completedActivities} <span className="text-sm text-on-surface-variant">de {activitiesCount}</span>
+                          <div className="text-xs font-semibold text-on-surface-variant">Atividades Práticas</div>
+                          <div className="text-lg font-extrabold text-on-surface font-mono">
+                            {completedActivities} <span className="text-xs text-on-surface-variant font-medium">de {activitiesCount}</span>
                           </div>
                         </div>
                       </div>
@@ -2386,8 +2382,8 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
               })()}
 
               {/* Study tips widget */}
-              <div className="app-card-padded">
-                <h3 className="app-section-title mb-4">Dicas de Estudo</h3>
+              <div className="product-card p-5">
+                <h3 className="font-heading font-extrabold text-sm text-on-surface mb-4">Dicas de Estudo</h3>
                 <ul className="space-y-3 text-label-md text-on-surface-variant">
                   <li className="flex items-start gap-2">
                     <span className="text-secondary mt-0.5">•</span>
@@ -2763,7 +2759,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         <div className="space-y-6 animate-fade-in">
           
           {/* Header Action: Back to Dashboard & Sidebar Toggle */}
-          <div className="app-page-header app-page-header-row">
+          <header className="product-card p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => {
@@ -2773,38 +2769,38 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                     handleGoToDashboard();
                   }
                 }}
-                className="app-secondary-action"
+                className="product-secondary-action text-xs"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-                Voltar para a Trilha
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
+                <span>Voltar para a Trilha</span>
               </button>
               
               <button
                 onClick={() => setLessonSidebarOpen(prev => !prev)}
-                className="app-secondary-action hidden lg:inline-flex items-center gap-2"
+                className="product-secondary-action text-xs hidden lg:inline-flex items-center gap-2"
                 title={lessonSidebarOpen ? "Ocultar Grade do Curso" : "Mostrar Grade do Curso"}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <line x1="9" y1="3" x2="9" y2="21" />
                 </svg>
-                {lessonSidebarOpen ? 'Ocultar Grade' : 'Mostrar Grade'}
+                <span>{lessonSidebarOpen ? 'Ocultar Grade' : 'Mostrar Grade'}</span>
               </button>
             </div>
             
-            <div className="text-label-sm text-on-surface-variant font-bold">
+            <div className="text-xs text-on-surface-variant font-bold">
               Curso: {curso.titulo}
             </div>
-          </div>
+          </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* Sidebar Timeline navigation inside Lesson View (4 Columns) */}
             {lessonSidebarOpen && (
-              <div className="lg:col-span-4 app-card-padded space-y-4 h-[650px] flex flex-col">
-                <h3 className="app-section-title pb-3 border-b border-outline-variant/30 flex items-center gap-2">
-                  <HugeiconsIcon icon={BookOpen01Icon} size={20} className="text-primary" />
-                  Conteúdo do Curso
+              <div className="lg:col-span-4 product-card p-5 space-y-4 h-[650px] flex flex-col">
+                <h3 className="font-heading font-extrabold text-sm text-on-surface pb-3 border-b border-outline-variant/60 flex items-center gap-2">
+                  <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" strokeWidth={2} />
+                  <span>Conteúdo do Curso</span>
                 </h3>
 
                 <div className="flex-1 overflow-y-auto space-y-5 pr-1 scrollbar-thin">
@@ -2899,35 +2895,35 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                 <div className="space-y-6 animate-fade-in">
                   
                   {/* Lesson header card */}
-                  <div className="app-card-padded space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
+                  <div className="product-card p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/60">
                       <div>
                         <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider bg-surface px-2 py-0.5 rounded border border-outline-variant/30">
+                          <span className="text-[10px] font-extrabold text-on-surface-variant uppercase font-mono tracking-wider bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant/40">
                             Aula {selectedAula.numero_aula}
                           </span>
                           {selectedAula.video_url && (
-                            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20">
                               Vídeo
                             </span>
                           )}
                           {selectedAula.questoes && selectedAula.questoes.length > 0 && (
-                            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
                               Quiz
                             </span>
                           )}
                           {selectedAula.arquivo_url && (
-                            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                               Material
                             </span>
                           )}
                           {!selectedAula.video_url && (!selectedAula.questoes || selectedAula.questoes.length === 0) && !selectedAula.arquivo_url && (
-                            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
                               Leitura
                             </span>
                           )}
                         </div>
-                        <h3 className="app-title">
+                        <h3 className="product-section-heading mt-0 text-base sm:text-lg">
                           {selectedAula.titulo}
                         </h3>
                       </div>
@@ -3111,16 +3107,16 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                   {/* Main media & theoretical content */}
                   {!aulasLiberadas.includes(selectedAula.id) ? (
-                    <div className="app-card-padded text-center space-y-6 flex flex-col items-center justify-center animate-fade-in">
-                      <div className="w-16 h-16 bg-amber-50 border border-amber-200 text-amber-500 rounded-full flex items-center justify-center shadow-inner">
-                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <div className="product-card p-8 text-center space-y-6 flex flex-col items-center justify-center animate-fade-in">
+                      <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-full flex items-center justify-center shadow-xs">
+                        <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
                       </div>
-                      <div className="max-w-md space-y-2">
-                        <h4 className="app-section-title">Conteúdo Bloqueado</h4>
-                        <p className="text-body-md text-on-surface-variant font-medium">
+                      <div className="max-w-md space-y-1.5">
+                        <h4 className="font-heading font-extrabold text-base text-on-surface">Conteúdo Bloqueado</h4>
+                        <p className="text-xs text-on-surface-variant font-medium">
                           Esta aula foi cadastrada pelo professor, mas ainda não está liberada para acesso dos alunos. Aguarde a liberação.
                         </p>
                       </div>
@@ -3132,10 +3128,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                             handleGoToDashboard();
                           }
                         }}
-                        className="px-6 py-2.5 bg-surface border border-outline-variant/40 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-semibold text-label-md rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+                        className="product-secondary-action text-xs"
                       >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
-                        Voltar para a Trilha
+                        <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
+                        <span>Voltar para a Trilha</span>
                       </button>
                     </div>
                   ) : (
@@ -3145,7 +3141,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                       {activeLessonTab === 'conteudo' && (() => {
                         const parsed = parseLessonConteudo(selectedAula.conteudo || '', selectedAula.tipo);
                         return (
-                          <div className="app-card-padded space-y-6 animate-fade-in">
+                          <div className="product-card p-5 sm:p-6 space-y-6 animate-fade-in">
                             {/* Video player */}
                             {selectedAula.video_url && (
                               <div className="space-y-4">
@@ -3202,7 +3198,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                         return <h5 key={pIdx} className="font-heading font-extrabold text-body-lg text-on-surface pt-4">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
                                       }
                                       if (trimmed.startsWith('##')) {
-                                        return <h4 key={pIdx} className="app-section-title pt-6 pb-2 border-b border-outline-variant/20">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
+                                        return <h4 key={pIdx} className="font-heading font-extrabold text-sm text-on-surface pt-6 pb-2 border-b border-outline-variant/40">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
                                       }
                                       if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
                                         return (
@@ -3230,7 +3226,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                         if (embedInfo) {
                           // ─── PDF / Google Drive: mostra viewer inline ───
                           return (
-                            <div className="app-card-padded space-y-4 animate-fade-in">
+                            <div className="product-card p-5 space-y-4 animate-fade-in">
                               {/* Header do viewer */}
                               <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
                                 <div className="flex items-center gap-2">
@@ -3291,7 +3287,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                         // ─── Outros formatos: botão de download ───
                         return (
-                          <div className="app-card-padded space-y-6 animate-fade-in">
+                          <div className="product-card p-5 sm:p-6 space-y-6 animate-fade-in">
                             <div className="bg-surface-container-low border border-outline-variant/50 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto shadow-inner">
                               <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mx-auto shadow-sm">
                                 <HugeiconsIcon icon={BookOpen01Icon} size={32} />
@@ -3318,7 +3314,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                       {/* Tab 3: Quiz */}
                       {activeLessonTab === 'quiz' && selectedAula.questoes && selectedAula.questoes.length > 0 && (
-                        <div className="app-card-padded space-y-6 animate-fade-in">
+                        <div className="product-card p-5 sm:p-6 space-y-6 animate-fade-in">
                           <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-2 border-b border-outline-variant/20 flex items-center gap-2">
                             <HugeiconsIcon icon={Quiz01Icon} size={18} className="text-secondary" />
                             Questões do Quiz
@@ -3527,7 +3523,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                   <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
                                     <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
                                   </div>
-                                  <h4 className="app-section-title text-emerald-700">Questionário Respondido!</h4>
+                                  <h4 className="font-heading font-extrabold text-sm text-emerald-700">Questionário Respondido!</h4>
                                   <p className="text-on-surface-variant text-label-md">
                                     Suas respostas foram salvas com sucesso.
                                   </p>
@@ -3538,7 +3534,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                   <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
                                     <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
                                   </div>
-                                  <h4 className="app-section-title text-emerald-700">Parabéns! Você passou!</h4>
+                                  <h4 className="font-heading font-extrabold text-sm text-emerald-700">Parabéns! Você passou!</h4>
                                   <p className="text-on-surface-variant text-label-md">
                                     Seu aproveitamento: <span className="font-bold text-emerald-600 font-mono text-body-lg">{quizScore}%</span> (Nota mínima: {selectedAula.nota_aprovacao}%)
                                   </p>
@@ -3549,7 +3545,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                   <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-sm">
                                     <HugeiconsIcon icon={Tick01Icon} size={32} strokeWidth={3} />
                                   </div>
-                                  <h4 className="app-section-title text-on-surface font-bold">Quiz Respondido!</h4>
+                                  <h4 className="font-heading font-extrabold text-sm text-on-surface">Quiz Respondido!</h4>
                                   <p className="text-on-surface-variant text-label-md">
                                     Seu aproveitamento: <span className="font-bold text-on-surface font-mono text-body-lg">{quizScore}%</span> (Nota de referência: {selectedAula.nota_aprovacao}%)
                                   </p>
@@ -3594,7 +3590,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           const tabLabel = isSingle ? 'Atividade Prática' : getAtividadeTabLabel(atividade, selectedAula.atividades || []);
 
                           return (
-                            <div key={atividade.id} className="app-card-padded space-y-5 animate-fade-in">
+                            <div key={atividade.id} className="product-card p-5 sm:p-6 space-y-5 animate-fade-in">
                               <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-3 border-b border-outline-variant/20 flex items-center gap-2">
                                 <HugeiconsIcon icon={atividade.tipo_entrega === 'quiz' ? Quiz01Icon : CheckmarkCircle02Icon} size={18} className="text-secondary" />
                                 {tabLabel}
@@ -3619,7 +3615,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                       href={atividade.material_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="app-primary-action !py-2 !px-3.5 !text-[11px] shrink-0 flex items-center gap-1.5"
+                                      className="product-primary-action !py-2 !px-3.5 !text-[11px] shrink-0 flex items-center gap-1.5"
                                     >
                                       <HugeiconsIcon icon={Download01Icon} size={14} />
                                       Acessar / Baixar
@@ -4350,7 +4346,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                   )}
 
                   {/* Manual completion checkbox */}
-                  <div className="app-card-padded flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="product-card p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                     {!aulasLiberadas.includes(selectedAula.id) ? (
                       <div className="text-label-sm text-amber-600 font-bold flex items-center gap-1.5">
                         <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

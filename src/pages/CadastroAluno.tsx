@@ -192,23 +192,23 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
         </p>
       </div>
 
-      {/* Role Switcher Tab */}
+      {/* Role Selector Tabs */}
       {onNavigateToTeacherSignup && (
-        <div className="grid grid-cols-2 gap-1 p-1 bg-surface-container-low dark:bg-slate-800 rounded-xl border border-outline-variant/30 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-surface-container-low rounded-product-control border border-outline-variant/60 text-xs font-bold">
           <button
             type="button"
-            className="py-2 rounded-lg bg-primary text-on-primary shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-default"
+            className="py-1.5 rounded-product-control bg-brand-navy text-white shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-default"
           >
-            <HugeiconsIcon icon={UserIcon} size={14} />
-            Sou Aluno
+            <HugeiconsIcon icon={UserIcon} size={14} strokeWidth={2} />
+            <span>Sou Aluno</span>
           </button>
           <button
             type="button"
             onClick={onNavigateToTeacherSignup}
-            className="py-2 rounded-lg text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            className="py-1.5 rounded-product-control text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
-            Sou Professor
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} strokeWidth={2} />
+            <span>Sou Professor</span>
           </button>
         </div>
       )}
@@ -217,9 +217,9 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Full Name */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={UserIcon} size={14} className="text-outline" />
-            Nome Completo
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={UserIcon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>Nome Completo</span>
           </label>
           <input
             type="text"
@@ -227,25 +227,21 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             disabled={loading}
-            className={`w-full p-4 text-body-md rounded border bg-surface-container-low transition-all focus:outline-none focus:ring-2 ${
-              !isNameValid
-                ? 'border-error focus:ring-error/20'
-                : 'border-outline-variant/60 focus:border-primary focus:ring-primary/20'
-            }`}
+            className={`product-control text-xs ${!isNameValid ? '!border-error' : ''}`}
           />
           {!isNameValid && (
-            <p className="text-label-sm text-error flex items-center gap-1 mt-1 font-medium">
-              <HugeiconsIcon icon={Alert01Icon} size={12} />
-              Digite seu nome e sobrenome completo.
+            <p className="text-[11px] text-error flex items-center gap-1 mt-1 font-medium">
+              <HugeiconsIcon icon={Alert01Icon} size={12} strokeWidth={2} />
+              <span>Digite seu nome e sobrenome completo.</span>
             </p>
           )}
         </div>
 
         {/* Email */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={Mail01Icon} size={14} className="text-outline" />
-            E-mail
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={Mail01Icon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>E-mail</span>
           </label>
           <input
             type="email"
@@ -253,25 +249,21 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className={`w-full p-4 text-body-md rounded border bg-surface-container-low transition-all focus:outline-none focus:ring-2 ${
-              !isEmailValid
-                ? 'border-error focus:ring-error/20'
-                : 'border-outline-variant/60 focus:border-primary focus:ring-primary/20'
-            }`}
+            className={`product-control text-xs ${!isEmailValid ? '!border-error' : ''}`}
           />
           {!isEmailValid && (
-            <p className="text-label-sm text-error flex items-center gap-1 mt-1 font-medium">
-              <HugeiconsIcon icon={Alert01Icon} size={12} />
-              Insira um endereço de e-mail válido.
+            <p className="text-[11px] text-error flex items-center gap-1 mt-1 font-medium">
+              <HugeiconsIcon icon={Alert01Icon} size={12} strokeWidth={2} />
+              <span>Insira um endereço de e-mail válido.</span>
             </p>
           )}
         </div>
 
         {/* Password */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={AccessIcon} size={14} className="text-outline" />
-            Senha
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={AccessIcon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>Senha</span>
           </label>
           <div className="relative">
             <input
@@ -280,33 +272,29 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className={`w-full p-4 pr-12 text-body-md rounded border bg-surface-container-low transition-all focus:outline-none focus:ring-2 ${
-                !isPasswordValid
-                  ? 'border-error focus:ring-error/20'
-                  : 'border-outline-variant/60 focus:border-primary focus:ring-primary/20'
-              }`}
+              className={`product-control text-xs pr-10 ${!isPasswordValid ? '!border-error' : ''}`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1"
             >
-              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} />
+              <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={16} strokeWidth={2} />
             </button>
           </div>
           {!isPasswordValid && (
-            <p className="text-label-sm text-error flex items-center gap-1 mt-1 font-medium">
-              <HugeiconsIcon icon={Alert01Icon} size={12} />
-              A senha deve conter pelo menos 6 caracteres.
+            <p className="text-[11px] text-error flex items-center gap-1 mt-1 font-medium">
+              <HugeiconsIcon icon={Alert01Icon} size={12} strokeWidth={2} />
+              <span>A senha deve conter pelo menos 6 caracteres.</span>
             </p>
           )}
         </div>
 
         {/* Class Access Code */}
         <div className="space-y-1">
-          <label className="text-label-sm font-semibold text-on-surface flex items-center gap-1">
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} className="text-outline" />
-            Código de Acesso da Turma
+          <label className="text-xs font-bold text-on-surface flex items-center gap-1">
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} className="text-on-surface-variant" strokeWidth={2} />
+            <span>Código de Acesso da Turma</span>
           </label>
           <input
             type="text"
@@ -314,31 +302,27 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
             value={accessCode}
             onChange={(e) => setAccessCode(e.target.value)}
             disabled={loading}
-            className={`w-full p-4 text-body-md rounded border bg-surface-container-low transition-all focus:outline-none focus:ring-2 ${
-              !isAccessCodeValid
-                ? 'border-error focus:ring-error/20'
-                : 'border-outline-variant/60 focus:border-primary focus:ring-primary/20'
-            }`}
+            className={`product-control text-xs uppercase tracking-wider font-mono font-bold ${!isAccessCodeValid ? '!border-error' : ''}`}
           />
           {!isAccessCodeValid && (
-            <p className="text-label-sm text-error flex items-center gap-1 mt-1 font-medium">
-              <HugeiconsIcon icon={Alert01Icon} size={12} />
-              Informe o código de acesso fornecido pelo professor.
+            <p className="text-[11px] text-error flex items-center gap-1 mt-1 font-medium">
+              <HugeiconsIcon icon={Alert01Icon} size={12} strokeWidth={2} />
+              <span>Informe o código de acesso fornecido pelo professor.</span>
             </p>
           )}
         </div>
 
         {/* Status Alerts */}
         {errorMessage && (
-          <div className="p-4 bg-error-container/30 border border-error/20 rounded text-error text-label-md flex items-start gap-2">
-            <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+          <div className="p-3.5 bg-error/10 border border-error/20 rounded-product-control text-error text-xs font-semibold flex items-start gap-2">
+            <HugeiconsIcon icon={Alert01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 bg-secondary-container/30 border border-secondary/20 rounded text-secondary text-label-md flex items-start gap-2">
-            <HugeiconsIcon icon={Tick01Icon} size={16} className="mt-0.5 shrink-0" />
+          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-product-control text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2">
+            <HugeiconsIcon icon={Tick01Icon} size={15} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -347,20 +331,16 @@ export const CadastroAluno: React.FC<CadastroAlunoProps> = ({
         <button
           type="submit"
           disabled={loading || !isFormValid}
-          className={`w-full py-4 rounded font-heading font-bold text-body-lg flex items-center justify-center gap-2 transition-all duration-300 ${
-            isFormValid && !loading
-              ? 'bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5'
-              : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
-          }`}
+          className="w-full product-primary-action text-xs justify-center"
         >
-          {loading ? 'Cadastrando...' : 'Registrar-se'}
-          <HugeiconsIcon icon={ArrowRight01Icon} size={18} />
+          <span>{loading ? 'Cadastrando...' : 'Registrar-se'}</span>
+          <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={2} />
         </button>
       </form>
 
       {/* Switch Screen Link */}
-      <div className="text-center pt-2 space-y-2 border-t border-outline-variant/20 mt-3">
-        <p className="text-label-md text-on-surface-variant">
+      <div className="text-center pt-3 space-y-2 border-t border-outline-variant/60 mt-3">
+        <p className="text-xs text-on-surface-variant">
           Já possui uma conta?{' '}
           <button
             onClick={onNavigateToLogin}

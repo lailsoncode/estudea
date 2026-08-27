@@ -236,47 +236,43 @@ export const DashboardProfessor: React.FC = () => {
   };
 
   return (
-    <div className="app-page">
+    <div className="product-page max-w-7xl mx-auto space-y-6 relative overflow-hidden animate-fade-in pb-10">
       {/* Top Header Panel */}
-      <header className="app-page-header">
+      <header className="product-card p-4 sm:p-5">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="max-w-2xl">
-            <p className="app-eyebrow">
-              Controle de Acesso
-            </p>
-            <h2 className="app-title">
-              Liberação de Aulas
-            </h2>
-            <p className="app-subtitle">
+            <span className="product-section-kicker">Controle de Acesso</span>
+            <h1 className="product-section-heading mt-0 text-xl sm:text-2xl">Liberação de Aulas</h1>
+            <p className="product-subtitle">
               Controle quais lições os alunos desta turma podem visualizar e realizar na trilha de aprendizado.
             </p>
           </div>
 
           <div className="relative w-full lg:w-[360px] shrink-0">
-            <p className="text-label-sm font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+            <p className="text-[10px] font-extrabold text-on-surface-variant uppercase tracking-wider mb-1.5">
               Turma em análise
             </p>
             <button
               type="button"
               onClick={() => setShowTurmaDropdown((current) => !current)}
               disabled={turmas.length <= 1}
-              className="w-full flex items-center gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-lowest px-4 py-3 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low disabled:cursor-default disabled:hover:border-outline-variant/60 disabled:hover:bg-surface-container-lowest"
+              className="w-full flex items-center gap-3 rounded-product-control border border-outline-variant/60 bg-surface-container-low px-4 py-2.5 text-left shadow-xs transition-all hover:border-primary/40 hover:bg-surface-container disabled:cursor-default disabled:hover:border-outline-variant/60 disabled:hover:bg-surface-container-low"
               title={turmas.length <= 1 ? 'Apenas uma turma disponível' : 'Trocar turma'}
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
-                <HugeiconsIcon icon={UserGroupIcon} size={20} strokeWidth={2} />
+              <div className="w-9 h-9 rounded-product-control bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+                <HugeiconsIcon icon={UserGroupIcon} size={18} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-heading font-extrabold text-body-md text-on-surface truncate">
+                <p className="font-heading font-extrabold text-xs text-on-surface truncate">
                   {selectedTurma ? selectedTurma.nome : 'Nenhuma turma encontrada'}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2">
                   {selectedTurma?.codigo_acesso && (
-                    <span className="font-mono text-[11px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant/40">
+                    <span className="font-mono text-[10px] font-bold text-on-surface-variant bg-surface-container px-1.5 py-0.2 rounded border border-outline-variant/40">
                       {selectedTurma.codigo_acesso}
                     </span>
                   )}
-                  <span className="text-label-sm text-on-surface-variant">
+                  <span className="text-[11px] text-on-surface-variant font-medium">
                     {selectedTurma
                       ? turmas.length > 1 ? `${turmas.length} turmas disponíveis` : 'Turma atual'
                       : 'Nenhuma turma cadastrada'}
@@ -286,7 +282,7 @@ export const DashboardProfessor: React.FC = () => {
               {turmas.length > 1 && (
                 <HugeiconsIcon
                   icon={ArrowDown01Icon}
-                  size={18}
+                  size={16}
                   strokeWidth={2.4}
                   className={`text-on-surface-variant transition-transform ${showTurmaDropdown ? 'rotate-180' : ''}`}
                 />
@@ -294,12 +290,12 @@ export const DashboardProfessor: React.FC = () => {
             </button>
 
             {showTurmaDropdown && turmas.length > 1 && (
-              <div className="absolute right-0 mt-2 w-full bg-surface-container-lowest border border-outline-variant/60 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-4 py-3 border-b border-outline-variant/30">
-                  <p className="font-heading font-bold text-label-md text-on-surface">Selecionar turma</p>
-                  <p className="text-label-sm text-on-surface-variant mt-0.5">Troque a turma sem sair da visão de progresso.</p>
+              <div className="absolute right-0 mt-2 w-full bg-surface-container-lowest border border-outline-variant/60 rounded-product-control shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-4 py-2.5 border-b border-outline-variant/40">
+                  <p className="font-heading font-extrabold text-xs text-on-surface">Selecionar turma</p>
+                  <p className="text-[11px] text-on-surface-variant font-medium mt-0.5">Troque a turma sem sair da visão de progresso.</p>
                 </div>
-                <div className="max-h-72 overflow-y-auto p-1.5">
+                <div className="max-h-72 overflow-y-auto p-1.5 space-y-1">
                   {turmas.map((t) => {
                     const active = selectedTurma?.id === t.id;
                     return (
@@ -310,14 +306,14 @@ export const DashboardProfessor: React.FC = () => {
                           localStorage.setItem('selectedTurmaId', t.id);
                           setShowTurmaDropdown(false);
                         }}
-                        className={`w-full text-left rounded-lg px-3 py-3 transition-colors flex items-center justify-between gap-3 ${
+                        className={`w-full text-left rounded-product-control px-3 py-2 transition-colors flex items-center justify-between gap-3 ${
                           active
                             ? 'bg-primary/10 text-primary'
                             : 'text-on-surface hover:bg-surface-container-low'
                         }`}
                       >
-                        <div className="min-w-0 flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-heading font-extrabold text-label-sm shrink-0 ${
+                        <div className="min-w-0 flex items-center gap-2.5">
+                          <div className={`w-7 h-7 rounded-product-control flex items-center justify-center font-heading font-extrabold text-[10px] shrink-0 ${
                             active
                               ? 'bg-primary text-on-primary'
                               : 'bg-surface-container text-on-surface-variant border border-outline-variant/40'
@@ -325,12 +321,12 @@ export const DashboardProfessor: React.FC = () => {
                             {getInitials(t.nome || '')}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-heading font-bold text-label-md truncate">{t.nome}</p>
-                            <p className="font-mono text-[11px] text-on-surface-variant mt-0.5">Código {t.codigo_acesso}</p>
+                            <p className="font-heading font-bold text-xs truncate">{t.nome}</p>
+                            <p className="font-mono text-[10px] text-on-surface-variant">Código {t.codigo_acesso}</p>
                           </div>
                         </div>
                         {active && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-primary/10 text-primary px-2 py-1 border border-primary/20">
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider rounded-full bg-primary/10 text-primary px-2 py-0.5 border border-primary/20">
                             Atual
                           </span>
                         )}
@@ -345,47 +341,47 @@ export const DashboardProfessor: React.FC = () => {
       </header>
 
       {/* Metrics Row */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: Total de Aulas */}
-        <div className="app-card-padded hover:shadow-md transition-all flex items-center gap-5">
-          <div className="p-3.5 rounded bg-primary/10 text-primary border border-primary/20">
-            <HugeiconsIcon icon={BookOpen01Icon} size={20} strokeWidth={2} />
+        <div className="product-metric">
+          <div className="h-10 w-10 rounded-product-control bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+            <HugeiconsIcon icon={BookOpen01Icon} size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="app-metric-label">
+            <h4 className="product-metric-label">
               Total de Aulas
             </h4>
-            <p className="app-metric-value mt-2">
+            <p className="product-metric-value mt-0.5">
               {loading ? '...' : aulas.length}
             </p>
           </div>
         </div>
 
         {/* Card 2: Aulas Liberadas */}
-        <div className="app-card-padded hover:shadow-md transition-all flex items-center gap-5">
-          <div className="p-3.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} strokeWidth={2} />
+        <div className="product-metric">
+          <div className="h-10 w-10 rounded-product-control bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="app-metric-label">
+            <h4 className="product-metric-label">
               Aulas Liberadas
             </h4>
-            <p className="app-metric-value mt-2">
+            <p className="product-metric-value mt-0.5">
               {loading ? '...' : aulasLiberadas.length}
             </p>
           </div>
         </div>
 
         {/* Card 3: Aulas Bloqueadas */}
-        <div className="app-card-padded hover:shadow-md transition-all flex items-center gap-5">
-          <div className="p-3.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
-            <HugeiconsIcon icon={Alert01Icon} size={20} strokeWidth={2} />
+        <div className="product-metric">
+          <div className="h-10 w-10 rounded-product-control bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 shrink-0">
+            <HugeiconsIcon icon={Alert01Icon} size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="app-metric-label">
+            <h4 className="product-metric-label">
               Aulas Bloqueadas
             </h4>
-            <p className="app-metric-value mt-2">
+            <p className="product-metric-value mt-0.5">
               {loading ? '...' : (aulas.length - aulasLiberadas.length)}
             </p>
           </div>
@@ -394,42 +390,42 @@ export const DashboardProfessor: React.FC = () => {
 
       {/* Main Grid View */}
       {loading ? (
-        <div className="app-card-padded text-center">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-on-surface-variant text-body-lg">Carregando dados de liberação de aulas...</p>
+        <div className="product-card p-12 text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-on-surface-variant font-semibold animate-pulse">Carregando dados de liberação de aulas...</p>
         </div>
       ) : (
         aulas.length === 0 ? (
-          <div className="app-card-padded text-center text-on-surface-variant space-y-2">
-            <HugeiconsIcon icon={Alert01Icon} size={40} className="text-outline mx-auto" />
-            <p className="app-section-title mt-4">
+          <div className="product-empty-state space-y-2 p-10">
+            <HugeiconsIcon icon={Alert01Icon} size={36} className="text-amber-500 mx-auto" strokeWidth={2} />
+            <p className="font-heading font-extrabold text-sm text-on-surface mt-2">
               Sem Aulas Cadastradas
             </p>
-            <p className="text-body-md">
+            <p className="text-xs text-on-surface-variant max-w-md mx-auto">
               {selectedTurma?.curso_id 
                 ? 'O curso vinculado a esta turma não possui aulas cadastradas no momento.'
                 : 'Esta turma não possui um curso vinculado ou não há aulas cadastradas no sistema.'}
             </p>
           </div>
         ) : (
-          <div className="app-card-padded space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/20">
+          <div className="product-card p-5 sm:p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60">
               <div>
-                <h3 className="app-section-title">Liberar Aulas da Turma</h3>
-                <p className="text-body-md text-on-surface-variant mt-1">
+                <h3 className="font-heading font-extrabold text-sm text-on-surface">Liberar Aulas da Turma</h3>
+                <p className="text-xs text-on-surface-variant font-medium mt-0.5">
                   Os alunos cadastrados na turma <strong>{selectedTurma?.nome}</strong> só conseguirão acessar as aulas que você liberar abaixo.
                 </p>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 shrink-0">
                 <button
                   onClick={handleReleaseAllLessons}
-                  className="px-4 py-2.5 bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 text-label-sm font-heading font-bold rounded-xl transition-all cursor-pointer animate-fade-in"
+                  className="product-primary-action text-xs !bg-emerald-600 hover:!bg-emerald-700"
                 >
                   Liberar Todas
                 </button>
                 <button
                   onClick={handleLockAllLessons}
-                  className="px-4 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-label-sm font-heading font-bold rounded-xl transition-all cursor-pointer animate-fade-in"
+                  className="product-secondary-action text-xs text-error hover:bg-error/10"
                 >
                   Bloquear Todas
                 </button>
@@ -437,31 +433,31 @@ export const DashboardProfessor: React.FC = () => {
             </div>
 
             {/* List of lessons sorted */}
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
               {aulas.map((aula) => {
                 const isLiberada = aulasLiberadas.includes(aula.id);
                 return (
                   <div
                     key={aula.id}
-                    className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 hover:border-slate-300 transition-all flex-wrap sm:flex-nowrap gap-4"
+                    className="flex items-center justify-between p-3.5 bg-surface-container-low rounded-product-control border border-outline-variant/60 hover:border-primary/40 transition-all flex-wrap sm:flex-nowrap gap-3"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center font-mono font-bold text-slate-500 border border-outline-variant/30 shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-product-control bg-surface-container flex items-center justify-center font-mono font-extrabold text-xs text-on-surface-variant border border-outline-variant/40 shrink-0">
                         {aula.numero_aula.toString().padStart(2, '0')}
                       </div>
                       <div className="truncate">
-                        <h4 className="font-heading font-bold text-body-md text-on-surface truncate">{aula.titulo}</h4>
-                        <p className="text-label-sm text-on-surface-variant mt-0.5 font-mono capitalize">
+                        <h4 className="font-heading font-extrabold text-xs text-on-surface truncate">{aula.titulo}</h4>
+                        <p className="text-[10px] text-on-surface-variant font-mono capitalize">
                           {aula.tipo} {aula.duracao ? `• ${aula.duracao}` : ''}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0 ml-auto sm:ml-0">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${
+                    <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
+                      <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                         isLiberada 
-                          ? 'bg-green-50 border-green-200 text-green-700' 
-                          : 'bg-amber-50 border-amber-200 text-amber-700'
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                          : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
                       }`}>
                         {isLiberada ? 'Liberada' : 'Bloqueada'}
                       </span>
@@ -473,7 +469,7 @@ export const DashboardProfessor: React.FC = () => {
                           onChange={() => handleToggleClassLessonRelease(aula.id)}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        <div className="w-9 h-5 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
                       </label>
                     </div>
                   </div>

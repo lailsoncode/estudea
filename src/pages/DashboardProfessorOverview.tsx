@@ -913,13 +913,13 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                   )}
 
                   <div className="space-y-1.5">
-                    <label className="app-field-label">Turma</label>
+                    <label className="text-xs font-bold text-on-surface">Turma</label>
                     <select
                       value={selectedClassForMsg}
                       onChange={(e) => setSelectedClassForMsg(e.target.value)}
                       disabled={sendingMsg}
                       required
-                      className="app-input"
+                      className="product-control text-xs"
                     >
                       {classes.map(c => (
                         <option key={c.id} value={c.id}>{c.nome}</option>
@@ -928,7 +928,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="app-field-label">Assunto</label>
+                    <label className="text-xs font-bold text-on-surface">Assunto</label>
                     <input
                       type="text"
                       value={msgTitle}
@@ -936,12 +936,12 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                       placeholder="Ex.: Novo material liberado"
                       disabled={sendingMsg}
                       required
-                      className="app-input"
+                      className="product-control text-xs"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="app-field-label">Mensagem</label>
+                    <label className="text-xs font-bold text-on-surface">Mensagem</label>
                     <textarea
                       value={msgBody}
                       onChange={(e) => setMsgBody(e.target.value)}
@@ -949,7 +949,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                       rows={4}
                       disabled={sendingMsg}
                       required
-                      className="app-input resize-none"
+                      className="product-control text-xs resize-none"
                     />
                   </div>
                 </div>
@@ -1016,7 +1016,7 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="app-field-label">Data</label>
+                    <label className="text-xs font-bold text-on-surface">Data</label>
                     <input
                       type="date"
                       value={schedDate}
@@ -1024,25 +1024,25 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                       onChange={(e) => setSchedDate(e.target.value)}
                       required
                       disabled={scheduleSaving}
-                      className="app-input"
+                      className="product-control text-xs"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="app-field-label">Horário</label>
+                    <label className="text-xs font-bold text-on-surface">Horário</label>
                     <input
                       type="time"
                       value={schedTime}
                       onChange={(e) => setSchedTime(e.target.value)}
                       required
                       disabled={scheduleSaving}
-                      className="app-input"
+                      className="product-control text-xs"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="app-field-label">Título do evento</label>
+                  <label className="text-xs font-bold text-on-surface">Título do evento</label>
                   <input
                     type="text"
                     value={schedTitle}
@@ -1050,17 +1050,17 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                     placeholder="Ex.: Prova de digitação"
                     required
                     disabled={scheduleSaving}
-                    className="app-input"
+                    className="product-control text-xs"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="app-field-label">Destino</label>
+                  <label className="text-xs font-bold text-on-surface">Destino</label>
                   <select
                     value={schedTargetTurmaId}
                     onChange={(e) => setSchedTargetTurmaId(e.target.value)}
                     disabled={scheduleSaving}
-                    className="app-input"
+                    className="product-control text-xs"
                   >
                     <option value="all">Todas as turmas</option>
                     {classes.map((turma) => (
@@ -1070,24 +1070,24 @@ export const DashboardProfessorOverview: React.FC<DashboardProfessorOverviewProp
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="app-field-label">Duração ou detalhes</label>
+                  <label className="text-xs font-bold text-on-surface">Duração ou detalhes</label>
                   <input
                     type="text"
                     value={schedDuration}
                     onChange={(e) => setSchedDuration(e.target.value)}
                     placeholder="Ex.: 45 min ou entrega prática"
                     disabled={scheduleSaving}
-                    className="app-input"
+                    className="product-control text-xs"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="app-field-label">Tipo do evento</label>
+                  <label className="text-xs font-bold text-on-surface">Tipo do evento</label>
                   <select
                     value={schedType}
                     onChange={(e) => setSchedType(e.target.value as ScheduleItem['type'])}
                     disabled={scheduleSaving}
-                    className="app-input"
+                    className="product-control text-xs"
                   >
                     <option value="live">Live / Aula síncrona</option>
                     <option value="deadline">Prazo / Atividade</option>
