@@ -2,17 +2,20 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   CreateLessonInputSchema,
+  LessonPatchSchema,
   QuestionSchema,
   ReleaseLessonInputSchema,
   UpdateLessonInputSchema,
+  UpdateModuleInputSchema,
   WithdrawLessonInputSchema,
 } from './schemas.js';
-import { questionForMcp } from './estudea.js';
+import { assertLessonPublishable, questionForMcp } from './estudea.js';
 import { normalizeQuestionForPersistence, validateLessonPayload } from './lesson-validation.js';
 
 const moduleId = '123e4567-e89b-42d3-a456-426614174000';
 const lessonId = '123e4567-e89b-42d3-a456-426614174001';
 const classId = '123e4567-e89b-42d3-a456-426614174002';
+const revisionWithOffset = '2026-08-27T20:57:47.350730+00:00';
 
 test('aceita uma aula textual completa', () => {
   const result = CreateLessonInputSchema.safeParse({
@@ -77,6 +80,39 @@ test('rejeita múltipla seleção quando todas as opções estão corretas', () 
   });
 
   assert.equal(result.success, false);
+});
+
+test('rejeita gabarito duplicado, excessivo ou divergente do formato legado', () => {
+  const options = [
+    { id: 'a', texto: 'A' },
+    { id: 'b', texto: 'B' },
+    { id: 'c', texto: 'C' },
+    { id: 'd', texto: 'D' },
+    { id: 'e', texto: 'E' },
+  ];
+  const duplicate = QuestionSchema.safeParse({
+    enunciado: 'Selecione duas respostas.',
+    tipo: 'multipla_selecao',
+    opcoes: options,
+    respostas_corretas: ['a', 'a'],
+  });
+  const excessive = QuestionSchema.safeParse({
+    enunciado: 'Selecione as respostas corretas.',
+    tipo: 'multipla_selecao',
+    opcoes: options,
+    respostas_corretas: ['a', 'b', 'c', 'd'],
+  });
+  const divergent = QuestionSchema.safeParse({
+    enunciado: 'Qual é a resposta correta?',
+    tipo: 'multipla_escolha',
+    opcoes: options,
+    respostas_corretas: ['a'],
+    resposta_correta: 'B',
+  });
+
+  assert.equal(duplicate.success, false);
+  assert.equal(excessive.success, false);
+  assert.equal(divergent.success, false);
 });
 
 test('preserva campos semânticos de questão aberta no formato legado', () => {
@@ -162,6 +198,83 @@ test('validador relata duplicidade e sequência longa de verdadeiro/falso sem gr
   assert.equal(result.alertas.some((warning) => warning.includes('consecutivas')), true);
 });
 
+test('valida atividades, URLs e materiais duplicados', () => {
+  const result = validateLessonPayload({
+    titulo: 'Aula de atividades',
+    tipo: 'video',
+    video_url: 'https://example.com/video',
+    atividades: [
+      { enunciado: 'Responda ao quiz.', tipo_entrega: 'quiz', questoes: [] },
+      { enunciado: 'Envie o resultado.', tipo_entrega: 'arquivo', material_url: 'ftp://example.com/modelo' },
+    ],
+    materiais: [
+      { titulo: 'Guia um', url: 'https://example.com/guia' },
+      { titulo: 'Guia dois', url: 'https://example.com/guia' },
+    ],
+  });
+
+  assert.equal(result.valida, false);
+  assert.equal(result.erros.some((error) => error.includes('pelo menos uma questão')), true);
+  assert.equal(result.erros.some((error) => error.includes('material_url')), true);
+  assert.equal(result.alertas.some((warning) => warning.includes('repete o material 1')), true);
+  assert.equal(result.alertas.some((warning) => warning.includes('qual arquivo')), true);
+});
+
+test('calcula distribuição por contexto sem produzir Questão NaN', () => {
+  const singleChoice = (prefix: string, answer: 'a' | 'b', index: number) => ({
+    enunciado: `${prefix} ${index + 1}?`,
+    tipo: 'multipla_escolha',
+    opcoes: [{ id: 'a', texto: 'A' }, { id: 'b', texto: 'B' }],
+    respostas_corretas: [answer],
+  });
+  const result = validateLessonPayload({
+    titulo: 'Aula com distribuições',
+    tipo: 'video',
+    video_url: 'https://example.com/video',
+    questoes: Array.from({ length: 5 }, (_, index) => singleChoice('Quiz', 'a', index)),
+    arena: {
+      habilitada: true,
+      questoes: Array.from({ length: 5 }, (_, index) => singleChoice('Arena', 'b', index)),
+    },
+  });
+
+  assert.equal(result.alertas.some((warning) => warning.startsWith('Quiz da aula:') && warning.includes('posição A')), true);
+  assert.equal(result.alertas.some((warning) => warning.startsWith('Arena:') && warning.includes('posição B')), true);
+  assert.equal(result.alertas.some((warning) => warning.includes('NaN')), false);
+});
+
+test('patch parcial não materializa defaults nem apaga campos omitidos', () => {
+  const arenaPatch = LessonPatchSchema.parse({ arena: { habilitada: true } });
+  const materialPatch = LessonPatchSchema.parse({ materiais: [] });
+
+  assert.deepEqual(arenaPatch, { arena: { habilitada: true } });
+  assert.deepEqual(materialPatch, { materiais: [] });
+});
+
+test('aceita revision_id com Z ou offset do Supabase', () => {
+  const lessonUpdate = UpdateLessonInputSchema.safeParse({
+    aula_id: lessonId,
+    revision_id: revisionWithOffset,
+    alteracoes: { titulo: 'Título revisado' },
+  });
+  const moduleUpdate = UpdateModuleInputSchema.safeParse({
+    modulo_id: moduleId,
+    revision_id: '2026-08-27T17:57:47.350730-03:00',
+    alteracoes: { titulo: 'Módulo revisado' },
+  });
+
+  assert.equal(lessonUpdate.success, true);
+  assert.equal(moduleUpdate.success, true);
+});
+
+test('bloqueia publicação quando o rascunho está inválido', () => {
+  assert.throws(() => assertLessonPublishable({
+    titulo: 'Aula inválida',
+    tipo: 'texto',
+    conteudo: 'Curto',
+  }), /não passou na validação/);
+});
+
 test('exige confirmação literal para liberar uma aula', () => {
   const unconfirmed = ReleaseLessonInputSchema.safeParse({
     aula_id: lessonId,
@@ -171,11 +284,18 @@ test('exige confirmação literal para liberar uma aula', () => {
   const confirmed = ReleaseLessonInputSchema.safeParse({
     aula_id: lessonId,
     turma_id: classId,
+    revision_id: revisionWithOffset,
+    confirmado: true,
+  });
+  const missingRevision = ReleaseLessonInputSchema.safeParse({
+    aula_id: lessonId,
+    turma_id: classId,
     confirmado: true,
   });
 
   assert.equal(unconfirmed.success, false);
   assert.equal(confirmed.success, true);
+  assert.equal(missingRevision.success, false);
 });
 
 test('exige revision_id para atualizar e confirmação para retirar', () => {

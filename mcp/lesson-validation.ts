@@ -31,6 +31,7 @@ const asText = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 const comparable = (value: unknown) => asText(value).toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
 const questionTypes = new Set(['multipla_escolha', 'verdadeiro_falso', 'aberta', 'multipla_selecao']);
 const arenaQuestionTypes = new Set(['multipla_escolha', 'verdadeiro_falso']);
+const activityDeliveryTypes = new Set(['texto', 'imagem', 'quiz', 'multipla', 'arquivo']);
 
 const normalizedKeywords = (value: unknown) => {
   if (Array.isArray(value)) return value.map(asText).filter(Boolean);
@@ -44,9 +45,9 @@ const labelPath = (path: Array<string | number>) => {
   if (path[0] === 'atividades' && path[2] === 'questoes') {
     return `Atividade ${Number(path[1]) + 1} — questão ${Number(path[3]) + 1}`;
   }
-  if (path[0] === 'questoes') return `Questão ${Number(path[1]) + 1}`;
-  if (path[0] === 'materiais') return `Material ${Number(path[1]) + 1}`;
-  if (path[0] === 'atividades') return `Atividade ${Number(path[1]) + 1}`;
+  if (path[0] === 'questoes') return typeof path[1] === 'number' ? `Questão ${path[1] + 1}` : 'Quiz da aula';
+  if (path[0] === 'materiais') return typeof path[1] === 'number' ? `Material ${path[1] + 1}` : 'Materiais';
+  if (path[0] === 'atividades') return typeof path[1] === 'number' ? `Atividade ${path[1] + 1}` : 'Atividades';
   return 'Aula';
 };
 
@@ -59,13 +60,10 @@ const normalizedOptions = (question: UnknownRecord) => asArray(question.opcoes).
   return { id: String.fromCharCode(97 + index), texto: asText(option) };
 });
 
-const normalizedAnswerIds = (
+const legacyAnswerIds = (
   question: UnknownRecord,
   options: Array<{ id: string; texto: string }>,
 ) => {
-  const explicit = asArray(question.respostas_corretas).map(asText).filter(Boolean);
-  if (explicit.length > 0) return explicit;
-
   const legacy = asText(question.resposta_correta);
   if (!legacy) return [];
   const tokens = (asText(question.tipo) === 'multipla_selecao' ? legacy.split(';') : [legacy])
@@ -79,6 +77,14 @@ const normalizedAnswerIds = (
     ));
     return match?.id || token;
   });
+};
+
+const normalizedAnswerIds = (
+  question: UnknownRecord,
+  options: Array<{ id: string; texto: string }>,
+) => {
+  const explicit = asArray(question.respostas_corretas).map(asText).filter(Boolean);
+  return explicit.length > 0 ? explicit : legacyAnswerIds(question, options);
 };
 
 const validateQuestion = (
@@ -97,6 +103,8 @@ const validateQuestion = (
   const type = asText(value.tipo) || 'multipla_escolha';
   const options = normalizedOptions(value);
   const answerIds = normalizedAnswerIds(value, options);
+  const explicitAnswerIds = asArray(value.respostas_corretas).map(asText).filter(Boolean);
+  const legacyIds = legacyAnswerIds(value, options);
 
   if (prompt.length < 3) errors.push({ path, message: 'o enunciado está vazio ou curto demais.' });
   if (!questionTypes.has(type)) errors.push({ path, message: `tipo “${type || 'vazio'}” não reconhecido.` });
@@ -122,6 +130,22 @@ const validateQuestion = (
   if (new Set(optionTexts).size !== optionTexts.length) errors.push({ path, message: 'existem alternativas repetidas.' });
 
   const validIds = new Set(optionIds);
+  const comparableAnswers = answerIds.map(comparable);
+  if (new Set(comparableAnswers).size !== comparableAnswers.length) {
+    errors.push({ path, message: 'existem IDs repetidos em respostas_corretas.' });
+  }
+  if (explicitAnswerIds.length > 0 && legacyIds.length > 0) {
+    const explicitSet = new Set(explicitAnswerIds.map(comparable));
+    const legacySet = new Set(legacyIds.map(comparable));
+    const divergent = explicitSet.size !== legacySet.size
+      || [...explicitSet].some((answer) => !legacySet.has(answer));
+    if (divergent) {
+      errors.push({
+        path,
+        message: 'respostas_corretas diverge de resposta_correta; mantenha os IDs como fonte única do gabarito.',
+      });
+    }
+  }
   const invalidAnswers = answerIds.filter((answer) => !validIds.has(comparable(answer)));
   if (invalidAnswers.length > 0) {
     errors.push({ path, message: `resposta(s) apontam para ID inexistente: ${invalidAnswers.join(', ')}.` });
@@ -135,7 +159,9 @@ const validateQuestion = (
     errors.push({ path, message: 'múltipla escolha na Arena aceita no máximo quatro alternativas.' });
   }
   if (type === 'multipla_selecao') {
-    if (answerIds.length < 2) errors.push({ path, message: 'múltipla seleção exige pelo menos duas respostas corretas.' });
+    if (new Set(comparableAnswers).size < 2 || new Set(comparableAnswers).size > 3) {
+      errors.push({ path, message: 'múltipla seleção exige exatamente duas ou três respostas corretas distintas.' });
+    }
     if (options.length > 0 && new Set(answerIds.map(comparable)).size >= options.length) {
       errors.push({ path, message: 'múltipla seleção não pode marcar todas as alternativas como corretas.' });
     }
@@ -218,9 +244,23 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
       return;
     }
     if (asText(activity.enunciado).length < 3) errors.push({ path: activityPath, message: 'o enunciado está vazio ou curto demais.' });
+    const deliveryType = asText(activity.tipo_entrega);
+    if (!activityDeliveryTypes.has(deliveryType)) {
+      errors.push({ path: activityPath, message: `tipo_entrega “${deliveryType || 'vazio'}” não reconhecido.` });
+    }
+    const materialUrl = asText(activity.material_url);
+    if (materialUrl && !validHttpUrl(materialUrl)) {
+      errors.push({ path: activityPath, message: 'material_url precisa usar HTTP ou HTTPS e ser válido.' });
+    }
     const activityQuestions = asArray(activity.questoes);
-    if (activityQuestions.length > 0 && asText(activity.tipo_entrega) !== 'quiz') {
+    if (deliveryType === 'quiz' && activityQuestions.length === 0) {
+      errors.push({ path: activityPath, message: 'atividade do tipo quiz exige pelo menos uma questão.' });
+    }
+    if (activityQuestions.length > 0 && deliveryType !== 'quiz') {
       errors.push({ path: activityPath, message: 'atividades com questões precisam usar tipo_entrega “quiz”.' });
+    }
+    if (deliveryType === 'arquivo' && !/(arquivo|documento|planilha|apresenta[cç][aã]o|pdf|zip|anexo)/iu.test(asText(activity.enunciado))) {
+      warnings.push({ path: activityPath, message: 'a entrega é do tipo arquivo, mas o enunciado não deixa claro qual arquivo deve ser enviado.' });
     }
     activityQuestions.forEach((question, questionIndex) => {
       activityQuestionCount += 1;
@@ -248,6 +288,7 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
   }
 
   const materials = asArray(value.materiais);
+  const materialUrls = new Map<string, number>();
   materials.forEach((material, index) => {
     const path: Array<string | number> = ['materiais', index];
     if (!isRecord(material)) {
@@ -256,6 +297,13 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
     }
     if (asText(material.titulo).length < 2) errors.push({ path, message: 'informe um título para o material.' });
     if (!validHttpUrl(material.url)) errors.push({ path, message: 'a URL precisa usar HTTP ou HTTPS e ser válida.' });
+    const normalizedUrl = comparable(material.url);
+    const previousIndex = materialUrls.get(normalizedUrl);
+    if (normalizedUrl && previousIndex !== undefined) {
+      warnings.push({ path, message: `a URL repete o material ${previousIndex + 1}; confirme se os dois itens são necessários.` });
+    } else if (normalizedUrl) {
+      materialUrls.set(normalizedUrl, index);
+    }
   });
 
   if (lessonType === 'quiz' && standardQuestions.length === 0) {
@@ -274,8 +322,12 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
     }
   });
 
-  const singleChoice = checkedQuestions.filter((question) => question.type === 'multipla_escolha');
-  if (singleChoice.length >= 5) {
+  const warnAnswerDistribution = (
+    questions: typeof checkedQuestions,
+    path: Array<string | number>,
+  ) => {
+    const singleChoice = questions.filter((question) => question.type === 'multipla_escolha');
+    if (singleChoice.length < 5) return;
     const positions = singleChoice.map((question) => {
       const answer = comparable(question.answerIds[0]);
       return question.options.findIndex((option) => comparable(option.id) === answer);
@@ -283,14 +335,27 @@ export const validateLessonPayload = (value: unknown): LessonValidationResult =>
     const counts = new Map<number, number>();
     positions.forEach((position) => counts.set(position, (counts.get(position) || 0) + 1));
     const highest = Math.max(0, ...counts.values());
-    if (positions.length >= 5 && highest / positions.length >= 0.7) {
+    if (positions.length >= 5 && highest / positions.length > 0.5) {
       const repeatedPosition = [...counts.entries()].find(([, count]) => count === highest)?.[0] ?? 0;
       warnings.push({
-        path: ['questoes'],
-        message: `${highest} de ${positions.length} questões de escolha única têm a resposta na posição ${repeatedPosition + 1}.`,
+        path,
+        message: `${highest} de ${positions.length} questões de escolha única têm a resposta na posição ${String.fromCharCode(65 + repeatedPosition)}.`,
       });
     }
-  }
+  };
+
+  warnAnswerDistribution(
+    checkedQuestions.filter((question) => question.path[0] === 'questoes'),
+    ['questoes'],
+  );
+  activities.forEach((_, activityIndex) => warnAnswerDistribution(
+    checkedQuestions.filter((question) => question.path[0] === 'atividades' && question.path[1] === activityIndex),
+    ['atividades', activityIndex],
+  ));
+  warnAnswerDistribution(
+    checkedQuestions.filter((question) => question.path[0] === 'arena'),
+    ['arena', 'questoes'],
+  );
 
   let vfRun = 0;
   let warnedVfRun = false;

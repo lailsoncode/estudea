@@ -4,6 +4,8 @@ import { validateLessonPayload } from './lesson-validation.js';
 const UUID_DESCRIPTION = 'UUID retornado pelo Estudea. Consulte as ferramentas de listagem antes de escrever.';
 const IdempotencyKeySchema = z.string().trim().min(8).max(200).optional()
   .describe('Identificador único da operação. Reutilize o mesmo valor ao repetir uma chamada após erro.');
+const RevisionIdSchema = z.iso.datetime({ offset: true })
+  .describe('updated_at retornado pelo Estudea; aceita Z ou offset como +00:00 e impede sobrescrever edição recente.');
 
 export const OptionSchema = z.object({
   id: z.string().trim().min(1).max(40).regex(/^[a-zA-Z0-9_-]+$/),
@@ -21,7 +23,7 @@ const QuestionBaseSchema = z.object({
   ]).default([])
     .describe('Prefira objetos {id,texto}. A lista simples de textos é aceita apenas por compatibilidade.'),
   respostas_corretas: z.array(z.string().trim().min(1).max(40)).max(8).default([])
-    .describe('IDs das opções corretas. Use dois ou mais IDs em múltipla seleção.'),
+    .describe('IDs das opções corretas. Use exatamente dois ou três IDs distintos em múltipla seleção.'),
   resposta_correta: z.string().trim().max(2000).default('')
     .describe('Formato legado. Prefira respostas_corretas com IDs estáveis.'),
   gabarito_recomendado: z.string().trim().max(10000).optional()
@@ -68,6 +70,13 @@ export const ActivitySchema = z.object({
   questoes: z.array(QuestionSchema).max(50).default([])
     .describe('Questionário exclusivo desta atividade. Use somente quando tipo_entrega for quiz.'),
 }).superRefine((activity, context) => {
+  if (activity.tipo_entrega === 'quiz' && activity.questoes.length === 0) {
+    context.addIssue({
+      code: 'custom',
+      path: ['questoes'],
+      message: 'Atividade do tipo quiz exige pelo menos uma questão.',
+    });
+  }
   if (activity.questoes.length > 0 && activity.tipo_entrega !== 'quiz') {
     context.addIssue({
       code: 'custom',
@@ -142,7 +151,7 @@ export const CreateModuleInputSchema = z.object({
 
 export const UpdateModuleInputSchema = z.object({
   modulo_id: z.uuid().describe(UUID_DESCRIPTION),
-  revision_id: z.iso.datetime().describe('updated_at retornado pela listagem; impede sobrescrever edição recente.'),
+  revision_id: RevisionIdSchema,
   alteracoes: z.object({
     titulo: z.string().trim().min(3).max(200).optional(),
     ordem: z.number().int().positive().max(10000).optional(),
@@ -194,14 +203,44 @@ export const CreateLessonInputSchema = z.object({
   idempotency_key: IdempotencyKeySchema,
 });
 
-export const LessonPatchSchema = LessonObjectSchema.partial().refine(
+const ArenaPatchSchema = z.object({
+  habilitada: z.boolean().optional(),
+  embaralhar_questoes: z.boolean().optional(),
+  embaralhar_opcoes: z.boolean().optional(),
+  questoes: z.array(QuestionSchema).max(100).optional(),
+});
+
+// O schema de criação usa defaults. O patch precisa declarar os campos sem defaults,
+// caso contrário o Zod materializa valores ausentes e uma edição parcial apaga conteúdo.
+export const LessonPatchSchema = z.object({
+  titulo: z.string().trim().min(3).max(200).optional(),
+  descricao: z.string().trim().max(5000).optional(),
+  conteudo: z.string().trim().max(100000).optional(),
+  tipo: z.enum(['video', 'texto', 'quiz', 'arquivo']).optional(),
+  duracao: z.string().trim().min(1).max(80).optional(),
+  numero_aula: z.number().int().positive().max(10000).optional(),
+  ordem: z.number().int().positive().max(10000).optional(),
+  video_url: z.url().max(2000).optional(),
+  arquivo_url: z.url().max(2000).optional(),
+  pontos: z.number().int().min(0).max(10000).optional(),
+  nota_aprovacao: z.number().int().min(0).max(100).optional(),
+  obrigatorio: z.boolean().optional(),
+  embaralhar_questoes: z.boolean().optional(),
+  embaralhar_opcoes: z.boolean().optional(),
+  permite_arena: z.boolean().optional(),
+  tempo_limite: z.number().int().positive().max(1440).optional(),
+  materiais: z.array(MaterialSchema).max(50).optional(),
+  atividades: z.array(ActivitySchema).max(20).optional(),
+  questoes: z.array(QuestionSchema).max(100).optional(),
+  arena: ArenaPatchSchema.optional(),
+}).refine(
   (value) => Object.keys(value).length > 0,
   'Informe ao menos uma alteração.',
 );
 
 export const UpdateLessonInputSchema = z.object({
   aula_id: z.uuid().describe(UUID_DESCRIPTION),
-  revision_id: z.iso.datetime().describe('updated_at retornado por consultar_aula ou listar_aulas.'),
+  revision_id: RevisionIdSchema,
   alteracoes: LessonPatchSchema.describe('Somente os campos informados serão substituídos; listas informadas substituem a lista inteira.'),
   idempotency_key: IdempotencyKeySchema,
 });
@@ -235,6 +274,7 @@ export const RegisterTaughtLessonInputSchema = z.object({
 export const ReleaseLessonInputSchema = z.object({
   aula_id: z.uuid().describe(UUID_DESCRIPTION),
   turma_id: z.uuid().describe(UUID_DESCRIPTION),
+  revision_id: RevisionIdSchema.describe('revision_id retornado por consultar_aula imediatamente antes da liberação.'),
   confirmado: z.literal(true)
     .describe('Só use true depois que o usuário confirmar explicitamente a liberação para os alunos.'),
   idempotency_key: IdempotencyKeySchema,

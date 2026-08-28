@@ -328,11 +328,11 @@ export const createEstudeaMcpServer = (
 
   server.registerTool('liberar_aula_para_turma', {
     title: 'Liberar aula para uma turma',
-    description: 'Torna a aula acessível aos alunos. Use somente após confirmação explícita e depois de consultar aula e turma.',
+    description: 'Revalida o rascunho e o torna acessível aos alunos. Exige confirmação explícita, turma compatível e o revision_id da consulta mais recente.',
     inputSchema: ReleaseLessonInputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
-  }, async ({ aula_id, turma_id, idempotency_key }) => runTool(
-    () => releaseLessonToClass(context, aula_id, turma_id, idempotency_key),
+  }, async ({ aula_id, turma_id, revision_id, idempotency_key }) => runTool(
+    () => releaseLessonToClass(context, aula_id, turma_id, revision_id, idempotency_key),
     () => 'Aula liberada para a turma com sucesso.',
   ));
 

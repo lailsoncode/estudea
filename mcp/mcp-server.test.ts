@@ -58,6 +58,10 @@ test('anuncia a superfície MCP esperada com anotações de segurança', async (
       tools.find((tool) => tool.name === 'liberar_aula_para_turma')?.annotations?.openWorldHint,
       true,
     );
+    const releaseSchema = tools.find((tool) => tool.name === 'liberar_aula_para_turma')?.inputSchema as {
+      required?: string[];
+    } | undefined;
+    assert.equal(releaseSchema?.required?.includes('revision_id'), true);
     assert.equal(
       tools.find((tool) => tool.name === 'validar_aula')?.annotations?.readOnlyHint,
       true,

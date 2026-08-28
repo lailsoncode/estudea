@@ -25,7 +25,7 @@ O Estudea possui um servidor MCP para professores criarem e revisarem aulas dire
 - mantém questões do Estudea e da Arena independentes, com opções identificadas;
 - preserva gabarito e palavras-chave de questões abertas e valida as regras rápidas da Arena;
 - atualiza rascunhos sem sobrescrever edições recentes;
-- exige confirmação explícita antes de liberar, retirar ou arquivar;
+- revalida o conteúdo e exige a revisão atual e confirmação explícita antes de liberar;
 - respeita RLS, papel do perfil e vínculos do professor;
 - oferece consentimento e revogação dentro de **Minha Conta**.
 

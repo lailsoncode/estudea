@@ -12,6 +12,10 @@ export class EstudeaToolError extends Error {}
 const friendlyErrors: Record<string, string> = {
   concurrent_module_update: 'O módulo foi alterado depois da sua consulta. Liste os módulos novamente e refaça a edição com o novo revision_id.',
   concurrent_lesson_update: 'A aula foi alterada depois da sua consulta. Consulte a aula novamente e refaça a edição com o novo revision_id.',
+  concurrent_lesson_release: 'A aula foi alterada depois da sua consulta. Consulte e valide a aula novamente antes de liberar.',
+  lesson_invalid_for_release: 'A aula não atende aos requisitos mínimos de publicação. Corrija o rascunho, valide novamente e só então libere.',
+  lesson_revision_required: 'Consulte a aula novamente e envie o revision_id retornado antes de liberar.',
+  idempotency_key_conflict: 'Esta idempotency_key já foi usada em outra operação. Gere uma nova chave para esta aula e turma.',
   released_lesson_cannot_be_edited: 'A aula já foi liberada. Retire-a das turmas antes de substituir seu conteúdo.',
   released_lesson_cannot_be_archived: 'A aula está liberada para uma ou mais turmas. Retire as liberações antes de arquivá-la.',
   module_has_released_lessons: 'O módulo possui aulas liberadas. Retire as liberações antes de arquivá-lo.',
@@ -70,11 +74,16 @@ const assertModuleManagement = async (context: AuthenticatedMcpContext, moduleId
   return { module, course };
 };
 
-const ensureValidLesson = (lesson: unknown) => {
+export const assertLessonPublishable = (lesson: unknown) => {
   const validation = validateLessonPayload(lesson);
   if (!validation.valida) {
     throw new EstudeaToolError(`A aula não passou na validação: ${validation.erros.join(' | ')}`);
   }
+  return validation;
+};
+
+const ensureValidLesson = (lesson: unknown) => {
+  assertLessonPublishable(lesson);
   if (!isUnknownRecord(lesson)) throw new EstudeaToolError('Estrutura da aula inválida.');
   return normalizeLessonForPersistence(lesson);
 };
@@ -388,7 +397,16 @@ export const updateLessonDraft = async (
     questoes: current.questoes,
     arena: current.arena,
   };
-  const merged = { ...base, ...patch };
+  const merged = {
+    ...base,
+    ...patch,
+    ...(patch.arena ? {
+      arena: {
+        ...(isUnknownRecord(base.arena) ? base.arena : {}),
+        ...patch.arena,
+      },
+    } : {}),
+  };
   const normalized = ensureValidLesson(merged);
   return callRpc(context, 'mcp_update_lesson_draft', {
     p_aula_id: lessonId,
@@ -477,17 +495,23 @@ export const registerTaughtLesson = (
   p_idempotency_key: idempotencyKey || null,
 });
 
-export const releaseLessonToClass = (
+export const releaseLessonToClass = async (
   context: AuthenticatedMcpContext,
   lessonId: string,
   classId: string,
+  revisionId: string,
   idempotencyKey?: string,
-) => callRpc(context, 'mcp_release_lesson_to_class', {
-  p_aula_id: lessonId,
-  p_turma_id: classId,
-  p_confirmado: true,
-  p_idempotency_key: idempotencyKey || null,
-});
+) => {
+  const current = await getLesson(context, lessonId);
+  assertLessonPublishable(current);
+  return callRpc(context, 'mcp_release_lesson_to_class', {
+    p_aula_id: lessonId,
+    p_turma_id: classId,
+    p_revision_id: revisionId,
+    p_confirmado: true,
+    p_idempotency_key: idempotencyKey || null,
+  });
+};
 
 export const withdrawLessonFromClass = (
   context: AuthenticatedMcpContext,

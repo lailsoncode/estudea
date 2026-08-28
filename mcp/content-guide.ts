@@ -10,14 +10,18 @@ Este recurso descreve o contrato pedagógico do MCP. O formato com tags [TÍTULO
 2. Estruture conteúdo teórico aprofundado, objetivos claros e uma atividade prática realista quando solicitada.
 3. Se o usuário fornecer texto com tags, converta uma aula por vez com interpretar_importacao_formatada.
 4. Use validar_aula e apresente ao professor erros, alertas e contagens antes de gravar.
-5. Crie apenas como rascunho. Liberação, retirada de turma e arquivamento exigem pedido e confirmação explícitos.
+5. Crie apenas como rascunho. Antes de liberar, consulte a aula novamente, revise a validação e envie o revision_id atual com a confirmação explícita.
+6. Liberação, retirada de turma e arquivamento são operações separadas e nunca devem ser inferidas a partir do pedido de criação.
 
 ## Questões
 
 - Use opções {id,texto} e respostas_corretas contendo os IDs.
+- Em múltipla seleção, use exatamente dois ou três IDs corretos, sem repetição.
+- Se preencher o campo legado resposta_correta junto com respostas_corretas, ambos precisam representar o mesmo gabarito.
 - Tipos aceitos no Estudea: multipla_escolha, verdadeiro_falso, aberta e multipla_selecao.
 - Em questão aberta, use gabarito_recomendado e palavras_chave_aprovacao; não transforme esses valores em alternativas.
 - Questões de atividade ficam em atividades[].questoes e exigem tipo_entrega igual a quiz.
+- Uma atividade quiz precisa conter ao menos uma questão; atividades de outros tipos não podem carregar questões.
 
 ## Arena
 

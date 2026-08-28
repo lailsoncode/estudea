@@ -100,7 +100,7 @@ O MCP é stateless e não chama outro modelo de IA. O modelo conectado produz ar
 | Aula | `criar_aulas_em_lote` | Escrita | Valida e cria até 100 rascunhos em uma única transação |
 | Diário | `registrar_aula_ministrada` | Escrita | Guarda conteúdo e atividades realizados separados do conteúdo do aluno |
 | Turma | `listar_turmas` | Leitura | Lista turmas compatíveis com professor e curso |
-| Turma | `liberar_aula_para_turma` | Escrita confirmada | Libera uma aula para uma turma |
+| Turma | `liberar_aula_para_turma` | Escrita confirmada | Revalida e libera usando o `revision_id` atual |
 | Turma | `retirar_aula_da_turma` | Escrita confirmada | Retira o acesso sem apagar a aula |
 
 Não existe exclusão definitiva pelo MCP. Arquivamento é reversível no banco e retirada de turma não remove conteúdo.
@@ -124,7 +124,7 @@ Use IDs estáveis para as opções e respostas:
 }
 ```
 
-O formato antigo com `opcoes` como textos e `resposta_correta` continua aceito para compatibilidade. Novas aulas devem usar o formato estruturado. O servidor rejeita respostas inexistentes, múltipla seleção com somente uma resposta, todas as opções corretas e alternativas/IDs duplicados.
+O formato antigo com `opcoes` como textos e `resposta_correta` continua aceito para compatibilidade. Novas aulas devem usar o formato estruturado. O servidor rejeita respostas inexistentes, IDs repetidos, divergência entre os dois formatos de gabarito e múltipla seleção sem exatamente duas ou três respostas distintas.
 
 Questões abertas usam campos próprios, sem transformar gabarito em alternativa:
 
@@ -219,12 +219,16 @@ As migrações específicas da integração são:
 ```text
 supabase/migrations/20260826010000_create_mcp_lesson_tools.sql
 supabase/migrations/20260827010000_expand_mcp_course_management.sql
+supabase/migrations/20260827020000_harden_mcp_lesson_release.sql
 ```
+
+Ao atualizar uma instalação existente, publique a migration `20260827020000` e o MCP `0.4.0` na mesma janela de manutenção: ela substitui a assinatura da RPC de liberação para tornar `revision_id` obrigatório.
 
 Elas incluem:
 
 - RPCs transacionais de módulo, aula, lote, arquivamento e liberação;
 - controle otimista por `updated_at`/`revision_id`;
+- revalidação transacional imediatamente antes de liberar uma aula;
 - Arena independente, opções estruturadas e materiais múltiplos;
 - registro pós-aula separado do conteúdo do aluno;
 - validação de professor, curso, módulo, aula e turma;
@@ -415,7 +419,7 @@ Produção deve retornar:
 ```json
 {
   "service": "estudea-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "status": "ok",
   "auth_mode": "oauth"
 }
@@ -523,7 +527,9 @@ Confirme que uma edição feita com `revision_id` antigo falha, em vez de sobres
 
 > Consulte a aula que acabamos de criar e liste as turmas compatíveis. Mostre exatamente qual turma será afetada e peça minha confirmação antes de liberar.
 
-Confirme somente em uma turma de teste. A ferramenta exige confirmação explícita e deve rejeitar uma tentativa ambígua.
+Confirme somente em uma turma de teste. A ferramenta exige confirmação explícita e o `revision_id` devolvido pela consulta mais recente. Ela revalida os dados persistidos dentro da mesma transação da liberação e deve rejeitar uma aula inválida, uma revisão desatualizada ou uma tentativa ambígua.
+
+Depois, repita a mesma chamada com a mesma `idempotency_key`: o resultado deve indicar `idempotent_replay` sem criar uma segunda liberação ou outro log de operação.
 
 ### 12.6 Isolamento entre professores
 
@@ -593,10 +599,11 @@ O token temporário expira e não deve ser reutilizado no EasyPanel. Nunca envie
 - o servidor usa chave anônima/publishable, nunca `service_role`;
 - RLS e `auth.uid()` continuam definindo o alcance dos dados;
 - criação ocorre primeiro como rascunho;
-- liberação, retirada de turma e arquivamento exigem confirmação explícita;
+- liberação exige confirmação explícita, `revision_id` atual e uma última validação transacional;
+- retirada de turma e arquivamento exigem confirmação explícita;
 - não existe ferramenta de exclusão definitiva;
 - rascunhos liberados não podem ser substituídos ou arquivados até a retirada das turmas;
-- `revision_id` impede que uma edição antiga sobrescreva uma edição recente;
+- `revision_id` impede que uma edição antiga sobrescreva uma edição recente ou que uma versão já alterada seja liberada;
 - RPCs de escrita são transacionais e idempotentes;
 - todas as escritas relevantes geram auditoria em `mcp_audit_logs`;
 - o professor pode revogar a autorização no próprio Estudea;
@@ -620,6 +627,8 @@ O token temporário expira e não deve ser reutilizado no EasyPanel. Nunca envie
 | ChatGPT não mostra Developer mode | Plano ou política do workspace | Verifique permissões da conta/workspace |
 | Ferramentas antigas aparecem | Metadata em cache | Use **Refresh** na conexão e abra uma nova conversa |
 | `concurrent_lesson_update` | A aula mudou depois da consulta | Consulte novamente e use o novo `revision_id` |
+| `concurrent_lesson_release` | A aula mudou antes da liberação | Consulte e valide novamente antes de confirmar |
+| `lesson_invalid_for_release` | O rascunho persistido não atende às regras | Corrija a aula, execute `validar_aula` e tente com a nova revisão |
 | Coluna `arquivado_em` não existe | Frontend/MCP publicados antes da migração nova | Aplique todas as migrações e depois faça o redeploy |
 
 ## 16. Comandos de manutenção
