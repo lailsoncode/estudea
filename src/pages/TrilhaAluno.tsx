@@ -4,6 +4,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { CardConquista } from '../components/common/CardConquista';
 import { dispararCelebracao } from '../utils/celebracao';
 import {
+  answersForQuestions,
+  getActivityQuizQuestions,
+  getStandardQuizQuestions,
+  hasStandardQuizQuestions,
+} from '../utils/lessonQuestionFilters';
+import {
   BookOpen01Icon,
   PlayCircleIcon,
   NotebookIcon,
@@ -199,6 +205,7 @@ interface Questao {
   tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'aberta' | 'multipla_selecao';
   atividade_id?: string | null;
   para_arena?: boolean;
+  contexto?: 'aula' | 'atividade' | 'arena';
 }
 
 interface Progresso {
@@ -217,6 +224,14 @@ interface Entrega {
   resposta: string;
   nota: number | null;
   feedback_professor: string | null;
+}
+
+interface QuizSubmissionPayload {
+  respostas: Record<string, string>;
+  score: number | null;
+  correctCount: number | null;
+  totalQuestions: number;
+  passed: boolean | null;
 }
 
 const shuffledCopy = <T,>(items: T[]): T[] => {
@@ -277,6 +292,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
   // Selected lesson navigation states
   const [selectedAula, setSelectedAula] = useState<Aula | null>(null);
+  const standardQuizQuestions = useMemo(
+    () => getStandardQuizQuestions(selectedAula?.questoes),
+    [selectedAula?.questoes],
+  );
 
   // Selected modulo for module_trail view
   const [selectedModulo, setSelectedModulo] = useState<Modulo | null>(null);
@@ -648,11 +667,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
     // Set default active tab based on available contents
     if (selectedAula) {
-      const hasActivityQuiz = selectedAula.atividades && selectedAula.atividades.some(a => a.tipo_entrega === 'quiz');
-
       if (selectedAula.video_url || selectedAula.conteudo) {
         setActiveLessonTab('conteudo');
-      } else if (selectedAula.questoes && selectedAula.questoes.length > 0 && !hasActivityQuiz) {
+      } else if (standardQuizQuestions.length > 0) {
         setActiveLessonTab('quiz');
       } else if (selectedAula.arquivo_url || (selectedAula.aula_materiais?.length || 0) > 0) {
         setActiveLessonTab('arquivos');
@@ -693,7 +710,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
     if (selectedAula && selectedAula.atividades && selectedAula.atividades.length > 0) {
       const newResponses: Record<string, string> = {};
       const newImages: Record<string, string> = {};
-      const newAnswers: Record<string, any> = {};
+      const newAnswers: Record<string, string> = {};
 
       selectedAula.atividades.forEach(activeAtividade => {
         const existingEntrega = entregas.find(e => e.atividade_id === activeAtividade.id);
@@ -704,13 +721,6 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
               if (parsed && parsed.respostas) {
                 Object.assign(newAnswers, parsed.respostas);
               }
-              if (parsed && typeof parsed.score === 'number') {
-                setQuizScore(parsed.score);
-              }
-              if (parsed && typeof parsed.passed === 'boolean') {
-                setQuizPassed(parsed.passed);
-              }
-              setQuizSubmitted(true);
             } catch (e) {
               console.error('Erro ao fazer parse da resposta do quiz:', e);
             }
@@ -732,10 +742,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
       setActivityResponse(newResponses);
       setActivityImage(newImages);
       if (Object.keys(newAnswers).length > 0) {
-        setQuizAnswers(newAnswers);
+        setQuizAnswers(previous => ({ ...previous, ...newAnswers }));
       }
     }
-  }, [selectedAula, entregas]);
+  }, [selectedAula, standardQuizQuestions, entregas]);
 
   // Check if a lesson is completed
   const isLessonCompleted = (aulaId: string) => {
@@ -975,12 +985,13 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
   // Submit quiz responses
   const handleSubmitQuiz = async () => {
-    if (!selectedAula || !selectedAula.questoes || selectedAula.questoes.length === 0) return;
+    if (!selectedAula || standardQuizQuestions.length === 0) return;
+    const standardAnswers = answersForQuestions(standardQuizQuestions, quizAnswers);
 
     const { data: gradeData, error: gradeError } = await supabase
       .rpc('grade_quiz_answers', {
         p_aula_id: selectedAula.id,
-        p_respostas: quizAnswers,
+        p_respostas: standardAnswers,
         p_atividade_id: null
       });
 
@@ -1002,53 +1013,45 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
     // Always mark the lesson as completed upon answering the quiz
     await handleToggleCompletion(selectedAula.id, true);
 
-    // Rede de segurança: Se a aula tem uma atividade vinculada do tipo quiz,
-    // e o aluno por algum motivo submeteu o Quiz tradicional da Aula (Tab 3),
-    // salvamos a resposta dele como a entrega da Atividade Prática
-    const quizActivity = selectedAula.atividades?.find(a => a.tipo_entrega === 'quiz');
-    if (quizActivity) {
-      await handleSubmitActivity(quizActivity.id, 'quiz');
-    } else {
-      // Save standard quiz submission in entregas_atividades so the teacher can review it
-      try {
-        const payload = {
-          respostas: quizAnswers,
-          score: score,
-          correctCount: gradeData?.correctCount ?? 0,
-          totalQuestions: gradeData?.totalQuestions ?? selectedAula.questoes.length,
-          passed: passed
-        };
-        const answerJson = JSON.stringify(payload);
-        const existingEntrega = entregas.find(e => e.aula_id === selectedAula.id && !e.atividade_id);
+    // Save standard quiz submission in entregas_atividades so the teacher can review it
+    try {
+      const payload = {
+        respostas: standardAnswers,
+        score: score,
+        correctCount: gradeData?.correctCount ?? 0,
+        totalQuestions: gradeData?.totalQuestions ?? standardQuizQuestions.length,
+        passed: passed
+      };
+      const answerJson = JSON.stringify(payload);
+      const existingEntrega = entregas.find(e => e.aula_id === selectedAula.id && !e.atividade_id);
 
-        if (existingEntrega) {
-          const { error: updateError } = await supabase
-            .from('entregas_atividades')
-            .update({
-              resposta: answerJson,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingEntrega.id);
-          if (updateError) throw updateError;
-          setEntregas(prev => prev.map(e => e.id === existingEntrega.id ? { ...e, resposta: answerJson } : e));
-        } else {
-          const { data: insertData, error: insertError } = await supabase
-            .from('entregas_atividades')
-            .insert({
-              aluno_id: userId,
-              aula_id: selectedAula.id,
-              atividade_id: null,
-              resposta: answerJson
-            })
-            .select();
-          if (insertError) throw insertError;
-          if (insertData) {
-            setEntregas(prev => [...prev, insertData[0]]);
-          }
+      if (existingEntrega) {
+        const { error: updateError } = await supabase
+          .from('entregas_atividades')
+          .update({
+            resposta: answerJson,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingEntrega.id);
+        if (updateError) throw updateError;
+        setEntregas(prev => prev.map(e => e.id === existingEntrega.id ? { ...e, resposta: answerJson } : e));
+      } else {
+        const { data: insertData, error: insertError } = await supabase
+          .from('entregas_atividades')
+          .insert({
+            aluno_id: userId,
+            aula_id: selectedAula.id,
+            atividade_id: null,
+            resposta: answerJson
+          })
+          .select();
+        if (insertError) throw insertError;
+        if (insertData) {
+          setEntregas(prev => [...prev, insertData[0]]);
         }
-      } catch (err) {
-        console.error('Erro ao salvar entrega do quiz:', err);
       }
+    } catch (err) {
+      console.error('Erro ao salvar entrega do quiz:', err);
     }
   };
 
@@ -1060,21 +1063,19 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
     if (tipo === 'quiz') {
       const activityRecord = selectedAula?.atividades?.find(a => a.id === atividadeId);
-      const isProprio = selectedAula?.questoes?.some(q => q.atividade_id === atividadeId);
-      const questions = isProprio
-        ? (selectedAula?.questoes?.filter(q => q.atividade_id === atividadeId) || [])
-        : (selectedAula?.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+      const questions = getActivityQuizQuestions(selectedAula?.questoes, atividadeId);
+      const activityAnswers = answersForQuestions(questions, quizAnswers);
 
       const isGraded = activityRecord ? (activityRecord.pontua ?? true) : true;
       const shouldGrade = isGraded && questions.length > 0;
 
-      let payload: any = {};
+      let payload: QuizSubmissionPayload;
 
       if (shouldGrade) {
         const { data: gradeData, error: gradeError } = await supabase
           .rpc('grade_quiz_answers', {
             p_aula_id: selectedAula?.id,
-            p_respostas: quizAnswers,
+            p_respostas: activityAnswers,
             p_atividade_id: atividadeId
           });
 
@@ -1087,7 +1088,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         }
 
         payload = {
-          respostas: quizAnswers,
+          respostas: activityAnswers,
           score: gradeData?.score ?? 0,
           correctCount: gradeData?.correctCount ?? 0,
           totalQuestions: gradeData?.totalQuestions ?? questions.length,
@@ -1095,7 +1096,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         };
       } else {
         payload = {
-          respostas: quizAnswers,
+          respostas: activityAnswers,
           score: null,
           correctCount: null,
           totalQuestions: questions.length,
@@ -1966,7 +1967,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                                   const typesList: string[] = [];
                                   if (aula.video_url) typesList.push('Vídeo');
-                                  if (aula.questoes && aula.questoes.length > 0 && !(aula.atividades && aula.atividades.some(a => a.tipo_entrega === 'quiz'))) typesList.push('Quiz');
+                                  if (hasStandardQuizQuestions(aula.questoes)) typesList.push('Quiz');
                                   if (aula.arquivo_url) typesList.push('Material');
                                   if (aula.atividades && aula.atividades.length > 0) typesList.push('Atividade');
                                   if (aula.conteudo && typesList.length === 0) typesList.push('Texto');
@@ -1994,7 +1995,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                                 <circle cx="12" cy="12" r="10" />
                                                 <polygon points="10 8 16 12 10 16 10 8" />
                                               </>
-                                            ) : (aula.questoes && aula.questoes.length > 0) ? (
+                                            ) : hasStandardQuizQuestions(aula.questoes) ? (
                                               <>
                                                 <circle cx="12" cy="12" r="10" />
                                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -2330,7 +2331,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                       const typesList: string[] = [];
                       if (aula.video_url) typesList.push('Vídeo');
-                      if (aula.questoes && aula.questoes.length > 0 && !(aula.atividades && aula.atividades.some(a => a.tipo_entrega === 'quiz'))) typesList.push('Quiz');
+                      if (hasStandardQuizQuestions(aula.questoes)) typesList.push('Quiz');
                       if (aula.arquivo_url) typesList.push('Material');
                       if (aula.atividades && aula.atividades.length > 0) typesList.push('Atividade');
                       if (aula.conteudo && typesList.length === 0) typesList.push('Texto');
@@ -2358,7 +2359,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                     <circle cx="12" cy="12" r="10" />
                                     <polygon points="10 8 16 12 10 16 10 8" />
                                   </>
-                                ) : (aula.questoes && aula.questoes.length > 0) ? (
+                                ) : hasStandardQuizQuestions(aula.questoes) ? (
                                   <>
                                     <circle cx="12" cy="12" r="10" />
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -2924,7 +2925,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                             let icon = NotebookIcon;
                             if (aula.video_url) icon = PlayCircleIcon;
-                            else if (aula.questoes && aula.questoes.length > 0) icon = Quiz01Icon;
+                            else if (hasStandardQuizQuestions(aula.questoes)) icon = Quiz01Icon;
                             else if (aula.arquivo_url) icon = BookOpen01Icon;
 
                             return (
@@ -3006,7 +3007,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                               Vídeo
                             </span>
                           )}
-                          {selectedAula.questoes && selectedAula.questoes.length > 0 && (
+                          {standardQuizQuestions.length > 0 && (
                             <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
                               Quiz
                             </span>
@@ -3016,7 +3017,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                               Material
                             </span>
                           )}
-                          {!selectedAula.video_url && (!selectedAula.questoes || selectedAula.questoes.length === 0) && !selectedAula.arquivo_url && (
+                          {!selectedAula.video_url && standardQuizQuestions.length === 0 && !selectedAula.arquivo_url && (
                             <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
                               Leitura
                             </span>
@@ -3077,7 +3078,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           <p className="font-bold text-on-surface font-mono">{selectedAula.duracao}</p>
                         </div>
                       )}
-                      {selectedAula.questoes && selectedAula.questoes.length > 0 && (
+                      {standardQuizQuestions.length > 0 && (
                         <>
                           <div className="bg-surface p-3 rounded-lg border border-outline-variant/30">
                             <p className="opacity-75 text-[11px]">Pontos</p>
@@ -3120,7 +3121,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           </button>
                         )}
 
-                        {selectedAula.questoes && selectedAula.questoes.length > 0 && !(selectedAula.atividades && selectedAula.atividades.some(a => a.tipo_entrega === 'quiz')) && (
+                        {standardQuizQuestions.length > 0 && (
                           <button
                             onClick={() => setActiveLessonTab('quiz')}
                             className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
@@ -3441,14 +3442,14 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                       })()}
 
                       {/* Tab 3: Quiz */}
-                      {activeLessonTab === 'quiz' && selectedAula.questoes && selectedAula.questoes.length > 0 && (
+                      {activeLessonTab === 'quiz' && standardQuizQuestions.length > 0 && (
                         <div className="product-card p-5 sm:p-6 space-y-6 animate-fade-in">
                           <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-2 border-b border-outline-variant/20 flex items-center gap-2">
                             <HugeiconsIcon icon={Quiz01Icon} size={18} className="text-secondary" />
                             Questões do Quiz
                           </h4>
 
-                          {selectedAula.questoes.map((q, idx) => (
+                          {standardQuizQuestions.map((q, idx) => (
                             <div key={q.id} className="space-y-3 p-4 bg-surface rounded-xl border border-outline-variant/45">
                               <p className="font-semibold text-on-surface text-body-md flex items-start gap-2">
                                 <span className="text-secondary font-bold font-mono">Q{idx + 1}.</span>
@@ -3633,9 +3634,9 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                             <div className="flex justify-end pt-2">
                               <button
                                 onClick={handleSubmitQuiz}
-                                disabled={selectedAula.questoes.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim())}
+                                disabled={standardQuizQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim())}
                                 className={`px-6 py-3 rounded-lg font-heading font-bold text-body-md flex items-center gap-2 transition-all ${
-                                  !selectedAula.questoes.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim())
+                                  !standardQuizQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim())
                                     ? 'bg-gradient-to-r from-secondary to-secondary-container text-on-secondary shadow shadow-secondary/15 hover:shadow-md hover:shadow-secondary/20 hover:-translate-y-0.5'
                                     : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed border border-outline-variant/40'
                                 }`}
@@ -3710,10 +3711,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           const canRedo = exactEntrega && (atividade.permite_refazer !== false) && exactEntrega.nota === null;
                           const isRedoing = isRedoingActivity[atividade.id] || false;
                           
-                          const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
-                          const activeQuestions = isProprio
-                            ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
-                            : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                          const activeQuestions = getActivityQuizQuestions(selectedAula.questoes, atividade.id);
 
                           const tabLabel = isSingle ? 'Atividade Prática' : getAtividadeTabLabel(atividade, selectedAula.atividades || []);
 
@@ -4431,10 +4429,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                             ? !(activityResponse[atividade.id] || '').trim() 
                                             : atividade.tipo_entrega === 'quiz'
                                               ? (() => {
-                                                  const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
-                                                  const activeQuestions = isProprio
-                                                    ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
-                                                    : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                                                  const activeQuestions = getActivityQuizQuestions(selectedAula.questoes, atividade.id);
                                                   return activeQuestions.length === 0 || activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
@@ -4446,10 +4441,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                             ? (activityResponse[atividade.id] || '').trim() 
                                             : atividade.tipo_entrega === 'quiz'
                                               ? (() => {
-                                                  const isProprio = selectedAula.questoes?.some(q => q.atividade_id === atividade.id);
-                                                  const activeQuestions = isProprio
-                                                    ? (selectedAula.questoes?.filter(q => q.atividade_id === atividade.id) || [])
-                                                    : (selectedAula.questoes?.filter(q => !q.atividade_id && !q.para_arena) || []);
+                                                  const activeQuestions = getActivityQuizQuestions(selectedAula.questoes, atividade.id);
                                                   return activeQuestions.length > 0 && !activeQuestions.some(q => !quizAnswers[q.id] || !quizAnswers[q.id].trim());
                                                 })()
                                               : atividade.tipo_entrega === 'multipla'
@@ -4488,7 +4480,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                       const atividade = hasAtividade ? selectedAula.atividades![0] : null;
                       const exactEntrega = atividade ? entregas.find(e => e.atividade_id === atividade.id) : null;
 
-                      if (selectedAula.questoes && selectedAula.questoes.length > 0) {
+                      if (standardQuizQuestions.length > 0) {
                         return (
                           <div className="text-label-sm text-on-surface-variant font-medium flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
