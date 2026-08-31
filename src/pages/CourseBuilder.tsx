@@ -1457,7 +1457,7 @@ export const CourseBuilder: React.FC = () => {
       setActiveTypes({
         video: !!lesson.video_url,
         texto: !!lesson.conteudo,
-        quiz: lesson.tipo === 'quiz' || loadedQuestions.length > 0,
+        quiz: lesson.tipo === 'quiz' || loadedQuestions.length > 0 || loadedAtividades.some(act => act.tipo_entrega === 'quiz'),
         arquivo: !!lesson.arquivo_url
       });
       
