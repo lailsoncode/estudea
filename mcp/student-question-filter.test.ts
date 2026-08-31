@@ -20,6 +20,7 @@ test('separa quiz comum, Arena e quizzes de atividade', () => {
   assert.deepEqual(getStandardQuizQuestions(questions).map(({ id }) => id), ['quiz-1', 'quiz-2']);
   assert.deepEqual(getArenaQuestions(questions).map(({ id }) => id), ['arena-1', 'arena-context']);
   assert.deepEqual(getActivityQuizQuestions(questions, 'activity-a').map(({ id }) => id), ['activity-1']);
+  assert.deepEqual(getActivityQuizQuestions(questions, 'activity-sem-questoes-proprias').map(({ id }) => id), ['quiz-1', 'quiz-2']);
 });
 
 test('envia somente respostas pertencentes ao contexto selecionado', () => {

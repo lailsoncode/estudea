@@ -19,9 +19,13 @@ export const getArenaQuestions = <T extends LessonQuestionReference>(questions?:
 export const getActivityQuizQuestions = <T extends LessonQuestionReference>(
   questions: T[] | null | undefined,
   activityId: string,
-): T[] => (
-  (questions || []).filter((question) => question.atividade_id === activityId)
-);
+): T[] => {
+  const activityQuestions = (questions || []).filter((question) => question.atividade_id === activityId);
+  if (activityQuestions.length > 0) {
+    return activityQuestions;
+  }
+  return getStandardQuizQuestions(questions);
+};
 
 export const hasStandardQuizQuestions = (questions?: LessonQuestionReference[] | null) => (
   getStandardQuizQuestions(questions).length > 0

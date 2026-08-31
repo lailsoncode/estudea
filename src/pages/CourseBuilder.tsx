@@ -1879,7 +1879,7 @@ export const CourseBuilder: React.FC = () => {
 
       // If Quiz, Arena or Activity Questionnaire, handle Questions
       const hasQuestions = activeTypes.quiz || 
-        (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz' && act.atividade_quiz_proprio)) ||
+        (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz')) ||
         questoes.some(q => q.para_arena);
 
       if (hasQuestions) {
@@ -1892,8 +1892,8 @@ export const CourseBuilder: React.FC = () => {
             const associatedAct = atividadesList.find(act => act.tempId === q.atividade_id || act.id === q.atividade_id);
             return lessonForm.has_atividade && associatedAct && associatedAct.tipo_entrega === 'quiz' && associatedAct.atividade_quiz_proprio;
           }
-          // 3. If it's a standard lesson quiz question: keep it only if standard quiz is enabled
-          return activeTypes.quiz;
+          // 3. If it's a standard lesson quiz question: keep it if standard quiz is enabled OR if there is a quiz activity sharing questions
+          return activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz'));
         });
 
         // Sync deleted questions
@@ -3217,7 +3217,7 @@ export const CourseBuilder: React.FC = () => {
                 <section className="product-card p-4 sm:p-5 relative overflow-hidden space-y-6">
                   {/* Quiz tabs */}
                   <div className="flex border-b border-slate-100">
-                    {activeTypes.quiz && (
+                    {(activeTypes.quiz || (lessonForm.has_atividade && atividadesList.some(act => act.tipo_entrega === 'quiz' && !act.atividade_quiz_proprio))) && (
                       <>
                         <button
                           type="button"
