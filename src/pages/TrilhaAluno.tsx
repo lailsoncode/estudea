@@ -8,6 +8,7 @@ import {
   getActivityQuizQuestions,
   getStandardQuizQuestions,
   hasStandardQuizQuestions,
+  shouldShowStandardQuiz,
 } from '../utils/lessonQuestionFilters';
 import { fetchAllBatches } from '../utils/batchedFetch';
 import {
@@ -296,6 +297,10 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
   const standardQuizQuestions = useMemo(
     () => getStandardQuizQuestions(selectedAula?.questoes),
     [selectedAula?.questoes],
+  );
+  const showStandardQuiz = useMemo(
+    () => shouldShowStandardQuiz(selectedAula?.questoes, selectedAula?.atividades),
+    [selectedAula?.questoes, selectedAula?.atividades],
   );
 
   // Selected modulo for module_trail view
@@ -670,7 +675,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
     if (selectedAula) {
       if (selectedAula.video_url || selectedAula.conteudo) {
         setActiveLessonTab('conteudo');
-      } else if (standardQuizQuestions.length > 0) {
+      } else if (showStandardQuiz) {
         setActiveLessonTab('quiz');
       } else if (selectedAula.arquivo_url || (selectedAula.aula_materiais?.length || 0) > 0) {
         setActiveLessonTab('arquivos');
@@ -746,7 +751,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         setQuizAnswers(previous => ({ ...previous, ...newAnswers }));
       }
     }
-  }, [selectedAula, standardQuizQuestions, entregas]);
+  }, [selectedAula, showStandardQuiz, entregas]);
 
   // Check if a lesson is completed
   const isLessonCompleted = (aulaId: string) => {
@@ -3122,7 +3127,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                           </button>
                         )}
 
-                        {standardQuizQuestions.length > 0 && (
+                        {showStandardQuiz && (
                           <button
                             onClick={() => setActiveLessonTab('quiz')}
                             className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 font-heading text-label-md font-extrabold rounded-xl transition-all duration-200 relative ${
@@ -3443,7 +3448,7 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                       })()}
 
                       {/* Tab 3: Quiz */}
-                      {activeLessonTab === 'quiz' && standardQuizQuestions.length > 0 && (
+                      {activeLessonTab === 'quiz' && showStandardQuiz && (
                         <div className="product-card p-5 sm:p-6 space-y-6 animate-fade-in">
                           <h4 className="font-heading font-extrabold text-body-lg text-on-surface pb-2 border-b border-outline-variant/20 flex items-center gap-2">
                             <HugeiconsIcon icon={Quiz01Icon} size={18} className="text-secondary" />

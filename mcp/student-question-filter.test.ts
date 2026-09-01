@@ -5,6 +5,7 @@ import {
   getActivityQuizQuestions,
   getArenaQuestions,
   getStandardQuizQuestions,
+  shouldShowStandardQuiz,
 } from '../src/utils/lessonQuestionFilters.js';
 
 const questions = [
@@ -33,6 +34,24 @@ test('envia somente respostas pertencentes ao contexto selecionado', () => {
   });
 
   assert.deepEqual(payload, { 'quiz-1': 'A', 'quiz-2': 'B' });
+});
+
+test('não duplica o quiz geral quando uma atividade reutiliza as mesmas questões', () => {
+  assert.equal(shouldShowStandardQuiz(questions, [
+    { id: 'activity-sem-questoes-proprias', tipo_entrega: 'quiz' },
+  ]), false);
+});
+
+test('mantém quizzes separados quando a atividade possui questões próprias', () => {
+  assert.equal(shouldShowStandardQuiz(questions, [
+    { id: 'activity-a', tipo_entrega: 'quiz' },
+  ]), true);
+});
+
+test('atividade que não é quiz não oculta o quiz geral', () => {
+  assert.equal(shouldShowStandardQuiz(questions, [
+    { id: 'activity-sem-questoes-proprias', tipo_entrega: 'texto' },
+  ]), true);
 });
 
 test('regressão: uma aula com 20 questões comuns e 10 da Arena exibe e envia somente 20', () => {
