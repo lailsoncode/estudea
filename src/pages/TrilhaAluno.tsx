@@ -9,6 +9,7 @@ import {
   getStandardQuizQuestions,
   hasStandardQuizQuestions,
 } from '../utils/lessonQuestionFilters';
+import { fetchAllBatches } from '../utils/batchedFetch';
 import {
   BookOpen01Icon,
   PlayCircleIcon,
@@ -475,12 +476,12 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
         let questionsByLesson = new Map<string, Questao[]>();
 
         if (aulaIds.length > 0) {
-          const { data: questionsData, error: questionsError } = await supabase
-            .rpc('get_accessible_questions', { p_aula_ids: aulaIds });
+          const questionsData = await fetchAllBatches<string, Questao>(aulaIds, (lessonIds) =>
+            supabase
+              .rpc('get_accessible_questions', { p_aula_ids: lessonIds })
+          );
 
-          if (questionsError) throw questionsError;
-
-          questionsByLesson = (questionsData || []).reduce((map: Map<string, Questao[]>, question: Questao) => {
+          questionsByLesson = questionsData.reduce((map: Map<string, Questao[]>, question: Questao) => {
             const current = map.get(question.aula_id) || [];
             current.push(question);
             map.set(question.aula_id, current);
