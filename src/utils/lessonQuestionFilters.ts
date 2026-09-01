@@ -20,11 +20,16 @@ export const getActivityQuizQuestions = <T extends LessonQuestionReference>(
   questions: T[] | null | undefined,
   activityId: string,
 ): T[] => {
-  const activityQuestions = (questions || []).filter((question) => question.atividade_id === activityId);
+  const allList = questions || [];
+  const activityQuestions = allList.filter((question) => question.atividade_id === activityId);
   if (activityQuestions.length > 0) {
     return activityQuestions;
   }
-  return getStandardQuizQuestions(questions);
+  const standard = getStandardQuizQuestions(allList);
+  if (standard.length > 0) {
+    return standard;
+  }
+  return allList.filter((question) => !isArenaQuestion(question));
 };
 
 export const hasStandardQuizQuestions = (questions?: LessonQuestionReference[] | null) => (

@@ -1923,9 +1923,13 @@ export const CourseBuilder: React.FC = () => {
             let realActId: string | null = null;
             if (isActivityQuestion) {
               realActId = tempIdToRealId[q.atividade_id!] || null;
+              // Fallback se houver apenas 1 atividade do tipo quiz na aula
+              if (!realActId && atividadesList.length === 1 && atividadesList[0].tipo_entrega === 'quiz' && atividadesList[0].atividade_quiz_proprio) {
+                realActId = tempIdToRealId[atividadesList[0].tempId] || atividadesList[0].id || null;
+              }
             }
             return {
-              id: q.id || crypto.randomUUID(),
+              id: (q.id && q.id.length >= 30) ? q.id : crypto.randomUUID(),
               aula_id: aulaId,
               enunciado: q.enunciado.trim(),
               opcoes: q.opcoes,
@@ -2877,6 +2881,8 @@ export const CourseBuilder: React.FC = () => {
                                 onClick={() => {
                                   const filtered = atividadesList.filter(a => a.tempId !== act.tempId);
                                   setAtividadesList(filtered);
+                                  // Migra quaisquer questões associadas a esta atividade para o quiz comum
+                                  setQuestoes(prev => prev.map(q => (q.atividade_id === act.tempId || q.atividade_id === act.id) ? { ...q, atividade_id: null } : q));
                                   if (filtered.length === 0) {
                                     setLessonForm({ ...lessonForm, has_atividade: false });
                                   }
@@ -3067,6 +3073,21 @@ export const CourseBuilder: React.FC = () => {
                                       const updated = atividadesList.map(a => a.tempId === act.tempId ? { ...a, tipo_entrega: 'quiz' as const } : a);
                                       setAtividadesList(updated);
                                       setActiveTypes(prev => ({ ...prev, quiz: true }));
+                                      // Se não houver questões não-arena, garante uma questão inicial
+                                      const nonArena = questoes.filter(q => !q.para_arena);
+                                      if (nonArena.length === 0) {
+                                        setQuestoes(prev => [
+                                          ...prev,
+                                          {
+                                            enunciado: 'Qual é o conceito ou resposta esperada para esta atividade?',
+                                            opcoes: ['Opção A', 'Opção B', 'Opção C'],
+                                            resposta_correta: 'Opção A',
+                                            ordem: 1,
+                                            tipo: 'multipla_escolha',
+                                            atividade_id: act.atividade_quiz_proprio ? act.tempId : null
+                                          }
+                                        ]);
+                                      }
                                     }}
                                     className="text-primary focus:ring-primary/20 border-slate-300"
                                   />
@@ -3138,19 +3159,27 @@ export const CourseBuilder: React.FC = () => {
                                           setQuizSubTab(`atividade_${act.tempId}`);
                                           const hasActivityQ = questoes.some(q => q.atividade_id === act.tempId || q.atividade_id === act.id);
                                           if (!hasActivityQ) {
-                                            setQuestoes(prev => [
-                                              ...prev,
-                                              {
-                                                enunciado: 'Pergunta do Questionário...',
-                                                opcoes: ['Opção A', 'Opção B'],
-                                                resposta_correta: 'Opção A',
-                                                ordem: 1,
-                                                tipo: 'multipla_escolha',
-                                                atividade_id: act.tempId
-                                              }
-                                            ]);
+                                            const standardQs = questoes.filter(q => !q.para_arena && !q.atividade_id);
+                                            if (standardQs.length > 0) {
+                                              // Vincula as questões existentes do quiz a esta atividade
+                                              setQuestoes(prev => prev.map(q => (!q.para_arena && !q.atividade_id) ? { ...q, atividade_id: act.tempId } : q));
+                                            } else {
+                                              setQuestoes(prev => [
+                                                ...prev,
+                                                {
+                                                  enunciado: 'Pergunta do Questionário...',
+                                                  opcoes: ['Opção A', 'Opção B'],
+                                                  resposta_correta: 'Opção A',
+                                                  ordem: 1,
+                                                  tipo: 'multipla_escolha',
+                                                  atividade_id: act.tempId
+                                                }
+                                              ]);
+                                            }
                                           }
                                         } else {
+                                          // Ao desmarcar questionário exclusivo, migra as questões de volta para o quiz geral
+                                          setQuestoes(prev => prev.map(q => (q.atividade_id === act.tempId || q.atividade_id === act.id) ? { ...q, atividade_id: null } : q));
                                           setQuizSubTab('standard');
                                         }
                                       }}
@@ -3362,10 +3391,16 @@ export const CourseBuilder: React.FC = () => {
                         if (quizSubTab.startsWith('atividade_')) {
                           const actTempId = quizSubTab.replace('atividade_', '');
                           const act = atividadesList.find(a => a.tempId === actTempId || a.id === actTempId);
-                          return q.atividade_id === actTempId || (act?.id && q.atividade_id === act.id);
+                          if (q.atividade_id === actTempId || (act?.id && q.atividade_id === act.id)) return true;
+                          if (atividadesList.filter(a => a.tipo_entrega === 'quiz').length === 1 && q.atividade_id && !q.para_arena) return true;
+                          return false;
                         }
                         if (quizSubTab === 'atividade') return !!q.atividade_id;
-                        return !q.para_arena && !q.atividade_id;
+                        if (q.para_arena) return false;
+                        if (!q.atividade_id) return true;
+                        // Se a atividade correspondente não existir mais, exibe na aba geral para não perder a questão
+                        const actExists = atividadesList.some(a => a.tempId === q.atividade_id || a.id === q.atividade_id);
+                        return !actExists;
                       })();
                       if (!belongsToTab) return null;
 
