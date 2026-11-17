@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { LessonMarkdown } from '../components/common/LessonMarkdown';
 import {
   BookOpen01Icon,
   Tick01Icon,
@@ -57,21 +58,6 @@ interface Entrega {
   nota: number | null;
   feedback_professor: string | null;
 }
-
-const renderFormattedText = (text: string) => {
-  if (!text) return '';
-  // Split by bold (**text**) or inline code (`code`)
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-slate-100 text-pink-600 px-1.5 py-0.5 rounded font-mono text-xs border border-slate-200">{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-};
 
 const parseLessonConteudo = (rawConteudo: string, tipo?: string) => {
   if (!rawConteudo) {
@@ -662,44 +648,13 @@ export const VisualizadorCursoAluno: React.FC<VisualizadorCursoAlunoProps> = ({ 
 
                           {/* Lesson Text Content */}
                           {(parsed.conteudo || selectedAula.tipo === 'texto') && (
-                            <div className="prose max-w-none text-xs text-on-surface leading-relaxed bg-surface-container-low/50 p-5 rounded-product-control border border-outline-variant/60 font-sans space-y-2">
-                              {parsed.conteudo ? (
-                                parsed.conteudo.split('\n').map((paragraph, pIdx) => {
-                                  const trimmed = paragraph.trim();
-                                  if (!trimmed) return null;
-
-                                  if (trimmed.startsWith('###')) {
-                                    return (
-                                      <h5 key={pIdx} className="font-heading font-extrabold text-sm text-on-surface pt-3">
-                                        {renderFormattedText(trimmed.replace('###', '').trim())}
-                                      </h5>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('##')) {
-                                    return (
-                                      <h4 key={pIdx} className="font-heading font-extrabold text-base text-on-surface pt-4 pb-1.5 border-b border-outline-variant/60">
-                                        {renderFormattedText(trimmed.replace('##', '').trim())}
-                                      </h4>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                                    return (
-                                      <ul key={pIdx} className="list-disc pl-5 space-y-1 my-1">
-                                        <li className="text-xs text-on-surface-variant font-medium">
-                                          {renderFormattedText(trimmed.substring(1).trim())}
-                                        </li>
-                                      </ul>
-                                    );
-                                  }
-                                  return (
-                                    <p key={pIdx} className="my-1.5 leading-relaxed text-justify text-on-surface-variant font-medium">
-                                      {renderFormattedText(paragraph)}
-                                    </p>
-                                  );
-                                })
-                              ) : (
-                                <p className="italic text-on-surface-variant text-xs font-medium">Nenhum conteúdo complementar para esta aula.</p>
-                              )}
+                            <div className="bg-surface-container-low/50 p-5 rounded-product-control border border-outline-variant/60">
+                              <LessonMarkdown
+                                source={parsed.conteudo}
+                                size="sm"
+                                className="text-on-surface-variant font-medium"
+                                emptyFallback={<p className="italic text-on-surface-variant text-xs font-medium">Nenhum conteúdo complementar para esta aula.</p>}
+                              />
                             </div>
                           )}
                         </>

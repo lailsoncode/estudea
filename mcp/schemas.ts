@@ -61,7 +61,7 @@ export const MaterialSchema = z.object({
 
 export const ActivitySchema = z.object({
   enunciado: z.string().trim().min(3).max(10000)
-    .describe('Instruções completas da atividade, incluindo entrega e critérios de qualidade.'),
+    .describe('Instruções completas da atividade em Markdown (mesmo formato do conteúdo da aula), incluindo entrega e critérios de qualidade.'),
   tipo_entrega: z.enum(['texto', 'imagem', 'quiz', 'multipla', 'arquivo']),
   pontua: z.boolean().default(true),
   permite_refazer: z.boolean().default(true),
@@ -99,7 +99,7 @@ const LessonObjectSchema = z.object({
   descricao: z.string().trim().max(5000).default('')
     .describe('Objetivos e resumo curto da aula.'),
   conteudo: z.string().trim().max(100000).default('')
-    .describe('Conteúdo didático em Markdown simples, pronto para o aluno.'),
+    .describe('Conteúdo didático em Markdown, pronto para o aluno: ## seções, listas, **negrito**, `código`, blocos ```linguagem, links, imagens, tabelas e citações. Sem HTML. Detalhes no guia estudea://guias/criacao-aulas.'),
   tipo: z.enum(['video', 'texto', 'quiz', 'arquivo']).default('texto'),
   duracao: z.string().trim().min(1).max(80).optional(),
   numero_aula: z.number().int().positive().max(10000).optional(),

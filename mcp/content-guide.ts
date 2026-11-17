@@ -13,6 +13,21 @@ Este recurso descreve o contrato pedagógico do MCP. O formato com tags [TÍTULO
 5. Crie apenas como rascunho. Antes de liberar, consulte a aula novamente, revise a validação e envie o revision_id atual com a confirmação explícita.
 6. Liberação, retirada de turma e arquivamento são operações separadas e nunca devem ser inferidas a partir do pedido de criação.
 
+## Formatação do conteúdo
+
+Os campos conteudo (aula) e enunciado (atividade) são exibidos ao aluno com este subconjunto de Markdown:
+
+- Títulos: ## para seções e ### para subseções. Evite # (o título da aula já aparece na página).
+- Cada linha é um parágrafo; separe parágrafos com uma linha em branco para facilitar a leitura.
+- Listas com "- " ou "1. ", sublistas com dois ou três espaços de recuo e checklists com "- [ ] ".
+- **negrito**, *itálico*, ~~tachado~~ e \`código inline\` para comandos, atalhos, nomes de arquivos e menus.
+- Blocos de código cercados por três crases com a linguagem (\`\`\`python, \`\`\`bash, \`\`\`html, \`\`\`sql). O aluno vê um botão de copiar.
+- Links [texto](https://...) e imagens ![descrição](https://...). Somente URLs http(s) e mailto: são exibidas.
+- Tabelas no formato GFM (| coluna | coluna | com linha |---|---|).
+- Citações com "> " para dicas, alertas e observações importantes; separador com ---.
+
+Não use HTML, fórmulas LaTeX, notas de rodapé, diagramas Mermaid nem blocos de código recuados com quatro espaços: eles aparecem como texto cru.
+
 ## Questões
 
 - Use opções {id,texto} e respostas_corretas contendo os IDs.

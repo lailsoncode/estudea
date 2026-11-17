@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CardConquista } from '../components/common/CardConquista';
+import { LessonMarkdown } from '../components/common/LessonMarkdown';
 import { dispararCelebracao } from '../utils/celebracao';
 import {
   answersForQuestions,
@@ -43,21 +44,6 @@ import {
   Download01Icon,
   File01Icon
 } from '@hugeicons/core-free-icons';
-
-const renderFormattedText = (text: string) => {
-  if (!text) return '';
-  // Split by bold (**text**) or inline code (`code`)
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-extrabold text-on-surface">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-surface-container-high/80 text-primary px-1.5 py-0.5 rounded font-mono text-xs border border-outline-variant/30">{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-};
 
 const getAtividadeTabLabel = (act: any, allActs: any[]) => {
   if (act.tipo_entrega === 'quiz') return 'Quiz';
@@ -3294,31 +3280,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
                                   <HugeiconsIcon icon={NotebookIcon} size={18} className="text-primary" />
                                   Material de Apoio
                                 </h4>
-                                <div className="prose prose-slate max-w-none text-body-md text-on-surface-variant leading-relaxed font-sans space-y-4">
-                                  {parsed.conteudo ? (
-                                    parsed.conteudo.split('\n').map((para, pIdx) => {
-                                      const trimmed = para.trim();
-                                      if (!trimmed) return null;
-
-                                      if (trimmed.startsWith('###')) {
-                                        return <h5 key={pIdx} className="font-heading font-extrabold text-body-lg text-on-surface pt-4">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
-                                      }
-                                      if (trimmed.startsWith('##')) {
-                                        return <h4 key={pIdx} className="font-heading font-extrabold text-sm text-on-surface pt-6 pb-2 border-b border-outline-variant/40">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
-                                      }
-                                      if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                                        return (
-                                          <ul key={pIdx} className="list-disc pl-6 space-y-1 my-2">
-                                            <li className="text-body-md">{renderFormattedText(trimmed.substring(1).trim())}</li>
-                                          </ul>
-                                        );
-                                      }
-                                      return <p key={pIdx} className="my-3 leading-relaxed text-justify">{renderFormattedText(trimmed)}</p>;
-                                    })
-                                  ) : (
-                                    <p className="italic text-on-surface-variant/70">Nenhum conteúdo complementar para esta aula.</p>
-                                  )}
-                                </div>
+                                <LessonMarkdown
+                                  source={parsed.conteudo}
+                                  className="text-on-surface-variant"
+                                  emptyFallback={<p className="italic text-on-surface-variant/70">Nenhum conteúdo complementar para esta aula.</p>}
+                                />
                               </div>
                             )}
                           </div>
@@ -3757,31 +3723,11 @@ export const TrilhaAluno: React.FC<TrilhaAlunoProps> = ({
 
                                 <div className="p-4 bg-surface rounded-xl border border-outline-variant/40 space-y-2">
                                   <p className="text-[11px] font-bold text-on-surface-variant uppercase font-mono tracking-wider">Instruções</p>
-                                  <div className="prose prose-slate max-w-none text-body-md text-on-surface leading-relaxed font-sans space-y-3">
-                                    {atividade.enunciado ? (
-                                      atividade.enunciado.split('\n').map((para, pIdx) => {
-                                        const trimmed = para.trim();
-                                        if (!trimmed) return <div key={pIdx} className="h-2" />;
-
-                                        if (trimmed.startsWith('###')) {
-                                          return <h5 key={pIdx} className="font-heading font-extrabold text-body-md text-on-surface pt-2">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
-                                        }
-                                        if (trimmed.startsWith('##')) {
-                                          return <h4 key={pIdx} className="font-heading font-extrabold text-body-lg text-on-surface pt-4 pb-1 border-b border-outline-variant/10">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
-                                        }
-                                        if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                                          return (
-                                            <ul key={pIdx} className="list-disc pl-5 space-y-1 my-1">
-                                              <li className="text-body-md font-medium">{renderFormattedText(trimmed.substring(1).trim())}</li>
-                                            </ul>
-                                          );
-                                        }
-                                        return <p key={pIdx} className="my-2 leading-relaxed text-justify font-medium">{renderFormattedText(trimmed)}</p>;
-                                      })
-                                    ) : (
-                                      <p className="italic text-on-surface-variant/70">Nenhuma instrução disponível para esta atividade.</p>
-                                    )}
-                                  </div>
+                                  <LessonMarkdown
+                                    source={atividade.enunciado}
+                                    className="text-on-surface font-medium"
+                                    emptyFallback={<p className="italic text-on-surface-variant/70">Nenhuma instrução disponível para esta atividade.</p>}
+                                  />
                                   <div className="flex gap-4 pt-1 text-[11px] text-on-surface-variant font-mono">
                                     <span>Formato de entrega: <span className="font-bold text-secondary uppercase">{atividade.tipo_entrega}</span></span>
                                   </div>

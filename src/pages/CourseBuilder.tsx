@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { LessonMarkdown } from '../components/common/LessonMarkdown';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   BookOpen01Icon,
@@ -104,20 +105,6 @@ interface Questao {
   atividade_id?: string | null;
 }
 
-const renderFormattedText = (text: string) => {
-  if (!text) return '';
-  // Split by bold (**text**) or inline code (`code`)
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-slate-100 text-pink-600 px-1.5 py-0.5 rounded font-mono text-xs border border-slate-200">{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-};
 
 const parseLessonConteudo = (rawConteudo: string, tipo?: string) => {
   if (!rawConteudo) {
@@ -2808,44 +2795,12 @@ export const CourseBuilder: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       <label className="text-label-sm font-bold text-slate-600 block">Pré-visualização do Aluno</label>
-                      <div className="prose max-w-none text-body-md text-slate-700 leading-relaxed bg-slate-50/50 p-5 rounded-xl border border-slate-100 font-sans space-y-2 min-h-[220px]">
-                        {lessonForm.conteudo ? (
-                          lessonForm.conteudo.split('\n').map((paragraph, pIdx) => {
-                            const trimmed = paragraph.trim();
-                            if (!trimmed) return null;
-
-                            if (trimmed.startsWith('###')) {
-                              return (
-                                <h5 key={pIdx} className="font-heading font-extrabold text-lg text-slate-900 pt-3">
-                                  {renderFormattedText(trimmed.replace('###', '').trim())}
-                                </h5>
-                              );
-                            }
-                            if (trimmed.startsWith('##')) {
-                              return (
-                                <h4 key={pIdx} className="font-heading font-extrabold text-xl text-slate-950 pt-4 pb-1.5 border-b border-slate-200">
-                                  {renderFormattedText(trimmed.replace('##', '').trim())}
-                                </h4>
-                              );
-                            }
-                            if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                              return (
-                                <ul key={pIdx} className="list-disc pl-6 space-y-1 my-1">
-                                  <li className="text-body-md text-slate-700">
-                                    {renderFormattedText(trimmed.substring(1).trim())}
-                                  </li>
-                                </ul>
-                              );
-                            }
-                            return (
-                              <p key={pIdx} className="my-1.5 leading-relaxed text-justify text-slate-700">
-                                {renderFormattedText(paragraph)}
-                              </p>
-                            );
-                          })
-                        ) : (
-                          <p className="italic text-slate-400">Digite algo na aba "Escrever" para ver a pré-visualização.</p>
-                        )}
+                      <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/50 min-h-[220px]">
+                        <LessonMarkdown
+                          source={lessonForm.conteudo}
+                          className="text-on-surface-variant"
+                          emptyFallback={<p className="italic text-on-surface-variant/70">Digite algo na aba "Escrever" para ver a pré-visualização.</p>}
+                        />
                       </div>
                     </div>
                   )}
@@ -2986,31 +2941,12 @@ export const CourseBuilder: React.FC = () => {
                               ) : (
                                 /* Live preview */
                                 <div className="p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 min-h-[120px]">
-                                  {act.enunciado ? (
-                                    <div className="prose prose-slate dark:prose-invert max-w-none text-body-sm text-slate-650 dark:text-slate-300 leading-relaxed font-sans space-y-3">
-                                      {act.enunciado.split('\n').map((para, pIdx) => {
-                                        const trimmed = para.trim();
-                                        if (!trimmed) return <div key={pIdx} className="h-1" />;
-
-                                        if (trimmed.startsWith('###')) {
-                                          return <h5 key={pIdx} className="font-heading font-extrabold text-body-sm text-slate-850 dark:text-slate-200 pt-1">{renderFormattedText(trimmed.replace('###', '').trim())}</h5>;
-                                        }
-                                        if (trimmed.startsWith('##')) {
-                                          return <h4 key={pIdx} className="font-heading font-extrabold text-body-md text-slate-850 dark:text-slate-200 pt-2 pb-0.5 border-b border-slate-100 dark:border-slate-800">{renderFormattedText(trimmed.replace('##', '').trim())}</h4>;
-                                        }
-                                        if (trimmed.startsWith('-') || (trimmed.startsWith('*') && !trimmed.startsWith('**'))) {
-                                          return (
-                                            <ul key={pIdx} className="list-disc pl-5 space-y-0.5 my-0.5">
-                                              <li className="text-body-sm">{renderFormattedText(trimmed.substring(1).trim())}</li>
-                                            </ul>
-                                          );
-                                        }
-                                        return <p key={pIdx} className="my-1.5 text-justify">{renderFormattedText(trimmed)}</p>;
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <p className="italic text-slate-400 dark:text-slate-500 text-body-sm">Nenhuma instrução disponível para visualizar.</p>
-                                  )}
+                                  <LessonMarkdown
+                                    source={act.enunciado}
+                                    size="sm"
+                                    className="text-on-surface-variant"
+                                    emptyFallback={<p className="italic text-slate-400 dark:text-slate-500 text-body-sm">Nenhuma instrução disponível para visualizar.</p>}
+                                  />
                                 </div>
                               )}
 
